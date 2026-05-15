@@ -45,10 +45,13 @@
 </style>
 
 <script>
-  (function () {
+  (function initHero() {
     if (window.HakoImage) {
       const heroUrl = window.HakoImage.get('landing.jpg', {w: 1600, f: 'webp', q: 80});
       document.getElementById('landing-view').style.setProperty('--hero-bg', `url('${heroUrl}')`);
+    } else {
+      // Retry if HakoImage isn't ready yet (e.g. if the main script is still loading)
+      setTimeout(initHero, 100);
     }
   })();
 </script>
