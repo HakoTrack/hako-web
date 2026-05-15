@@ -110,3 +110,7 @@ function initMediaList(type) {
   // Initial render
   renderMediaList(type, 'media-list-container', 'Title', 'all');
 }
+
+// Global attachment for mockup compatibility
+window.initProfile = initProfile;
+window.setupProfileTabs = setupProfileTabs;

@@ -33,7 +33,7 @@ export async function initializeFavorites(username) {
 
       container.innerHTML = ids.map(id => `
         <img src="/assets/covers/${subfolder}/${id}_medium.jpg"
-             class="media-cover rounded w-full aspect-[85/115] object-cover cursor-pointer hover:scale-105 transition-transform bg-[#151f2e]"
+             class="media-cover rounded w-full aspect-85/115 object-cover cursor-pointer hover:scale-105 transition-transform bg-[#151f2e]"
              data-media-id="${id}"
              alt="${category} ${id}"
              onerror="this.onerror=null; this.src='/assets/covers/placeholder_medium.jpg';">
