@@ -46,6 +46,12 @@ export const handleRouting = async () => {
       handleRouting();
     } else {
       await loadComponent('app-view', '/views/landing.html');
+
+      // Load hero background
+      const heroUrl = window.HakoImage.get('landing.jpg', { w: 1600, f: 'webp', q: 80 });
+      const view = document.getElementById('landing-view');
+      if (view) view.style.setProperty('--hero-bg', `url('${heroUrl}')`);
+
       document.getElementById('landing-login')?.addEventListener('click', showLoginModal);
       document.getElementById('landing-signup')?.addEventListener('click', showSignupModal);
     }
