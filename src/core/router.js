@@ -1,5 +1,9 @@
 import { AuthService } from './auth.js';
 import { loadComponent } from '../utils/loadComponent.js';
+import { Modal } from '../utils/modal.js';
+import { renderLoginPage } from '../modules/auth/login.js';
+import { renderSignupPage } from '../modules/auth/signup.js';
+import { supabase } from '../utils/supabase.js';
 
 export const handleRouting = async () => {
   const user = await AuthService.getCurrentUser();
@@ -10,7 +14,6 @@ export const handleRouting = async () => {
   if (!appView) return;
 
   // 1. Determine if we should show the navbar/footer
-  // We hide them on the landing page for the full-screen hero effect
   const isLanding = path === '/' && !user;
   const navbarPlaceholder = document.getElementById('navbar-placeholder');
   const footerPlaceholder = document.getElementById('footer-placeholder');
@@ -22,7 +25,6 @@ export const handleRouting = async () => {
     if (navbarPlaceholder) navbarPlaceholder.style.display = 'block';
     if (footerPlaceholder) footerPlaceholder.style.display = 'block';
 
-    // Load shared layout components for non-landing pages
     await Promise.all([
       loadComponent('navbar-placeholder', '/components/common/navbar.html'),
       loadComponent('footer-placeholder', '/components/common/footer.html')
@@ -30,29 +32,16 @@ export const handleRouting = async () => {
     updateNavbar(user);
   }
 
-  // 2. Auth Guard: If not logged in and not on login/signup/landing, redirect
-  if (!user && path !== '/login' && path !== '/signup' && path !== '/') {
-    window.history.pushState({}, '', '/login');
-    handleRouting();
-    return;
-  }
-
-  // 3. Routing Logic
+  // 2. Routing Logic
   if (path === '/') {
     if (user) {
       window.history.pushState({}, '', '/feed');
       handleRouting();
     } else {
       await loadComponent('app-view', '/views/landing.html');
+      document.getElementById('landing-login')?.addEventListener('click', showLoginModal);
+      document.getElementById('landing-signup')?.addEventListener('click', showSignupModal);
     }
-  } else if (path === '/login') {
-    const { renderLoginPage } = await import('../modules/auth/login.js');
-    appView.innerHTML = renderLoginPage();
-    initLoginForm();
-  } else if (path === '/signup') {
-    const { renderSignupPage } = await import('../modules/auth/signup.js');
-    appView.innerHTML = renderSignupPage();
-    initSignupForm();
   } else if (pathParts.includes('profile')) {
     const username = pathParts[pathParts.indexOf('profile') + 1] || user?.email?.split('@')[0] || 'shaetsu';
     await loadComponent('app-view', '/profile/profile.html');
@@ -69,6 +58,16 @@ export const handleRouting = async () => {
   }
 };
 
+export function showLoginModal() {
+  Modal.create(renderLoginPage(), 'Welcome Back');
+  initLoginForm();
+}
+
+export function showSignupModal() {
+  Modal.create(renderSignupPage(), 'Join Hako');
+  initSignupForm();
+}
+
 function initLoginForm() {
   const form = document.getElementById('login-form');
   if (!form) return;
@@ -79,9 +78,9 @@ function initLoginForm() {
     const password = document.getElementById('password').value;
 
     try {
-      const { supabase } = await import('../utils/supabase.js');
       const { data, error } = await supabase.auth.signInWithPassword({ email, password });
       if (error) throw error;
+      Modal.close();
       window.history.pushState({}, '', '/feed');
       handleRouting();
     } catch (error) {
@@ -110,9 +109,11 @@ function updateNavbar(user) {
     });
   } else {
     navLinks.innerHTML = `
-            <a href="/login" class="nav-link">Login</a>
-            <a href="/signup" class="nav-link">Sign Up</a>
+            <button id="nav-login" class="nav-link">Login</button>
+            <button id="nav-signup" class="nav-link">Sign Up</button>
         `;
+    document.getElementById('nav-login').addEventListener('click', showLoginModal);
+    document.getElementById('nav-signup').addEventListener('click', showSignupModal);
   }
 
   document.getElementById('nav-branding')?.addEventListener('click', () => {
@@ -137,11 +138,10 @@ function initSignupForm() {
     }
 
     try {
-      const { supabase } = await import('../utils/supabase.js');
       const { error } = await supabase.auth.signUp({ email, password });
       if (error) throw error;
       alert("Signup successful! Please check your email for verification.");
-      window.history.pushState({}, '', '/login');
+      Modal.close();
       handleRouting();
     } catch (error) {
       alert(error.message);

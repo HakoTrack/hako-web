@@ -48,7 +48,7 @@ function renderThought(activity, username) {
     <div class="bg-card rounded-xl overflow-hidden shadow-md">
       <div class="p-4 border-b border-slate-800 flex items-center justify-between">
         <div class="flex items-center space-x-3">
-          <img src="/assets/profile/${username}/avatar.jpg" class="object-cover w-8 h-8 rounded-lg bg-slate-700" onerror="this.src='https://via.placeholder.com/32'">
+          <img src="/assets/profile/${username}/avatar.jpg" class="object-cover w-8 h-8 rounded-lg bg-slate-700" onerror="this.src=''">
           <div>
             <p class="text-sm font-semibold text-white">${username} <span class="text-slate-500 font-normal">posted a thought</span></p>
             <p class="text-[10px] text-slate-500 uppercase">${activity.time_relative || 'Recently'}</p>
@@ -90,7 +90,7 @@ function renderListUpdate(activity, username, animeDb) {
     <div class="bg-card rounded-xl overflow-hidden shadow-md">
       <div class="p-4 border-b border-slate-800 flex items-center justify-between">
         <div class="flex items-center space-x-3">
-          <img src="/assets/profile/${username}/avatar.jpg" class="object-cover w-8 h-8 rounded-lg bg-slate-700" onerror="this.src='https://via.placeholder.com/32'">
+          <img src="/assets/profile/${username}/avatar.jpg" class="object-cover w-8 h-8 rounded-lg bg-slate-700" onerror="this.src=''">
           <div>
             <p class="text-sm font-semibold text-white">${username} <span class="text-slate-500 font-normal">${activity.action}</span></p>
             <p class="text-[10px] text-slate-500 uppercase">${activity.time_relative || 'Recently'}</p>
