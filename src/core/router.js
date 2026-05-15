@@ -50,9 +50,9 @@ export const handleRouting = async () => {
       // Load hero background
       const heroUrl = window.HakoImage.get('landing.jpg', { f: 'avif' });
       const view = document.getElementById('landing-view');
-      //if (view) view.style.setProperty('--hero-bg', `url('${heroUrl}')`);
+
       if (view) {
-        const img = new Image;
+        const img = new Image();
         img.src = heroUrl;
 
         img.onload = () => {
