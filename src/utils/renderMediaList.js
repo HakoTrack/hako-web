@@ -1,11 +1,3 @@
-/**
- * Generic renderer for media lists (Anime/Manga)
- * @param {string} type - 'anime' or 'manga'
- * @param {string} containerId - DOM target
- * @param {string} sortBy - Sort key
- * @param {string} filterStatus - Status to filter by
- */
-
 const getScoreColor = (score) => {
   if (!score) return 'text-slate-500';
   if (score >= 9) return 'text-green-400';
@@ -15,7 +7,7 @@ const getScoreColor = (score) => {
   return 'text-red-400';
 };
 
-window.renderMediaList = async function (type = 'anime', containerId = 'anime-list-container', sortBy = 'Title', filterStatus = 'all') {
+export const renderMediaList = async function (type = 'anime', containerId = 'anime-list-container', sortBy = 'Title', filterStatus = 'all') {
   const container = document.getElementById(containerId);
   if (!container) return;
 
@@ -163,6 +155,3 @@ window.renderMediaList = async function (type = 'anime', containerId = 'anime-li
     container.innerHTML = `<div class="p-10 text-center font-['Arial',_sans-serif] text-[20px] text-slate-500">This list is empty... (≖､≖╬)</div>`;
   }
 };
-
-window.renderAnimeList = (id, sort, filter) => window.renderMediaList('anime', id, sort, filter);
-window.renderMangaList = (id, sort, filter) => window.renderMediaList('manga', id, sort, filter);

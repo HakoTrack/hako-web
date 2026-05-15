@@ -1,9 +1,11 @@
 import './styles/global.css';
 import { handleRouting } from './core/router.js';
 import { initAuth } from './core/auth.js';
+import { initQuickEditor } from './utils/quickEditor.js';
 
 // 1. Initialize global systems
 initAuth();
+initQuickEditor();
 
 // 2. Start the router
 window.addEventListener('popstate', handleRouting);

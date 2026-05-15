@@ -1,4 +1,4 @@
-async function populateActivityFeed(username) {
+export async function populateActivityFeed(username) {
 
   if (!username) {
     console.error("No username provided to populateActivityFeed");
@@ -117,5 +117,5 @@ function renderListUpdate(activity, username, animeDb) {
     </div>`;
 }
 
-// Export to window so profile.html can call it
+// Global attachment for mockup compatibility
 window.populateActivityFeed = populateActivityFeed;

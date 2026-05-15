@@ -1,4 +1,4 @@
-window.initializeFavorites = async function (username) {
+export async function initializeFavorites(username) {
   if (!username) {
     const pathParts = window.location.pathname.split('/').filter(p => p);
     username = pathParts[pathParts.length - 1] || 'shaetsu';
@@ -48,4 +48,4 @@ window.initializeFavorites = async function (username) {
   } catch (e) {
     console.error("Error loading favorites:", e);
   }
-};
+}

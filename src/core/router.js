@@ -1,4 +1,5 @@
 import { AuthService } from './auth.js';
+import { loadComponent } from '../utils/loadComponent.js';
 
 export const handleRouting = async () => {
   const user = await AuthService.getCurrentUser();
@@ -6,66 +7,50 @@ export const handleRouting = async () => {
   const pathParts = path.split('/').filter(p => p && !p.endsWith('.html'));
 
   // Shared layout components
-  if (typeof loadComponent === 'function') {
-    await Promise.all([
-      loadComponent('navbar-placeholder', '/components/common/navbar.html'),
-      loadComponent('footer-placeholder', '/components/common/footer.html')
-    ]);
-    updateNavbar(user);
-  }
+  await Promise.all([
+    loadComponent('navbar-placeholder', '/components/common/navbar.html'),
+    loadComponent('footer-placeholder', '/components/common/footer.html')
+  ]);
+  updateNavbar(user);
 
   const appView = document.getElementById('app-view');
+  if (!appView) return;
 
   // Auth Guard: If not logged in and not on login/signup, redirect or show login
-  if (!user && path !== '/login' && path !== '/signup') {
-    // For now, let's just show login if they try to access something private
-    // Or we could have a landing page
-    if (path === '/') {
-      await renderModule('landing');
-    } else {
-      window.location.href = '/login';
-    }
+  if (!user && path !== '/login' && path !== '/signup' && path !== '/') {
+    window.location.href = '/login';
     return;
   }
 
   // Routing Logic
-  if (path === '/login') {
+  if (path === '/') {
+    await renderModule('landing');
+  } else if (path === '/login') {
     const { renderLoginPage } = await import('../modules/auth/login.js');
     appView.innerHTML = renderLoginPage();
-    // Add event listeners for login form
     initLoginForm();
   } else if (path === '/signup') {
     const { renderSignupPage } = await import('../modules/auth/signup.js');
     appView.innerHTML = renderSignupPage();
-    // Add event listeners for signup form
     initSignupForm();
   } else if (pathParts.includes('profile')) {
     const username = pathParts[pathParts.indexOf('profile') + 1] || user?.email?.split('@')[0] || 'shaetsu';
-    if (typeof loadComponent === 'function') {
-      await loadComponent('app-view', '/profile/profile.html');
-      if (window.initProfile) {
-        await window.initProfile(username);
-      }
-    }
+    await loadComponent('app-view', '/profile/profile.html');
+    const { initProfile } = await import('../features/profile.js');
+    await initProfile(username);
   } else if (pathParts.length === 0 || pathParts[0] === 'feed') {
-    if (typeof loadComponent === 'function') {
-      await loadComponent('app-view', '/views/feed.html');
-      if (window.populateActivityFeed) {
-        const username = user?.email?.split('@')[0] || 'shaetsu';
-        await window.populateActivityFeed(username);
-      }
-    }
+    await loadComponent('app-view', '/views/feed.html');
+    const { populateActivityFeed } = await import('../features/populateFeed.js');
+    const username = user?.email?.split('@')[0] || 'shaetsu';
+    await populateActivityFeed(username);
   } else {
-    if (typeof loadComponent === 'function') {
-      await loadComponent('app-view', '/views/404.html');
-      document.title = '404 - Page Not Found | Hako';
-    }
+    await loadComponent('app-view', '/views/404.html');
+    document.title = '404 - Page Not Found | Hako';
   }
 };
 
 async function renderModule(moduleName) {
   const appView = document.getElementById('app-view');
-  // Implement module rendering logic or load HTML
   if (moduleName === 'landing') {
     appView.innerHTML = `
             <div class="flex flex-col items-center justify-center min-h-[60vh] text-center">
@@ -93,7 +78,8 @@ function initLoginForm() {
       const { supabase } = await import('../utils/supabase.js');
       const { data, error } = await supabase.auth.signInWithPassword({ email, password });
       if (error) throw error;
-      window.location.href = '/feed';
+      window.history.pushState({}, '', '/feed');
+      handleRouting();
     } catch (error) {
       alert(error.message);
     }
@@ -132,28 +118,29 @@ function updateNavbar(user) {
 }
 
 function initSignupForm() {
-    const form = document.getElementById('signup-form');
-    if (!form) return;
-    
-    form.addEventListener('submit', async (e) => {
-        e.preventDefault();
-        const email = document.getElementById('email').value;
-        const password = document.getElementById('password').value;
-        const confirmPassword = document.getElementById('confirm-password').value;
-        
-        if (password !== confirmPassword) {
-            alert("Passwords do not match");
-            return;
-        }
-        
-        try {
-            const { supabase } = await import('../utils/supabase.js');
-            const { data, error } = await supabase.auth.signUp({ email, password });
-            if (error) throw error;
-            alert("Signup successful! Please check your email for verification.");
-            window.location.href = '/login';
-        } catch (error) {
-            alert(error.message);
-        }
-    });
+  const form = document.getElementById('signup-form');
+  if (!form) return;
+
+  form.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const email = document.getElementById('email').value;
+    const password = document.getElementById('password').value;
+    const confirmPassword = document.getElementById('confirm-password').value;
+
+    if (password !== confirmPassword) {
+      alert("Passwords do not match");
+      return;
+    }
+
+    try {
+      const { supabase } = await import('../utils/supabase.js');
+      const { error } = await supabase.auth.signUp({ email, password });
+      if (error) throw error;
+      alert("Signup successful! Please check your email for verification.");
+      window.history.pushState({}, '', '/login');
+      handleRouting();
+    } catch (error) {
+      alert(error.message);
+    }
+  });
 }
