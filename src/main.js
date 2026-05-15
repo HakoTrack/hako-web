@@ -1,3 +1,4 @@
+import './styles/global.css';
 import { handleRouting } from './core/router.js';
 import { initAuth } from './core/auth.js';
 

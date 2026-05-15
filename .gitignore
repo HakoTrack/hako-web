@@ -28,5 +28,5 @@ yarn-error.log*
 
 # Misc
 tools/
-assets/
+public/assets/
 mockup/
