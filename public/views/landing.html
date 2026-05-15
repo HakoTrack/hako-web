@@ -2,32 +2,29 @@
   <!-- Center content area -->
   <div class="grow flex flex-col items-center justify-center text-center">
     <main class="max-w-4xl mx-auto">
-      <h1 id="hero-title"
+      <h1
         class="text-6xl md:text-8xl font-extrabold mb-6 tracking-tighter flex items-center justify-center gap-4 md:gap-6">
         <span class="font-['Zen_Antique'] text-indigo-400">箱</span>
-        <span id="hako-text"
-          class="font-['Zen_Antique'] text-white overflow-hidden transition-all duration-1000 ease-out"
-          style="width: 0;">Hako</span>
+        <span class="font-['Zen_Antique'] text-white">Hako</span>
       </h1>
-      <div id="hero-content" class="transition-opacity duration-1000" style="opacity: 0;">
-        <p class="text-lg md:text-xl text-slate-300 mb-10 max-w-lg mx-auto leading-relaxed">
-          A box of everything Japanese media.
-        </p>
-        <div class="flex flex-col sm:flex-row items-center justify-center gap-4 md:gap-6">
-          <button id="landing-login"
-            class="w-full sm:w-48 bg-white/5 backdrop-blur-xl text-white py-4 rounded-xl text-center font-bold text-lg border border-white/10 hover:bg-white/10 transition-all">
-            Login
-          </button>
-          <button id="landing-signup"
-            class="w-full sm:w-48 bg-white/5 backdrop-blur-xl text-white py-4 rounded-xl text-center font-bold text-lg border border-white/10 hover:bg-white/10 transition-all">
-            Sign Up
-          </button>
-        </div>
+      <p class="text-lg md:text-xl text-slate-300 mb-10 max-w-lg mx-auto leading-relaxed">
+        A box of everything Japanese media.
+      </p>
+      <div class="flex flex-col sm:flex-row items-center justify-center gap-4 md:gap-6">
+        <button id="landing-login"
+          class="w-full sm:w-48 bg-white/5 backdrop-blur-xl text-white py-4 rounded-xl text-center font-bold text-lg border border-white/10 hover:bg-white/10 transition-all">
+          Login
+        </button>
+        <button id="landing-signup"
+          class="w-full sm:w-48 bg-white/5 backdrop-blur-xl text-white py-4 rounded-xl text-center font-bold text-lg border border-white/10 hover:bg-white/10 transition-all">
+          Sign Up
+        </button>
       </div>
     </main>
   </div>
 
-  <footer class="mt-auto pt-12 text-center pb-8 transition-opacity duration-1000" style="opacity: 0;" id="hero-footer">
+  <!-- Footer fixed at bottom with consistent padding -->
+  <footer class="mt-auto pt-12 text-center pb-8">
     <p class="text-[10px] uppercase text-slate-500 opacity-60 leading-loose mx-auto tracking-widest px-4">
       An in-development database, tracking platform, and indie social media for anime, manga, light novels, and visual
       novels.
@@ -44,51 +41,5 @@
     height: 100vh;
     display: flex;
     flex-direction: column;
-    transition: background-image 1.5s ease-in-out;
   }
 </style>
-
-<script>
-  (function initHero() {
-    console.log("Landing init starting...");
-    const hakoText = document.getElementById('hako-text');
-    const content = document.getElementById('hero-content');
-    const footer = document.getElementById('hero-footer');
-    const landingView = document.getElementById('landing-view');
-
-    if (!hakoText || !content || !footer) {
-      console.error("DOM elements not found!", {hakoText, content, footer});
-      return;
-    }
-
-    // Paint text
-    hakoText.style.width = hakoText.scrollWidth + 'px';
-    console.log("Text paint applied, width:", hakoText.style.width);
-
-    // Load background
-    if (window.HakoImage) {
-      const heroUrl = window.HakoImage.get('landing.jpg', {w: 1600, f: 'webp', q: 80});
-      console.log("Loading background:", heroUrl);
-
-      const img = new Image();
-      img.onload = () => {
-        console.log("Image loaded, applying styles.");
-        landingView.style.setProperty('--hero-bg', `url('${heroUrl}')`);
-
-        content.style.opacity = '1';
-        footer.style.opacity = '1';
-        console.log("Content revealed.");
-      };
-      img.onerror = () => {
-        console.error("Image failed, revealing anyway.");
-        content.style.opacity = '1';
-        footer.style.opacity = '1';
-      };
-      img.src = heroUrl;
-    } else {
-      console.warn("HakoImage not found, revealing immediately.");
-      content.style.opacity = '1';
-      footer.style.opacity = '1';
-    }
-  })();
-</script>
