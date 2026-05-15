@@ -6,25 +6,45 @@ export const handleRouting = async () => {
   const path = window.location.pathname;
   const pathParts = path.split('/').filter(p => p && !p.endsWith('.html'));
 
-  // Shared layout components
-  await Promise.all([
-    loadComponent('navbar-placeholder', '/components/common/navbar.html'),
-    loadComponent('footer-placeholder', '/components/common/footer.html')
-  ]);
-  updateNavbar(user);
-
   const appView = document.getElementById('app-view');
   if (!appView) return;
 
-  // Auth Guard: If not logged in and not on login/signup, redirect or show login
+  // 1. Determine if we should show the navbar/footer
+  // We hide them on the landing page for the full-screen hero effect
+  const isLanding = path === '/' && !user;
+  const navbarPlaceholder = document.getElementById('navbar-placeholder');
+  const footerPlaceholder = document.getElementById('footer-placeholder');
+
+  if (isLanding) {
+    if (navbarPlaceholder) navbarPlaceholder.style.display = 'none';
+    if (footerPlaceholder) footerPlaceholder.style.display = 'none';
+  } else {
+    if (navbarPlaceholder) navbarPlaceholder.style.display = 'block';
+    if (footerPlaceholder) footerPlaceholder.style.display = 'block';
+
+    // Load shared layout components for non-landing pages
+    await Promise.all([
+      loadComponent('navbar-placeholder', '/components/common/navbar.html'),
+      loadComponent('footer-placeholder', '/components/common/footer.html')
+    ]);
+    updateNavbar(user);
+  }
+
+  // 2. Auth Guard: If not logged in and not on login/signup/landing, redirect
   if (!user && path !== '/login' && path !== '/signup' && path !== '/') {
-    window.location.href = '/login';
+    window.history.pushState({}, '', '/login');
+    handleRouting();
     return;
   }
 
-  // Routing Logic
+  // 3. Routing Logic
   if (path === '/') {
-    await renderModule('landing');
+    if (user) {
+      window.history.pushState({}, '', '/feed');
+      handleRouting();
+    } else {
+      await loadComponent('app-view', '/views/landing.html');
+    }
   } else if (path === '/login') {
     const { renderLoginPage } = await import('../modules/auth/login.js');
     appView.innerHTML = renderLoginPage();
@@ -48,22 +68,6 @@ export const handleRouting = async () => {
     document.title = '404 - Page Not Found | Hako';
   }
 };
-
-async function renderModule(moduleName) {
-  const appView = document.getElementById('app-view');
-  if (moduleName === 'landing') {
-    appView.innerHTML = `
-            <div class="flex flex-col items-center justify-center min-h-[60vh] text-center">
-                <h1 class="text-5xl font-bold text-white mb-4">Welcome to Hako</h1>
-                <p class="text-xl text-slate-400 mb-8">Track your anime and manga progress with ease.</p>
-                <div class="space-x-4">
-                    <a href="/login" class="bg-accent text-white px-8 py-3 rounded-lg font-bold hover:opacity-90 transition-opacity">Login</a>
-                    <a href="/signup" class="bg-slate-700 text-white px-8 py-3 rounded-lg font-bold hover:opacity-90 transition-opacity">Sign Up</a>
-                </div>
-            </div>
-        `;
-  }
-}
 
 function initLoginForm() {
   const form = document.getElementById('login-form');
