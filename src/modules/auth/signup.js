@@ -1,13 +1,13 @@
 export const renderSignupPage = () => {
   return `
     <div class="flex flex-col items-center justify-center min-h-[60vh]">
-        <div class="bg-card p-8 rounded-lg shadow-xl w-full max-w-md border border-slate-700 text-center">
+        <div class="bg-card p-6 rounded-lg shadow-xl w-full max-w-md text-center">
             <h2 class="text-2xl font-bold mb-4 text-slate-400">Registration Closed</h2>
-            <p class="text-slate-500 mb-6">We are currently in a closed beta phase. Please check back later.</p>
+            <p class="text-slate-500 mb-6">We are currently in a closed alpha phase.\nPlease check back later.</p>
             <p class="text-sm text-slate-400">Already have an account? <a href="/login" class="text-accent">Sign In</a></p>
         </div>
 
-        <!-- Registration Form (Hidden for closed beta) -->
+        <!-- Registration Form (Hidden for closed alpha) -->
         <!--
         <form id="signup-form" class="hidden bg-card p-8 rounded-lg shadow-xl w-full max-w-md border border-accent/20">
             <h2 class="text-2xl font-bold mb-6 text-accent">Join Hako</h2>

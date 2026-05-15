@@ -13,7 +13,14 @@ export const handleRouting = async () => {
   const appView = document.getElementById('app-view');
   if (!appView) return;
 
-  // 1. Determine if we should show the navbar/footer
+  // 1. Auth Guard: Redirect to landing if unauthenticated and not on landing
+  if (!user && path !== '/') {
+    window.history.pushState({}, '', '/');
+    handleRouting();
+    return;
+  }
+
+  // 2. Determine if we should show the navbar/footer
   const isLanding = path === '/' && !user;
   const navbarPlaceholder = document.getElementById('navbar-placeholder');
   const footerPlaceholder = document.getElementById('footer-placeholder');
