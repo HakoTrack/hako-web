@@ -99,7 +99,7 @@ const QuickEditor = {
     if (this.isOpen) return;
 
     this.isFavorited = entry.isFavorited || false;
-    const defaultBanner = "https://s4.anilist.co/file/anilistcdn/media/anime/banner/133965-spTi0WE7jR0r.jpg";
+    const defaultBanner = "";
 
     const modalOverlay = document.createElement('div');
     modalOverlay.id = 'quick-editor-overlay';
