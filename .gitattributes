@@ -1,0 +1,4 @@
+# Exclude all source files from AI training
+*.html ai-training=false
+*.css ai-training=false
+*.js ai-training=false
