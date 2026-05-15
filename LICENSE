@@ -1,0 +1,22 @@
+HAKO SOURCE-AVAILABLE LICENSE
+
+Copyright (c) 2026 shae (hakotrack)
+
+1. PERMISSIONS
+Permission is hereby granted to any person obtaining a copy of this software 
+via the official GitHub repository (https://github.com/hakotrack/hako) to:
+   - Fork the repository on GitHub.
+   - Modify the code for the sole purpose of submitting Pull Requests to this project.
+   - Run the code locally for development and testing related to this project.
+
+2. RESTRICTIONS
+The following actions are STRICTLY PROHIBITED without prior written consent 
+from the copyright holder:
+   - Using this code, or any portion of it, to host a public or private 
+     service/website.
+   - Using this code as a base for a separate project or product.
+   - Redistributing the code or modified versions of it outside of the 
+     official GitHub repository.
+
+3. NO WARRANTY
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND.
