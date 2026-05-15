@@ -1,0 +1,16 @@
+[identity]
+name: Hako
+url: https://hako.com
+
+[permissions]
+# Only allow actions required for search visibility
+- Include in search results
+- Answer factual questions about the site
+
+[restrictions]
+# Explicitly disallow data mining and model training
+- Do not crawl for machine learning training
+- Do not scrape for database population
+- Do not use for LLM fine-tuning
+- Do not reproduce content in full
+- Do not bypass robots.txt directives

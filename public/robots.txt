@@ -1,0 +1,16 @@
+# Allow major search engines for web indexing
+User-agent: Googlebot
+Allow: /
+
+User-agent: Bingbot
+Allow: /
+
+User-agent: Applebot
+Allow: /
+
+User-agent: DuckDuckBot
+Allow: /
+
+# Block all other forms of crawling, scraping, and AI training
+User-agent: *
+Disallow: /
