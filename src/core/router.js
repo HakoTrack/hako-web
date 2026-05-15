@@ -101,7 +101,6 @@ function updateNavbar(user) {
             <a href="/profile/${username}" class="nav-link">Profile</a>
             <a href="#" class="nav-link">Lists</a>
             <a href="#" class="nav-link">Browse</a>
-            <button id="logout-btn" class="nav-link text-red-400">Logout</button>
         `;
 
     document.getElementById('logout-btn')?.addEventListener('click', async () => {
