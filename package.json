@@ -1,0 +1,33 @@
+{
+  "name": "hako-web",
+  "version": "1.0.0",
+  "description": "Hako is a box of everything Japanese media.",
+  "main": "index.js",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/HakoTrack/hako-web.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/HakoTrack/hako-web/issues"
+  },
+  "homepage": "https://github.com/HakoTrack/hako-web#readme",
+  "dependencies": {
+    "vite": "^8.0.13"
+  },
+  "devDependencies": {
+    "@tailwindcss/postcss": "^4.3.0",
+    "autoprefixer": "^10.5.0",
+    "postcss": "^8.5.14",
+    "tailwindcss": "^4.3.0"
+  }
+}

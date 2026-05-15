@@ -1,86 +1,88 @@
-    body {
-      font-family: 'Inter', sans-serif;
-      background-color: #0b1622;
-      color: #9fadbd;
-    }
+@import "tailwindcss";
 
-    .bg-card {
-      background-color: #151f2e;
-    }
+body {
+  font-family: 'Inter', sans-serif;
+  background-color: #0b1622;
+  color: #9fadbd;
+}
 
-    .bg-nav {
-      background-color: #2b2d42;
-    }
+.bg-card {
+  background-color: #151f2e;
+}
 
-    .text-accent {
-      color: #3db4f2;
-    }
+.bg-nav {
+  background-color: #2b2d42;
+}
 
-    .bg-accent {
-      background-color: #3db4f2;
-    }
+.text-accent {
+  color: #3db4f2;
+}
 
-    .border-accent {
-      border-color: #3db4f2;
-    }
+.bg-accent {
+  background-color: #3db4f2;
+}
 
-    ::-webkit-scrollbar {
-      width: 8px;
-    }
+.border-accent {
+  border-color: #3db4f2;
+}
 
-    ::-webkit-scrollbar-track {
-      background: #0b1622;
-    }
+::-webkit-scrollbar {
+  width: 8px;
+}
 
-    ::-webkit-scrollbar-thumb {
-      background: #2b2d42;
-      border-radius: 4px;
-    }
+::-webkit-scrollbar-track {
+  background: #0b1622;
+}
 
-    ::-webkit-scrollbar-thumb:hover {
-      background: #3db4f2;
-    }
+::-webkit-scrollbar-thumb {
+  background: #2b2d42;
+  border-radius: 4px;
+}
 
-    .nav-link:hover {
-      color: #edf1f5;
-    }
+::-webkit-scrollbar-thumb:hover {
+  background: #3db4f2;
+}
 
-    .tab-active {
-      color: #3db4f2;
-      border-bottom: 3px solid #3db4f2;
-    }
+.nav-link:hover {
+  color: #edf1f5;
+}
 
-    .heatmap-cell {
-      width: 12px;
-      height: 12px;
-      border-radius: 2px;
-    }
+.tab-active {
+  color: #3db4f2;
+  border-bottom: 3px solid #3db4f2;
+}
 
-    .level-0 {
-      background-color: #1a2433;
-    }
+.heatmap-cell {
+  width: 12px;
+  height: 12px;
+  border-radius: 2px;
+}
 
-    .level-1 {
-      background-color: #1e4d73;
-    }
+.level-0 {
+  background-color: #1a2433;
+}
 
-    .level-2 {
-      background-color: #2a72a8;
-    }
+.level-1 {
+  background-color: #1e4d73;
+}
 
-    .level-3 {
-      background-color: #3db4f2;
-    }
+.level-2 {
+  background-color: #2a72a8;
+}
 
-    .level-4 {
-      background-color: #83ccf5;
-    }
+.level-3 {
+  background-color: #3db4f2;
+}
 
-    .media-card:hover .overlay {
-      opacity: 1;
-    }
+.level-4 {
+  background-color: #83ccf5;
+}
 
-    .media-card .overlay {
-      opacity: 0;
-      transition: opacity 0.2s ease;
-    }
+.media-card:hover .overlay {
+  opacity: 1;
+}
+
+.media-card .overlay {
+  opacity: 0;
+  transition: opacity 0.2s ease;
+}
