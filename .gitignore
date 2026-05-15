@@ -1,2 +1,4 @@
 tools/
 assets/
+.vercel
+.env*.local
