@@ -13,8 +13,7 @@ export const HakoImage = {
    * Statically: Fetches and optimizes images (WebP, resizing).
    */
   get: function (path, options = {}) {
-    const cleanPath = path.replace('@', "/").replace(/^\//, '');
-    const baseUrl = `https://cdn.statically.io/gh/${GITHUB_USER}/${GITHUB_REPO}/${GITHUB_BRANCH}/${cleanPath}`;
+    const baseUrl = `https://cdn.statically.io/gh/${GITHUB_USER}/${GITHUB_REPO}/${GITHUB_BRANCH}/${path}`;
     const params = [];
 
     if (options.w) params.push(`w=${options.w}`);
@@ -22,9 +21,7 @@ export const HakoImage = {
     if (options.f) params.push(`f=${options.f}`); // webp, auto
     if (options.q) params.push(`q=${options.q}`); // 1-100
 
-    const finalUrl = params.length > 0 ? `${baseUrl}?${params.join('&')}` : baseUrl;
-
-    return finalUrl.replace(/^http:\/\//i, 'https://')
+    return params.length > 0 ? `${baseUrl}?${params.join('&')}` : baseUrl;
   },
 
   /**
