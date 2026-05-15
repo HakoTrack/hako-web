@@ -5,7 +5,7 @@
  */
 
 (function () {
-  const GITHUB_USER = "shaetsu";
+  const GITHUB_USER = "hakotrack";
   const GITHUB_REPO = "hako-assets";
   const GITHUB_BRANCH = "main";
 
