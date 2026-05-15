@@ -3,6 +3,7 @@ import { initializeFavorites } from './favorites.js';
 import { initializeTasteChart } from './taste.js';
 import { populateActivityFeed } from './populateFeed.js';
 import { renderMediaList } from '../utils/renderMediaList.js';
+import '../utils/images.js';
 
 export const initProfile = async (username) => {
   const profileContainer = document.getElementById('profile-container');
@@ -21,8 +22,10 @@ export const initProfile = async (username) => {
 
     if (displayNameEl) displayNameEl.innerText = data.display_name;
     if (bioEl) bioEl.innerText = data.bio || "";
-    if (avatarEl) avatarEl.src = `/assets/profile/${username}/avatar.jpg`;
-    if (bannerEl) bannerEl.src = `/assets/profile/${username}/banner.jpg`;
+
+    // Use HakoImage CDN utility
+    if (avatarEl) avatarEl.src = window.HakoImage.get(`profile/${username}/avatar.jpg`, { w: 200, f: 'webp' });
+    if (bannerEl) bannerEl.src = window.HakoImage.get(`profile/${username}/banner.jpg`, { w: 1200, f: 'webp', q: 80 });
 
     const roleBadge = document.getElementById('role-badge');
     if (username === 'shaetsu' && roleBadge) roleBadge.classList.remove('hidden');
