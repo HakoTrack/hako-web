@@ -13,3 +13,10 @@ export const AuthService = {
     window.location.reload(); // Refresh to trigger the router
   }
 };
+
+export const initAuth = () => {
+  supabase.auth.onAuthStateChange((event, session) => {
+    console.log('Auth state changed:', event, session);
+    // You could trigger a re-route here if needed
+  });
+};
