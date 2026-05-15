@@ -33,18 +33,27 @@
 </div>
 
 <script>
-  window.addEventListener('DOMContentLoaded', () => {
+  (function () {
     function initHero() {
-      if (window.HakoImage) {
-        const heroUrl = window.HakoImage.get('landing.jpg', {w: 1600, f: 'webp', q: 80});
-        const view = document.getElementById('landing-view');
-        if (view) view.style.setProperty('--hero-bg', `url('${heroUrl}')`);
+      // Check for global availability of the image helper
+      const hako = window.HakoImage;
+      const view = document.getElementById('landing-view');
+
+      if (hako && view) {
+        const heroUrl = hako.get('landing.jpg', {w: 1600, f: 'webp', q: 80});
+        view.style.backgroundImage = `linear-gradient(rgba(26, 27, 38, 0.6), rgba(11, 16, 22, 1)), url('${heroUrl}')`;
       } else {
-        setTimeout(initHero, 100);
+        // Retry logic if images.js loads later
+        setTimeout(initHero, 50);
       }
     }
-    initHero();
-  });
+
+    if (document.readyState === 'loading') {
+      document.addEventListener('DOMContentLoaded', initHero);
+    } else {
+      initHero();
+    }
+  })();
 </script>
 
 <style>
