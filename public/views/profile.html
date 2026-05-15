@@ -1,0 +1,120 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ShaeTsu's Profile | AniTrack</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/3.9.1/chart.min.js"></script>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="../global.css">
+  <script src="../scripts/core/loadComponent.js"></script>
+</head>
+
+<body class="min-h-screen">
+
+  <div id="navbar-placeholder" class="sticky top-0 z-50"></div>
+
+  <div class="relative w-full h-[300px] md:h-[400px]">
+    <img src="../assets/profile/shaetsu/banner.jpg" alt="Profile Banner" class="object-top w-full h-full object-cover">
+    <div class="absolute inset-0 bg-gradient-to-t from-[#0b1622] to-transparent"></div>
+  </div>
+
+  <main class="max-w-[1500px] mx-auto px-4 -mt-24 relative z-10">
+    <div class="flex flex-col md:flex-row md:items-end md:space-x-8 mb-8">
+      <div class="relative group">
+        <img src="../assets/profile/shaetsu/avatar.jpg" alt="Avatar"
+          class="w-40 h-40 md:w-48 md:h-48 rounded-lg bg-card p-1 border-4 border-[#0b1622] shadow-2xl">
+        <div
+          class="absolute inset-0 bg-black/40 rounded-lg flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity cursor-pointer">
+          <i class="fa-solid fa-camera text-2xl text-white"></i>
+        </div>
+      </div>
+      <div class="flex-1 mt-4 md:mt-0">
+        <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between">
+          <div>
+            <h1 class="text-3xl font-bold text-white tracking-tight">ShaeTsu
+              <!-- Role Badge -->
+              <span
+                class="ml-3 px-2 py-0.5 text-xl font-bold uppercase text-white bg-accent rounded shadow-sm">神様</span>
+            </h1>
+            <p class="text-accent mt-1 flex items-center">
+              <i class="fa-solid fa-circle text-[8px] mr-2"></i> Online
+            </p>
+          </div>
+          <div class="mt-4 sm:mt-0 flex space-x-3">
+            <button
+              class="bg-accent text-white px-6 py-2 rounded-lg font-semibold hover:brightness-110 transition-all">Follow</button>
+            <button class="bg-card text-white px-4 py-2 rounded-lg border border-slate-700 hover:bg-slate-800"><i
+                class="fa-solid fa-ellipsis"></i></button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div
+      class="profile-tabs flex space-x-8 border-b border-slate-800 mb-8 overflow-x-auto whitespace-nowrap scrollbar-hide">
+      <button class="tab-btn pb-4 font-semibold text-white tab-active" onclick="switchTab('overview')">Overview</button>
+      <button class="tab-btn pb-4 font-semibold hover:text-white transition-colors"
+        onclick="switchTab('anime')">Anime</button>
+      <button class="tab-btn pb-4 font-semibold hover:text-white transition-colors"
+        onclick="switchTab('manga')">Manga</button>
+      <button class="tab-btn pb-4 font-semibold hover:text-white transition-colors"
+        onclick="switchTab('lightnovels')">Light Novels</button>
+      <button class="tab-btn pb-4 font-semibold hover:text-white transition-colors"
+        onclick="switchTab('visualnovels')">Visual Novels</button>
+      <button class="tab-btn pb-4 font-semibold hover:text-white transition-colors"
+        onclick="switchTab('favorites')">Favorites</button>
+      <button class="tab-btn pb-4 font-semibold hover:text-white transition-colors"
+        onclick="switchTab('stats')">Stats</button>
+      <button class="tab-btn pb-4 font-semibold hover:text-white transition-colors"
+        onclick="switchTab('social')">Social</button>
+    </div>
+
+    <div id="profile-content-placeholder"></div>
+  </main>
+
+  <footer id="footer-placeholder"></footer>
+
+  <!-- Feature Scripts -->
+  <script src="../scripts/features/profile.js"></script>
+  <script src="../scripts/utils/renderMediaList.js"></script>
+  <script src="../scripts/features/taste.js"></script>
+  <script>
+    const init = async () => {
+      if (window.loadComponent) {
+        // Load Common UI
+        await Promise.all([
+          loadComponent('navbar-placeholder', '../components/common/navbar.html'),
+          loadComponent('footer-placeholder', '../components/common/footer.html')
+        ]);
+
+        // Initial Tab Load (Overview)
+        await loadComponent('profile-content-placeholder', '../components/profile/overview.html');
+
+        // Initialize Overview-specific charts
+        if (typeof window.initializeTasteChart === 'function') {
+          window.initializeTasteChart();
+        }
+
+        // Setup Tab switching logic
+        if (typeof window.setupProfileTabs === 'function') {
+          window.setupProfileTabs();
+        }
+      } else {
+        console.error('loadComponent script not found');
+      }
+    };
+
+    if (document.readyState === 'loading') {
+      window.addEventListener('DOMContentLoaded', init);
+    } else {
+      init();
+    }
+  </script>
+
+</body>
+
+</html>
