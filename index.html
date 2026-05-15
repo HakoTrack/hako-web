@@ -12,11 +12,11 @@
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="/global.css">
 
-  <!-- Core Scripts -->
+  <!-- Core Scripts (Global) -->
   <script src="/scripts/core/loadComponent.js"></script>
   <script src="/scripts/core/populateFeed.js"></script>
 
-  <!-- Feature Scripts -->
+  <!-- Feature Scripts (Global) -->
   <script src="/scripts/features/profile.js"></script>
   <script src="/scripts/features/favorites.js"></script>
   <script src="/scripts/features/taste.js"></script>
@@ -33,43 +33,23 @@
 
   <div id="footer-placeholder"></div>
 
-  <script>
-    const navigate = async () => {
-      const path = window.location.pathname;
-      const pathParts = path.split('/').filter(p => p && !p.endsWith('.html'));
-
-      // Load shared layout components
-      await Promise.all([
-        loadComponent('navbar-placeholder', '/components/common/navbar.html'),
-        loadComponent('footer-placeholder', '/components/common/footer.html')
-      ]);
-
-      // Determine which view to load
-      // For now, we support /profile/:username and default to feed
-      if (pathParts.includes('profile')) {
-        const username = pathParts[pathParts.indexOf('profile') + 1] || 'shaetsu';
-        await loadComponent('app-view', '/profile/profile.html');
-        if (window.initProfile) {
-          await window.initProfile(username);
-        }
-      } else if (pathParts.length === 0 || pathParts[0] === 'feed') {
-        // Activity Feed
-        await loadComponent('app-view', '/views/feed.html');
-        if (window.populateActivityFeed) {
-          await window.populateActivityFeed('shaetsu');
-        }
-      } else {
-        // 404 Page
-        await loadComponent('app-view', '/views/404.html');
-        document.title = '404 - Page Not Found | Hako';
-      }
-    };
+  <script type="module">
+    import {handleRouting} from '/src/core/router.js';
 
     // Handle initial load and back/forward navigation
-    window.addEventListener('popstate', navigate);
-    window.addEventListener('DOMContentLoaded', navigate);
+    window.addEventListener('popstate', handleRouting);
+    window.addEventListener('DOMContentLoaded', handleRouting);
+
+    // Intercept clicks on links for SPA routing
+    document.addEventListener('click', (e) => {
+      const target = e.target.closest('a');
+      if (target && target.href.startsWith(window.location.origin)) {
+        e.preventDefault();
+        window.history.pushState({}, '', target.getAttribute('href'));
+        handleRouting();
+      }
+    });
   </script>
 </body>
 
 </html>
-

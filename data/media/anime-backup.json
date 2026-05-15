@@ -1,0 +1,397 @@
+{
+  "232": {
+    "title": {
+      "romaji": "Cardcaptor Sakura",
+      "english": "Cardcaptor Sakura"
+    },
+    "format": "TV",
+    "episodes": 70,
+    "duration": 25,
+    "status": "FINISHED",
+    "genres": [
+      "Comedy",
+      "Drama",
+      "Fantasy",
+      "Mahou Shoujo",
+      "Romance"
+    ]
+  },
+  "2403": {
+    "title": {
+      "romaji": "Kodomo no Jikan",
+      "english": null
+    },
+    "format": "TV",
+    "episodes": 12,
+    "duration": 24,
+    "status": "FINISHED",
+    "genres": [
+      "Comedy",
+      "Drama",
+      "Ecchi"
+    ]
+  },
+  "3667": {
+    "title": {
+      "romaji": "Strike Witches",
+      "english": "Strike Witches"
+    },
+    "format": "TV",
+    "episodes": 12,
+    "duration": 24,
+    "status": "FINISHED",
+    "genres": [
+      "Action",
+      "Ecchi",
+      "Sci-Fi"
+    ]
+  },
+  "6213": {
+    "title": {
+      "romaji": "Toaru Kagaku no Railgun",
+      "english": "A Certain Scientific Railgun"
+    },
+    "format": "TV",
+    "episodes": 24,
+    "duration": 24,
+    "status": "FINISHED",
+    "genres": [
+      "Action",
+      "Fantasy",
+      "Sci-Fi"
+    ]
+  },
+  "6747": {
+    "title": {
+      "romaji": "Dance in the Vampire Bund",
+      "english": "Dance in the Vampire Bund"
+    },
+    "format": "TV",
+    "episodes": 12,
+    "duration": 24,
+    "status": "FINISHED",
+    "genres": [
+      "Action",
+      "Ecchi",
+      "Romance",
+      "Supernatural"
+    ]
+  },
+  "10357": {
+    "title": {
+      "romaji": "Jinrui wa Suitai Shimashita",
+      "english": "Humanity Has Declined"
+    },
+    "format": "TV",
+    "episodes": 12,
+    "duration": 23,
+    "status": "FINISHED",
+    "genres": [
+      "Comedy",
+      "Fantasy",
+      "Sci-Fi"
+    ]
+  },
+  "20754": {
+    "title": {
+      "romaji": "Gakkou Gurashi!",
+      "english": "SCHOOL-LIVE!"
+    },
+    "format": "TV",
+    "episodes": 12,
+    "duration": 24,
+    "status": "FINISHED",
+    "genres": [
+      "Horror",
+      "Mystery",
+      "Psychological",
+      "Slice of Life",
+      "Supernatural"
+    ]
+  },
+  "21828": {
+    "title": {
+      "romaji": "Shoujo Ramune",
+      "english": null
+    },
+    "format": "OVA",
+    "episodes": 0,
+    "duration": 19,
+    "status": "RELEASING",
+    "genres": [
+      "Hentai"
+    ]
+  },
+  "98514": {
+    "title": {
+      "romaji": "Uma Musume: Pretty Derby",
+      "english": "Umamusume: Pretty Derby"
+    },
+    "format": "TV",
+    "episodes": 13,
+    "duration": 24,
+    "status": "FINISHED",
+    "genres": [
+      "Drama",
+      "Slice of Life",
+      "Sports"
+    ]
+  },
+  "99420": {
+    "title": {
+      "romaji": "Shoujo Shuumatsu Ryokou",
+      "english": "Girls' Last Tour"
+    },
+    "format": "TV",
+    "episodes": 12,
+    "duration": 24,
+    "status": "FINISHED",
+    "genres": [
+      "Adventure",
+      "Sci-Fi",
+      "Slice of Life"
+    ]
+  },
+  "101165": {
+    "title": {
+      "romaji": "Goblin Slayer",
+      "english": "GOBLIN SLAYER"
+    },
+    "format": "TV",
+    "episodes": 12,
+    "duration": 24,
+    "status": "FINISHED",
+    "genres": [
+      "Action",
+      "Adventure",
+      "Fantasy"
+    ]
+  },
+  "114535": {
+    "title": {
+      "romaji": "Fumetsu no Anata e",
+      "english": "To Your Eternity"
+    },
+    "format": "TV",
+    "episodes": 20,
+    "duration": 25,
+    "status": "FINISHED",
+    "genres": [
+      "Adventure",
+      "Drama",
+      "Fantasy",
+      "Psychological",
+      "Supernatural"
+    ]
+  },
+  "116589": {
+    "title": {
+      "romaji": "86: Eighty Six",
+      "english": "86 EIGHTY-SIX"
+    },
+    "format": "TV",
+    "episodes": 11,
+    "duration": 24,
+    "status": "FINISHED",
+    "genres": [
+      "Action",
+      "Drama",
+      "Mecha",
+      "Sci-Fi"
+    ]
+  },
+  "146975": {
+    "title": {
+      "romaji": "THE iDOLM@STER Cinderella Girls: U149",
+      "english": "THE IDOLM@STER CINDERELLA GIRLS U149"
+    },
+    "format": "TV",
+    "episodes": 12,
+    "duration": 24,
+    "status": "FINISHED",
+    "genres": [
+      "Comedy",
+      "Drama",
+      "Music",
+      "Slice of Life"
+    ]
+  },
+  "152802": {
+    "title": {
+      "romaji": "Dark Gathering",
+      "english": "Dark Gathering"
+    },
+    "format": "TV",
+    "episodes": 25,
+    "duration": 24,
+    "status": "FINISHED",
+    "genres": [
+      "Adventure",
+      "Horror",
+      "Supernatural"
+    ]
+  },
+  "155908": {
+    "title": {
+      "romaji": "Yuru Camp△ SEASON 3",
+      "english": "Laid-Back Camp Season 3"
+    },
+    "format": "TV",
+    "episodes": 12,
+    "duration": 24,
+    "status": "FINISHED",
+    "genres": [
+      "Comedy",
+      "Slice of Life"
+    ]
+  },
+  "160090": {
+    "title": {
+      "romaji": "Kaii to Otome to Kamikakushi",
+      "english": "Mysterious Disappearances"
+    },
+    "format": "TV",
+    "episodes": 12,
+    "duration": 24,
+    "status": "FINISHED",
+    "genres": [
+      "Ecchi",
+      "Horror",
+      "Mystery",
+      "Supernatural"
+    ]
+  },
+  "164212": {
+    "title": {
+      "romaji": "GIRLS BAND CRY",
+      "english": "Girls Band Cry"
+    },
+    "format": "TV",
+    "episodes": 13,
+    "duration": 24,
+    "status": "FINISHED",
+    "genres": [
+      "Drama",
+      "Music",
+      "Slice of Life"
+    ]
+  },
+  "172258": {
+    "title": {
+      "romaji": "Kimi no Koto ga Dai Dai Dai Dai Daisuki na 100-nin no Kanojo 2nd Season",
+      "english": "The 100 Girlfriends Who Really, Really, Really, Really, REALLY Love You Season 2"
+    },
+    "format": "TV",
+    "episodes": 12,
+    "duration": 24,
+    "status": "FINISHED",
+    "genres": [
+      "Comedy",
+      "Ecchi",
+      "Romance"
+    ]
+  },
+  "183385": {
+    "title": {
+      "romaji": "Watashi wo Tabetai, Hitodenashi",
+      "english": "This Monster Wants to Eat Me"
+    },
+    "format": "TV",
+    "episodes": 13,
+    "duration": 24,
+    "status": "FINISHED",
+    "genres": [
+      "Drama",
+      "Horror",
+      "Psychological",
+      "Romance",
+      "Supernatural"
+    ]
+  },
+  "187869": {
+    "title": {
+      "romaji": "Kamiina Botan, Yoeru Sugata wa Yuri no Hana",
+      "english": "Botan Kamiina Fully Blossoms When Drunk"
+    },
+    "format": "TV",
+    "episodes": 12,
+    "duration": 24,
+    "status": "RELEASING",
+    "genres": [
+      "Comedy",
+      "Romance",
+      "Slice of Life"
+    ]
+  },
+  "190143": {
+    "title": {
+      "romaji": "Shunkashuutou Daikousha: Haru no Mai",
+      "english": "Agents of the Four Seasons: Dance of Spring"
+    },
+    "format": "TV",
+    "episodes": 14,
+    "duration": 24,
+    "status": "RELEASING",
+    "genres": [
+      "Drama",
+      "Fantasy",
+      "Romance"
+    ]
+  },
+  "196935": {
+    "title": {
+      "romaji": "Akane-banashi",
+      "english": "Akane-banashi"
+    },
+    "format": "TV",
+    "episodes": 0,
+    "duration": 25,
+    "status": "RELEASING",
+    "genres": [
+      "Drama"
+    ]
+  },
+  "202102": {
+    "title": {
+      "romaji": "NEEDY GIRL OVERDOSE",
+      "english": "NEEDY GIRL OVERDOSE"
+    },
+    "format": "TV",
+    "episodes": 13,
+    "duration": 25,
+    "status": "RELEASING",
+    "genres": [
+      "Adventure",
+      "Drama",
+      "Psychological",
+      "Slice of Life"
+    ]
+  },
+  "202957": {
+    "title": {
+      "romaji": "Meitantei Precure!",
+      "english": "Star Detective Precure!"
+    },
+    "format": "TV",
+    "episodes": 51,
+    "duration": 24,
+    "status": "RELEASING",
+    "genres": [
+      "Mahou Shoujo",
+      "Mystery"
+    ]
+  },
+  "206166": {
+    "title": {
+      "romaji": "Ingoku Danchi",
+      "english": "Ingoku Danchi:Deviant's Apartment Complex"
+    },
+    "format": "TV_SHORT",
+    "episodes": 12,
+    "duration": 3,
+    "status": "RELEASING",
+    "genres": [
+      "Ecchi"
+    ]
+  }
+}
