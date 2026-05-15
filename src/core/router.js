@@ -48,7 +48,7 @@ export const handleRouting = async () => {
       await loadComponent('app-view', '/views/landing.html');
 
       // Load hero background
-      const heroUrl = window.HakoImage.get('landing.jpg', { w: 1600, f: 'webp', q: 80 });
+      const heroUrl = window.HakoImage.get('landing.jpg', { f: 'avif' });
       const view = document.getElementById('landing-view');
       if (view) view.style.setProperty('--hero-bg', `url('${heroUrl}')`);
 
