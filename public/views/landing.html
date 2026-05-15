@@ -1,13 +1,16 @@
-<div id="landing-view" class="bg-hero min-h-screen flex flex-col px-6 py-8 md:py-12 transition-opacity duration-1000">
+<div id="landing-view"
+  class="bg-hero min-h-screen flex flex-col px-6 py-8 md:py-12 transition-opacity duration-1000 opacity-100">
   <!-- Center content area -->
   <div class="grow flex flex-col items-center justify-center text-center">
     <main class="max-w-4xl mx-auto">
       <h1 id="hero-title"
         class="text-6xl md:text-8xl font-extrabold mb-6 tracking-tighter flex items-center justify-center gap-4 md:gap-6">
         <span class="font-['Zen_Antique'] text-indigo-400">箱</span>
-        <span id="hako-text" class="font-['Zen_Antique'] text-white">Hako</span>
+        <span id="hako-text"
+          class="font-['Zen_Antique'] text-white overflow-hidden transition-all duration-1000 ease-out"
+          style="width: 0;">Hako</span>
       </h1>
-      <div id="hero-content">
+      <div id="hero-content" class="transition-opacity duration-1000 opacity-0">
         <p class="text-lg md:text-xl text-slate-300 mb-10 max-w-lg mx-auto leading-relaxed">
           A box of everything Japanese media.
         </p>
@@ -25,7 +28,7 @@
     </main>
   </div>
 
-  <footer class="mt-auto pt-12 text-center pb-8" id="hero-footer">
+  <footer class="mt-auto pt-12 text-center pb-8 transition-opacity duration-1000 opacity-0" id="hero-footer">
     <p class="text-[10px] uppercase text-slate-500 opacity-60 leading-loose mx-auto tracking-widest px-4">
       An in-development database, tracking platform, and indie social media for anime, manga, light novels, and visual
       novels.
@@ -42,5 +45,41 @@
     height: 100vh;
     display: flex;
     flex-direction: column;
+    transition: background-image 1.5s ease-in-out;
   }
 </style>
+
+<script>
+  (function initHero() {
+    const hakoText = document.getElementById('hako-text');
+    const content = document.getElementById('hero-content');
+    const footer = document.getElementById('hero-footer');
+    const landingView = document.getElementById('landing-view');
+
+    // 1. Paint text
+    setTimeout(() => {
+      hakoText.style.width = hakoText.scrollWidth + 'px';
+    }, 100);
+
+    // 2. Load background image
+    if (window.HakoImage) {
+      const heroUrl = window.HakoImage.get('landing.jpg', {w: 1600, f: 'webp', q: 80});
+
+      const img = new Image();
+      img.onload = () => {
+        landingView.style.setProperty('--hero-bg', `url('${heroUrl}')`);
+
+        // 3. Fade in content
+        setTimeout(() => {
+          content.classList.remove('opacity-0');
+          footer.classList.remove('opacity-0');
+        }, 500);
+      };
+      img.src = heroUrl;
+    } else {
+      console.warn("HakoImage not ready, revealing content immediately.");
+      content.classList.remove('opacity-0');
+      footer.classList.remove('opacity-0');
+    }
+  })();
+</script>
