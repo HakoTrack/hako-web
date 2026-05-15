@@ -18,12 +18,13 @@ from the copyright holder:
    - Redistributing the code or modified versions of it outside of the 
      official GitHub repository.
 
-3. NO WARRANTY
-THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND.
+3. SUNSET PROVISION (INACTIVITY TRIGGER)
+If this repository receives no updates (commits to the primary branch) from the 
+copyright holder or an authorized maintainer for a continuous period of 
+twenty-four (24) months, all restrictions listed in Section 2 shall expire. 
+In such an event, the software shall automatically transition to the terms of 
+the MIT License, granting full permission for use, modification, and 
+redistribution to the public.
 
-4: Sunset Provision
-If this repository receives no commits from the copyright holder or an authorized
-maintainer for a continuous period of twenty-four (24) months,
-the restrictions in Section 2 (Restrictions) shall expire. 
-In such an event, the software shall automatically transition to the MIT License terms, 
-granting full permission for use, modification, and redistribution.
+4. NO WARRANTY
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND.
