@@ -1,46 +1,24 @@
 <script>
   import { ui } from "../core/ui.svelte.js";
-  import { onMount } from "svelte";
   import { getTonalProfile } from "../utils/toneCalc.js";
   import { HakoImage } from "../utils/images.js";
   import { supabase } from "../utils/supabase.js";
   import { AuthService } from "../core/auth.js";
-
-  // Module-level cache to prevent flicker when re-opening titles
-  const favoritesCache = new Map();
 
   let { entry } = ui.modalData || {};
 
   // Reactive tonal profile based on raw metadata
   let tonalProfile = $derived(getTonalProfile(entry?.rawMetadata));
 
+  // Determine favorite status reactively from the global Set
+  let isFavorited = $derived(ui.favoriteIds.has(entry.id));
+
   // Bindable local state for the form
   let status = $state(entry?.status || "planning");
   let score = $state(entry?.score || 0);
   let progress = $state(entry?.progress || 0);
-  let isFavorited = $state(entry?.isFavorited || false);
   let startDate = $state(entry?.startDate || "");
   let finishDate = $state(entry?.finishDate || "");
-
-  onMount(async () => {
-    // Check initial favorite state
-    const user = await AuthService.getCurrentUser();
-    if (user) {
-      const cacheKey = `${user.id}-${entry.id}`;
-      if (favoritesCache.has(cacheKey)) {
-        isFavorited = favoritesCache.get(cacheKey);
-      } else {
-        const { data } = await supabase
-          .from("profile_favorites")
-          .select("id")
-          .eq("profile_id", user.id)
-          .eq("anime_id", entry.id)
-          .maybeSingle();
-        isFavorited = !!data;
-        favoritesCache.set(cacheKey, isFavorited);
-      }
-    }
-  });
 
   async function toggleFavorite() {
     const user = await AuthService.getCurrentUser();
@@ -54,15 +32,13 @@
           .delete()
           .eq("profile_id", user.id)
           .eq("anime_id", entry.id);
-        isFavorited = false;
-        favoritesCache.set(`${user.id}-${entry.id}`, false);
+        ui.removeFavorite(entry.id);
       } else {
         // Add favorite
         await supabase
           .from("profile_favorites")
           .insert({ profile_id: user.id, anime_id: entry.id });
-        isFavorited = true;
-        favoritesCache.set(`${user.id}-${entry.id}`, true);
+        ui.addFavorite(entry.id);
       }
     } catch (err) {
       console.error("Favorite toggle error:", err);
@@ -109,7 +85,6 @@
     <!-- Banner Section -->
     <div class="relative w-full h-[160px] bg-[#0b1622] flex-shrink-0">
       <img
-        loading="lazy"
         src={HakoImage.getBanner("anime", entry.id)}
         class="w-full h-full object-cover opacity-60"
         alt="banner"
@@ -128,7 +103,6 @@
         class="absolute -bottom-10 left-8 flex items-end space-x-6 z-10 w-[calc(100%-4rem)]"
       >
         <img
-          loading="lazy"
           src={HakoImage.getCover("anime", entry.id, "medium")}
           class="w-[100px] h-[140px] rounded shadow-xl border border-[#151f2e] object-cover bg-[#0b1622]"
           alt="cover"

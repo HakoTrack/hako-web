@@ -75,6 +75,7 @@ export const initProfile = async (username) => {
     setupProfileTabs(username, profile.id);
 
   } catch (e) {
+
     console.error("Profile Init Error:", e);
     await loadComponent('app-view', '/views/404.html');
     document.title = 'User Not Found | Hako';

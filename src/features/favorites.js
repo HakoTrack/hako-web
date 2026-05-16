@@ -1,5 +1,6 @@
 import { supabase } from '../utils/supabase.js';
 import { HakoImage } from '../utils/images.js';
+import { ui } from '../core/ui.svelte.js';
 
 export async function initializeFavorites(profileId) {
   if (!profileId) {
@@ -17,6 +18,7 @@ export async function initializeFavorites(profileId) {
     if (error) throw error;
 
     const animeIds = favData.map(f => f.anime_id);
+    ui.setFavorites(animeIds);
 
     const renderFavorites = (category, containerId, subfolder, ids) => {
       const container = document.getElementById(containerId);
