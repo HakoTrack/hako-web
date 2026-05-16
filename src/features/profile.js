@@ -41,7 +41,6 @@ export const initProfile = async (username) => {
       admin: { label: '師匠', romaji: 'Shishou', color: 'bg-indigo-500', title: 'Admin' },
       moderator: { label: '先生', romaji: 'Sensei', color: 'bg-emerald-500', title: 'Moderator' },
       contributor: { label: '先輩', romaji: 'Senpai', color: 'bg-blue-500', title: 'Contributor' },
-      developer: { label: '開発者', romaji: 'Kaihatsusha', color: 'bg-accent', title: 'Developer' }
     };
 
     if (roleBadge) {

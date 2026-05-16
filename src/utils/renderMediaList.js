@@ -1,4 +1,5 @@
 import { fetchAnimeByIds, fetchUserAnimeList } from './animeData.js';
+import { HakoImage } from './images.js';
 
 const getScoreColor = (score) => {
   if (!score) return 'text-slate-500';
@@ -124,7 +125,7 @@ export const renderMediaList = async function (type = 'anime', containerId = 'an
         const meta = metadata[item.id.toString()] || {};
         const total = type === 'manga' ? (meta.chapters || item.total || '?') : (meta.episodes || item.total || '?');
         const displayTitle = meta.title?.romaji || item.title;
-        const localImagePath = `/assets/covers/${type}/${item.id}_small.jpg`;
+        const localImagePath = HakoImage.getCover(type, item.id, 'small');
 
         const row = document.createElement('tr');
         row.className = 'group hover:bg-slate-800/30 transition-colors border-b border-slate-800/50 last:border-0';

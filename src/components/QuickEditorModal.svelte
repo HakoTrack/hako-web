@@ -2,6 +2,7 @@
   import { ui } from "../core/ui.svelte.js";
   import { onMount } from "svelte";
   import { getTonalProfile } from "../utils/toneCalc.js";
+  import { HakoImage } from "../utils/images.js";
 
   let { entry } = ui.modalData || {};
 
@@ -60,7 +61,7 @@
     <!-- Banner Section -->
     <div class="relative w-full h-[160px] bg-[#0b1622] flex-shrink-0">
       <img
-        src={entry.banner}
+        src={HakoImage.getBanner("anime", entry.id)}
         class="w-full h-full object-cover opacity-60"
         alt="banner"
         on:error={(e) => (e.target.src = "")}
@@ -78,7 +79,7 @@
         class="absolute -bottom-10 left-8 flex items-end space-x-6 z-10 w-[calc(100%-4rem)]"
       >
         <img
-          src={entry.image}
+          src={HakoImage.getCover("anime", entry.id, "medium")}
           class="w-[100px] h-[140px] rounded shadow-xl border border-[#151f2e] object-cover bg-[#0b1622]"
           alt="cover"
           on:error={(e) =>

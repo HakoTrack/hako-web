@@ -1,4 +1,5 @@
 import { fetchAnimeByIds } from '../utils/animeData.js';
+import { HakoImage } from '../utils/images.js';
 
 export async function populateActivityFeed(username) {
 
@@ -71,7 +72,7 @@ function renderThought(activity, username) {
 
 function renderListUpdate(activity, username, animeDb) {
   const mediaId = activity.media.id;
-  const localCover = `/assets/covers/anime/${mediaId}_medium.jpg`;
+  const localCover = HakoImage.getCover('anime', mediaId, 'small');
 
   // Calculate progress percent from DB
   const mediaMeta = animeDb[mediaId.toString()] || {};
