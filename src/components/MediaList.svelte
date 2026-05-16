@@ -12,7 +12,7 @@
   let searchQuery = $state("");
   let isLoading = $state(true);
 
-  const statusGroups = [
+  let statusGroups = $derived([
     {
       id: "current",
       label: type === "anime" ? "Watching" : "Reading",
@@ -22,7 +22,7 @@
     { id: "paused", label: "Paused", color: "bg-orange-500" },
     { id: "dropped", label: "Dropped", color: "bg-red-500" },
     { id: "planning", label: "Planning", color: "bg-slate-500" },
-  ];
+  ]);
 
   onMount(async () => {
     try {
@@ -82,9 +82,10 @@
 </script>
 
 <div
+  id="media-list-wrapper"
   class="flex flex-col lg:flex-row gap-8 mb-12 animate-in fade-in duration-300"
 >
-  <aside class="lg:w-[20%]">
+  <aside class="lg:w-[20%] order-2 lg:order-1">
     <div class="sticky top-24 space-y-6">
       <div class="bg-card rounded-xl p-5 space-y-4">
         <div>
@@ -125,6 +126,13 @@
         id="media-categories-sidebar"
         class="bg-card rounded-xl border border-slate-800 overflow-hidden"
       >
+        <div class="p-4">
+          <h3
+            class="text-xs font-bold uppercase tracking-widest text-white flex items-center"
+          >
+            <i class="fa-solid fa-layer-group text-accent mr-2"></i> Categories
+          </h3>
+        </div>
         <button
           onclick={() => (filterStatus = "all")}
           class="category-btn flex items-center justify-between px-4 py-3 text-sm font-medium {filterStatus ===
@@ -133,7 +141,8 @@
             : 'text-slate-400 hover:text-white border-l-4 border-transparent'} transition-all w-full"
         >
           <span>All {type.charAt(0).toUpperCase() + type.slice(1)}</span>
-          <span class="text-xs text-slate-500 bg-[#0b1622] px-2 py-0.5 rounded"
+          <span
+            class="count text-xs text-slate-500 bg-[#0b1622] px-2 py-0.5 rounded"
             >{listDataEntries.length}</span
           >
         </button>
@@ -146,7 +155,7 @@
               : 'text-slate-400 hover:text-white border-l-4 border-transparent'} transition-all w-full"
           >
             <span>{group.label}</span>
-            <span class="text-xs text-slate-500"
+            <span class="count text-xs text-slate-500"
               >{listDataEntries.filter(
                 (i) => i.status.toLowerCase() === group.id,
               ).length}</span
@@ -157,7 +166,10 @@
     </div>
   </aside>
 
-  <main class="lg:w-[80%] space-y-10 min-h-[400px]">
+  <main
+    id="media-list-container"
+    class="lg:w-[80%] order-1 lg:order-2 space-y-10 min-h-[400px]"
+  >
     {#if isLoading}
       <div class="flex items-center justify-center p-20">
         <i class="fa-solid fa-circle-notch fa-spin text-accent text-2xl"></i>
