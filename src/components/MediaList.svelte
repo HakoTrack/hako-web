@@ -28,6 +28,7 @@
     try {
       if (type === "anime") {
         listDataEntries = await fetchUserAnimeList(profileId);
+        console.log("Database entries", listDataEntries);
         const ids = listDataEntries.map((item) => item.id);
         metadata = await fetchAnimeByIds(ids);
       }
