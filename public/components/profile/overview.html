@@ -1,5 +1,6 @@
 <div class="grid grid-cols-1 lg:grid-cols-12 gap-8 mb-12">
 
+  <!-- LEFT COLUMN: Sidebar (About Me + Favorites) -->
   <div class="lg:col-span-4 space-y-8">
     <div class="bg-card p-6 rounded-xl shadow-md">
       <h3 class="text-white font-bold mb-4 flex items-center">
@@ -95,126 +96,94 @@
         <h4 class="text-[10px] uppercase text-slate-500 font-bold mb-3 tracking-widest">People</h4>
         <div id="fav-people-grid" class="grid grid-cols-5 gap-2"></div>
       </div>
+    </div>
+  </div> <!-- CLOSE LEFT COLUMN -->
 
-      <div class="lg:col-span-5 space-y-8">
-        <div class="space-y-6">
-          <div class="flex items-center justify-between">
-            <h3 class="text-white font-bold text-lg">Activity Feed</h3>
-            <div class="text-sm text-accent cursor-pointer hover:underline">View All</div>
-          </div>
-
-          <!-- Container for dynamic activity items -->
-          <div id="activity-feed-container" class="space-y-6">
-            <div class="text-slate-600 text-sm italic">Loading activities...</div>
-          </div>
-        </div>
+  <!-- RIGHT COLUMN: Content (Activity Feed) -->
+  <div class="lg:col-span-5 space-y-8">
+    <div class="space-y-6">
+      <div class="flex items-center justify-between">
+        <h3 class="text-white font-bold text-lg">Activity Feed</h3>
+        <div class="text-sm text-accent cursor-pointer hover:underline">View All</div>
       </div>
 
-      <div class="lg:col-span-3 space-y-8">
-        <div class="bg-card p-6 rounded-xl shadow-md">
-          <h3 class="text-white font-bold mb-4 flex items-center">
-            <i class="fa-solid fa-chart-simple text-accent mr-2"></i> List Stats
-          </h3>
-          <div class="space-y-6">
-            <!-- Anime Stats -->
-            <div class="border-b border-slate-800 pb-4">
-              <h4 class="text-[10px] uppercase text-accent font-bold mb-2 tracking-widest">Anime</h4>
-              <div class="flex justify-between text-xs mb-1"><span>Total</span><span class="text-white">342</span></div>
-              <div class="flex justify-between text-xs mb-1"><span>Days Watched</span><span
-                  class="text-white">84.5</span>
-              </div>
-              <div class="flex justify-between text-xs"><span>Mean Score</span><span
-                  class="text-white font-bold">8.4</span>
-              </div>
-            </div>
-            <!-- Manga Stats -->
-            <div class="border-b border-slate-800 pb-4">
-              <h4 class="text-[10px] uppercase text-accent font-bold mb-2 tracking-widest">Manga</h4>
-              <div class="flex justify-between text-xs mb-1"><span>Total</span><span class="text-white">156</span></div>
-              <div class="flex justify-between text-xs mb-1"><span>Chapters</span><span class="text-white">4,280</span>
-              </div>
-              <div class="flex justify-between text-xs"><span>Mean Score</span><span
-                  class="text-white font-bold">7.9</span>
-              </div>
-            </div>
-            <!-- Light Novel Stats -->
-            <div class="border-b border-slate-800 pb-4">
-              <h4 class="text-[10px] uppercase text-accent font-bold mb-2 tracking-widest">Light Novels</h4>
-              <div class="flex justify-between text-xs mb-1"><span>Total</span><span class="text-white">42</span></div>
-              <div class="flex justify-between text-xs mb-1"><span>Volumes</span><span class="text-white">128</span>
-              </div>
-              <div class="flex justify-between text-xs"><span>Mean Score</span><span
-                  class="text-white font-bold">8.1</span>
-              </div>
-            </div>
-            <!-- Visual Novel Stats -->
-            <div>
-              <h4 class="text-[10px] uppercase text-accent font-bold mb-2 tracking-widest">Visual Novels</h4>
-              <div class="flex justify-between text-xs mb-1"><span>Total</span><span class="text-white">18</span></div>
-              <div class="flex justify-between text-xs mb-1"><span>Hours Played</span><span
-                  class="text-white">650</span>
-              </div>
-              <div class="flex justify-between text-xs"><span>Mean Score</span><span
-                  class="text-white font-bold">9.2</span>
-              </div>
-            </div>
+      <!-- Container for dynamic activity items -->
+      <div id="activity-feed-container" class="space-y-6">
+        <div class="text-slate-600 text-sm italic">Loading activities...</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- FAR RIGHT COLUMN: List Stats + Taste Profile -->
+  <div class="lg:col-span-3 space-y-8">
+    <div class="bg-card p-6 rounded-xl shadow-md">
+      <h3 class="text-white font-bold mb-4 flex items-center">
+        <i class="fa-solid fa-chart-simple text-accent mr-2"></i> List Stats
+      </h3>
+      <div class="space-y-6">
+        <!-- Anime Stats -->
+        <div class="border-b border-slate-800 pb-4">
+          <h4 class="text-[10px] uppercase text-accent font-bold mb-2 tracking-widest">Anime</h4>
+          <div class="flex justify-between text-xs mb-1"><span>Total</span><span class="text-white">342</span></div>
+          <div class="flex justify-between text-xs mb-1"><span>Days Watched</span><span class="text-white">84.5</span>
+          </div>
+          <div class="flex justify-between text-xs"><span>Mean Score</span><span class="text-white font-bold">8.4</span>
           </div>
         </div>
-
-        <div class="bg-card p-6 rounded-xl shadow-md">
-          <h3 class="text-white font-bold mb-4 flex items-center">
-            <i class="fa-solid fa-brain text-accent mr-2"></i> Taste Profile
-          </h3>
-          <div class="pt-2">
-            <div class="h-50 w-full">
-              <canvas id="genreChart"></canvas>
-            </div>
+        <!-- Manga Stats -->
+        <div class="border-b border-slate-800 pb-4">
+          <h4 class="text-[10px] uppercase text-accent font-bold mb-2 tracking-widest">Manga</h4>
+          <div class="flex justify-between text-xs mb-1"><span>Total</span><span class="text-white">156</span></div>
+          <div class="flex justify-between text-xs mb-1"><span>Chapters</span><span class="text-white">4,280</span>
           </div>
-          <!-- Legend mapping icons to text -->
-          <div class="grid grid-cols-2 gap-2 mt-6 text-[9px] uppercase tracking-tighter text-slate-500 font-bold">
-            <div class="flex items-center"><i class="fa-solid fa-ghost mr-1 text-accent w-4 text-center"></i>
-              Speculative</div>
-            <div class="flex items-center"><i class="fa-solid fa-bolt mr-1 text-accent w-4 text-center"></i> Visceral
-            </div>
-            <div class="flex items-center"><i class="fa-solid fa-brain mr-1 text-accent w-4 text-center"></i> Cerebral
-            </div>
-            <div class="flex items-center"><i class="fa-solid fa-heart-pulse mr-1 text-accent w-4 text-center"></i>
-              Emotive</div>
-            <div class="flex items-center"><i class="fa-solid fa-users mr-1 text-accent w-4 text-center"></i>
-              Interpersonal</div>
-            <div class="flex items-center"><i class="fa-solid fa-face-smile mr-1 text-accent w-4 text-center"></i>
-              Lighthearted</div>
+          <div class="flex justify-between text-xs"><span>Mean Score</span><span class="text-white font-bold">7.9</span>
           </div>
         </div>
-
-        <div class="bg-card p-6 rounded-xl shadow-md">
-          <h3 class="text-white font-bold mb-4">Recent Reviews</h3>
-          <div class="space-y-4">
-            <div class="flex items-center space-x-3 group cursor-pointer">
-              <div class="relative w-12 h-16 rounded overflow-hidden">
-                <img src="" class="w-full h-full object-cover">
-              </div>
-              <div>
-                <p class="text-xs font-bold text-white leading-tight">Look Back</p>
-                <div class="flex text-yellow-400 text-[10px] mt-1">
-                  <i class="fa-solid fa-star"></i><i class="fa-solid fa-star"></i><i class="fa-solid fa-star"></i><i
-                    class="fa-solid fa-star"></i><i class="fa-solid fa-star"></i>
-                </div>
-              </div>
-            </div>
-            <div class="flex items-center space-x-3 group cursor-pointer">
-              <div class="relative w-12 h-16 rounded overflow-hidden">
-                <img src="" class="w-full h-full object-cover">
-              </div>
-              <div>
-                <p class="text-xs font-bold text-white leading-tight">Takopi's Original Sin</p>
-                <div class="flex text-yellow-400 text-[10px] mt-1">
-                  <i class="fa-solid fa-star"></i><i class="fa-solid fa-star"></i><i class="fa-solid fa-star"></i><i
-                    class="fa-solid fa-star"></i><i class="fa-solid fa-star"></i>
-                </div>
-              </div>
-            </div>
+        <!-- Light Novel Stats -->
+        <div class="border-b border-slate-800 pb-4">
+          <h4 class="text-[10px] uppercase text-accent font-bold mb-2 tracking-widest">Light Novels</h4>
+          <div class="flex justify-between text-xs mb-1"><span>Total</span><span class="text-white">42</span></div>
+          <div class="flex justify-between text-xs mb-1"><span>Volumes</span><span class="text-white">128</span>
+          </div>
+          <div class="flex justify-between text-xs"><span>Mean Score</span><span class="text-white font-bold">8.1</span>
+          </div>
+        </div>
+        <!-- Visual Novel Stats -->
+        <div>
+          <h4 class="text-[10px] uppercase text-accent font-bold mb-2 tracking-widest">Visual Novels</h4>
+          <div class="flex justify-between text-xs mb-1"><span>Total</span><span class="text-white">18</span></div>
+          <div class="flex justify-between text-xs mb-1"><span>Hours Played</span><span class="text-white">650</span>
+          </div>
+          <div class="flex justify-between text-xs"><span>Mean Score</span><span class="text-white font-bold">9.2</span>
           </div>
         </div>
       </div>
     </div>
+
+    <div class="bg-card p-6 rounded-xl shadow-md">
+      <h3 class="text-white font-bold mb-4 flex items-center">
+        <i class="fa-solid fa-brain text-accent mr-2"></i> Taste Profile
+      </h3>
+      <div class="pt-2">
+        <div class="h-50 w-full">
+          <canvas id="genreChart"></canvas>
+        </div>
+      </div>
+      <!-- Legend mapping icons to text -->
+      <div class="grid grid-cols-2 gap-2 mt-6 text-[9px] uppercase tracking-tighter text-slate-500 font-bold">
+        <div class="flex items-center"><i class="fa-solid fa-ghost mr-1 text-accent w-4 text-center"></i>
+          Speculative</div>
+        <div class="flex items-center"><i class="fa-solid fa-bolt mr-1 text-accent w-4 text-center"></i> Visceral
+        </div>
+        <div class="flex items-center"><i class="fa-solid fa-brain mr-1 text-accent w-4 text-center"></i> Cerebral
+        </div>
+        <div class="flex items-center"><i class="fa-solid fa-heart-pulse mr-1 text-accent w-4 text-center"></i>
+          Emotive</div>
+        <div class="flex items-center"><i class="fa-solid fa-users mr-1 text-accent w-4 text-center"></i>
+          Interpersonal</div>
+        <div class="flex items-center"><i class="fa-solid fa-face-smile mr-1 text-accent w-4 text-center"></i>
+          Lighthearted</div>
+      </div>
+    </div>
+  </div> <!-- CLOSE FAR RIGHT COLUMN -->
+</div>
