@@ -36,7 +36,12 @@ export const initProfile = async (username) => {
     if (bannerEl) bannerEl.src = window.HakoImage ? window.HakoImage.get(bannerPath.replace(/^\//, ''), { w: 1200, f: 'webp', q: 80 }) : bannerPath;
 
     const roleBadge = document.getElementById('role-badge');
-    if (profile.role === 'owner' && roleBadge) roleBadge.classList.remove('hidden');
+    // if (profile.role === 'owner' && roleBadge) roleBadge.classList.remove('hidden');
+
+    if (profile.role) {
+      roleBadge.innerText = profile.role;
+      roleBadge.style.textTransform = 'uppercase';
+    }
 
     document.title = `${username}'s Profile | Hako`;
     profileContainer.classList.remove('invisible');
