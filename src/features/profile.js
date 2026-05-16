@@ -41,6 +41,7 @@ export const initProfile = async (username) => {
     if (profile.role) {
       roleBadge.innerText = profile.role;
       roleBadge.style.textTransform = 'uppercase';
+      roleBadge.classList.remove('hidden');
     }
 
     document.title = `${username}'s Profile | Hako`;
