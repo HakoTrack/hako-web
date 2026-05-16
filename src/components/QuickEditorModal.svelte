@@ -3,6 +3,8 @@
   import { onMount } from "svelte";
   import { getTonalProfile } from "../utils/toneCalc.js";
   import { HakoImage } from "../utils/images.js";
+  import { supabase } from "../utils/supabase.js";
+  import { AuthService } from "../core/auth.js";
 
   let { entry } = ui.modalData || {};
 
@@ -11,15 +13,49 @@
 
   // Bindable local state for the form
   let status = $state(entry?.status || "planning");
-
   let score = $state(entry?.score || 0);
   let progress = $state(entry?.progress || 0);
   let isFavorited = $state(entry?.isFavorited || false);
   let startDate = $state(entry?.startDate || "");
   let finishDate = $state(entry?.finishDate || "");
 
-  function close() {
-    ui.closeModal();
+  onMount(async () => {
+    // Check initial favorite state
+    const user = await AuthService.getCurrentUser();
+    if (user) {
+      const { data } = await supabase
+        .from("profile_favorites")
+        .select("id")
+        .eq("profile_id", user.id)
+        .eq("anime_id", entry.id)
+        .maybeSingle();
+      isFavorited = !!data;
+    }
+  });
+
+  async function toggleFavorite() {
+    const user = await AuthService.getCurrentUser();
+    if (!user) return;
+
+    try {
+      if (isFavorited) {
+        // Delete favorite
+        await supabase
+          .from("profile_favorites")
+          .delete()
+          .eq("profile_id", user.id)
+          .eq("anime_id", entry.id);
+        isFavorited = false;
+      } else {
+        // Add favorite
+        await supabase
+          .from("profile_favorites")
+          .insert({ profile_id: user.id, anime_id: entry.id });
+        isFavorited = true;
+      }
+    } catch (err) {
+      console.error("Favorite toggle error:", err);
+    }
   }
 
   function save() {
@@ -31,15 +67,11 @@
       startDate,
       finishDate,
     });
-    close();
-  }
-
-  function toggleFavorite() {
-    isFavorited = !isFavorited;
+    ui.closeModal();
   }
 
   function handleDelete() {
-    if (confirm("Delete this entry?")) close();
+    if (confirm("Delete this entry?")) ui.closeModal();
   }
 
   // Handle Escape key
