@@ -2,6 +2,7 @@
   import { onMount } from "svelte";
   import { initProfile } from "../features/profile.js";
   import MediaList from "../components/MediaList.svelte";
+  import ProfileOverview from "../components/ProfileOverview.svelte";
 
   let { currentPath } = $props();
 
@@ -104,8 +105,8 @@
     </div>
 
     <div class="py-8 min-h-[400px]">
-      {#if activeTab === "overview"}
-        <div id="profile-content-placeholder"></div>
+      {#if activeTab === "overview" && profileData}
+        <ProfileOverview {profileData} />
       {:else if activeTab === "anime" && profileData}
         <MediaList type="anime" profileId={profileData.id} />
       {/if}
