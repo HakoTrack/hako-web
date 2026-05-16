@@ -82,13 +82,15 @@
 </script>
 
 <div
+  class="fixed top-20 left-4 bg-black text-white p-2 z-[9999] pointer-events-none"
+>
+  DEBUG: filterStatus = {filterStatus}
+</div>
+
+<div
   id="media-list-wrapper"
   class="flex flex-col lg:flex-row gap-8 mb-12 animate-in fade-in duration-300"
 >
-  <div class="fixed top-0 left-0 bg-black text-white p-2 z-[9999]">
-    DEBUG: filterStatus = {filterStatus}
-  </div>
-
   <aside class="lg:w-[20%] order-2 lg:order-1">
     <div class="sticky top-24 space-y-6">
       <div class="bg-card rounded-xl p-5 space-y-4">
