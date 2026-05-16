@@ -132,7 +132,7 @@
             bind:value={status}
             class="w-full bg-[#0b1622] text-slate-200 text-sm rounded border-none p-2.5 focus:ring-2 focus:ring-blue-500/50 outline-none cursor-pointer"
           >
-            <option value="watching">Watching</option>
+            <option value="current">Watching</option>
             <option value="completed">Completed</option>
             <option value="paused">Paused</option>
             <option value="dropped">Dropped</option>
