@@ -74,6 +74,10 @@
     if (confirm("Delete this entry?")) ui.closeModal();
   }
 
+  function close() {
+    ui.closeModal();
+  }
+
   // Handle Escape key
   function handleKeydown(e) {
     if (e.key === "Escape") close();
