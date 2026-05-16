@@ -24,6 +24,13 @@ export async function initializeFavorites(profileId) {
       const container = document.getElementById(containerId);
       const section = document.getElementById(`fav-${category}-section`);
 
+      // prefetch assets
+      const link = document.createElement('link');
+      link.rel = 'prefetch';
+      link.href = `${HakoImage.getCover(subfolder, ids[0], 'medium')}`;
+      link.href = `${HakoImage.getBanner(subfolder, ids[0])}`;
+      document.head.appendChild(link);
+
       // If the component hasn't loaded into the DOM yet, we skip
       if (!container) return;
 
@@ -48,6 +55,8 @@ export async function initializeFavorites(profileId) {
 
     // For now, other categories remain empty or hidden as they aren't in the DB schema yet
     renderFavorites('manga', 'fav-manga-grid', 'manga', []);
+    renderFavorites('light-novels', 'fav-light-novels-grid', 'light-novels', []);
+    renderFavorites('visual-novels', 'fav-visual-novels-grid', 'visual-novels', []);
     renderFavorites('characters', 'fav-characters-grid', 'characters', []);
     renderFavorites('staff', 'fav-staff-grid', 'staff', []);
 
