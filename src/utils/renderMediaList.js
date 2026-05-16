@@ -131,7 +131,7 @@ export const renderMediaList = async function (type = 'anime', containerId = 'an
         row.className = 'group hover:bg-slate-800/30 transition-colors border-b border-slate-800/50 last:border-0';
         row.innerHTML = `
           <td class="p-2 text-center">
-            <img src="${localImagePath}" onerror="this.onerror=null; this.src='${item.image}';"
+            <img loading=lazy src="${localImagePath}" onerror="this.onerror=null; this.src='${item.image}';"
                  data-media-id="${item.id}"
                  onclick="if(window.openQuickEditor) window.openQuickEditor(${item.id})"
                  class="media-cover w-12 h-16 object-cover rounded shadow-md group-hover:scale-105 transition-transform inline-block cursor-pointer">

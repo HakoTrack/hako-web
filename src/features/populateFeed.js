@@ -102,7 +102,7 @@ function renderListUpdate(activity, username, animeDb) {
         </div>
       </div>
       <div class="flex items-center p-4">
-        <img src="${localCover}"
+        <img loading=lazy src="${localCover}"
              data-media-id="${mediaId}"
              onclick="if(window.openQuickEditor) window.openQuickEditor(${mediaId})"
              class="media-cover w-16 h-24 rounded shadow-lg object-cover cursor-pointer hover:scale-105 transition-transform bg-[#151f2e]"
