@@ -109,6 +109,7 @@
     <!-- Banner Section -->
     <div class="relative w-full h-[160px] bg-[#0b1622] flex-shrink-0">
       <img
+        loading="lazy"
         src={HakoImage.getBanner("anime", entry.id)}
         class="w-full h-full object-cover opacity-60"
         alt="banner"
@@ -127,6 +128,7 @@
         class="absolute -bottom-10 left-8 flex items-end space-x-6 z-10 w-[calc(100%-4rem)]"
       >
         <img
+          loading="lazy"
           src={HakoImage.getCover("anime", entry.id, "medium")}
           class="w-[100px] h-[140px] rounded shadow-xl border border-[#151f2e] object-cover bg-[#0b1622]"
           alt="cover"
