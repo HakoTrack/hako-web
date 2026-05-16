@@ -1,3 +1,5 @@
+import { fetchAnimeByIds } from './animeData.js';
+
 const getScoreColor = (score) => {
   if (!score) return 'text-slate-500';
   if (score >= 9) return 'text-green-400';
@@ -14,7 +16,6 @@ export const renderMediaList = async function (type = 'anime', containerId = 'an
   const config = {
     anime: {
       dataPath: `/data/users/shaetsu/anime-list.json`,
-      metaPath: `/data/media/anime.json`,
       activeLabel: 'Watching',
       sidebarId: 'anime-categories-sidebar'
     },
@@ -27,13 +28,19 @@ export const renderMediaList = async function (type = 'anime', containerId = 'an
   }[type];
 
   try {
-    const [listResponse, metaResponse] = await Promise.all([
-      fetch(config.dataPath),
-      fetch(config.metaPath)
-    ]);
-
+    const listResponse = await fetch(config.dataPath);
+    if (!listResponse.ok) throw new Error(`Failed to fetch user list`);
     const listData = await listResponse.json();
-    const metadata = await metaResponse.json();
+
+    let metadata;
+    if (type === 'anime') {
+      const ids = listData.data.map(item => item.id);
+      metadata = await fetchAnimeByIds(ids);
+    } else {
+      const metaResponse = await fetch(config.metaPath);
+      if (!metaResponse.ok) throw new Error(`Failed to fetch metadata`);
+      metadata = await metaResponse.json();
+    }
 
     const statusGroups = [
       { id: 'current', label: config.activeLabel, color: 'bg-green-500' },

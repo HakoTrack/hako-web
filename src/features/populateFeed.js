@@ -1,3 +1,5 @@
+import { fetchAnimeByIds } from '../utils/animeData.js';
+
 export async function populateActivityFeed(username) {
 
   if (!username) {
@@ -12,21 +14,22 @@ export async function populateActivityFeed(username) {
   }
 
   try {
-    // Fetch activities and global media database to calculate progress
-    const [actRes, mediaRes] = await Promise.all([
-      fetch(`/data/users/${username}/activities.json`),
-      fetch(`/data/media/anime.json`)
-    ]);
-
-    if (!actRes.ok || !mediaRes.ok) throw new Error(`Failed to fetch data sources`);
-
+    // Fetch activities
+    const actRes = await fetch(`/data/users/${username}/activities.json`);
+    if (!actRes.ok) throw new Error(`Failed to fetch activities`);
     const data = await actRes.json();
-    const animeDb = await mediaRes.json();
 
     if (!data.activities || data.activities.length === 0) {
       feedContainer.innerHTML = '<p class="text-slate-500 text-sm p-4 text-center">No recent activity.</p>';
       return;
     }
+
+    // Extract unique anime IDs and fetch metadata from Supabase
+    const animeIds = [...new Set(data.activities
+      .filter(a => a.type === 'list_update')
+      .map(a => a.media.id))];
+
+    const animeDb = await fetchAnimeByIds(animeIds);
 
     feedContainer.innerHTML = data.activities.map(activity => {
       if (activity.type === 'thought') {

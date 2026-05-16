@@ -3,6 +3,8 @@
  * Handles the UI and logic for rapid media entry updates.
  */
 
+import { fetchAnimeById } from './animeData.js';
+
 const QuickEditor = {
   isOpen: false,
   isFavorited: false,
@@ -48,22 +50,18 @@ const QuickEditor = {
   openEditor: async function (id) {
     const username = this.getUsername();
     const userListPath = `/data/users/${username}/anime-list.json`;
-    const mediaDbPath = `/data/media/anime.json`;
 
     try {
-      const [userRes, mediaRes] = await Promise.all([
+      const [userRes, mediaMetadata] = await Promise.all([
         fetch(userListPath),
-        fetch(mediaDbPath)
+        fetchAnimeById(id)
       ]);
 
-      if (!userRes.ok || !mediaRes.ok) throw new Error("Data files failed to load.");
+      if (!userRes.ok) throw new Error("User list data failed to load.");
 
       const userJson = await userRes.json();
-      const mediaData = await mediaRes.json();
-
       const userListData = userJson.data || userJson;
       const userEntry = Array.isArray(userListData) ? userListData.find(item => item.id === id) : {};
-      const mediaMetadata = mediaData[id.toString()];
 
       const titleObj = mediaMetadata?.title || {};
       const displayTitle = titleObj.english || titleObj.romaji || titleObj.native || userEntry.title || "Unknown Title";
