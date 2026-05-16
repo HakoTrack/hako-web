@@ -19,8 +19,6 @@ export const renderMediaList = async function (type = 'anime', containerId = 'an
       sidebarId: 'anime-categories-sidebar'
     },
     manga: {
-      dataPath: `/data/users/shaetsu/manga-list.json`,
-      metaPath: `/data/media/manga.json`,
       activeLabel: 'Reading',
       sidebarId: 'manga-categories-sidebar'
     }
@@ -158,11 +156,11 @@ export const renderMediaList = async function (type = 'anime', containerId = 'an
     });
 
     if (container.innerHTML === '') {
-      container.innerHTML = `<div class="p-20 text-center text-slate-500 italic">No items found in this category.</div>`;
+      container.innerHTML = `<div class="p-10 text-center font-['Arial',sans-serif] text-[20px] text-slate-500">This list is empty... (≖､≖╬)</div>`;
     }
 
   } catch (err) {
     console.error(err);
-    container.innerHTML = `<div class="p-10 text-center font-['Arial',_sans-serif] text-[20px] text-slate-500">This list is empty... (≖､≖╬)</div>`;
+    container.innerHTML = `<div class="p-10 text-center font-['Arial',sans-serif] text-[20px] text-slate-500">This list is empty... (≖､≖╬)</div>`;
   }
 };
