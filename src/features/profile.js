@@ -74,6 +74,7 @@ export const initProfile = async (username) => {
     await populateActivityFeed(username);
     setupProfileTabs(username, profile.id);
 
+    return profile;
   } catch (e) {
 
     console.error("Profile Init Error:", e);
