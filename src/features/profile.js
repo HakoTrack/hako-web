@@ -36,13 +36,28 @@ export const initProfile = async (username) => {
     if (bannerEl) bannerEl.src = window.HakoImage ? window.HakoImage.get(bannerPath.replace(/^\//, ''), { w: 1200, f: 'webp', q: 80 }) : bannerPath;
 
     const roleBadge = document.getElementById('role-badge');
-    // if (profile.role === 'owner' && roleBadge) roleBadge.classList.remove('hidden');
+    const ROLES = {
+      owner: { label: '総帥', romaji: 'Sousui', color: 'bg-red-500', title: 'Owner' },
+      admin: { label: '師匠', romaji: 'Shishou', color: 'bg-indigo-500', title: 'Admin' },
+      moderator: { label: '先生', romaji: 'Sensei', color: 'bg-emerald-500', title: 'Moderator' },
+      contributor: { label: '先輩', romaji: 'Senpai', color: 'bg-blue-500', title: 'Contributor' },
+      developer: { label: '開発者', romaji: 'Kaihatsusha', color: 'bg-accent', title: 'Developer' }
+    };
 
-    if (profile.role) {
-      roleBadge.innerText = profile.role;
-      roleBadge.style.textTransform = 'uppercase';
-      roleBadge.classList.remove('hidden');
+    if (roleBadge) {
+      const role = profile.role?.toLowerCase();
+      if (role && ROLES[role]) {
+        const config = ROLES[role];
+        roleBadge.innerText = config.label;
+        roleBadge.title = `${config.romaji} (${config.title})`;
+        // Remove default accent color and add the role-specific color
+        roleBadge.classList.remove('hidden', 'bg-accent');
+        roleBadge.classList.add(config.color);
+      } else {
+        roleBadge.classList.add('hidden');
+      }
     }
+
 
     document.title = `${username}'s Profile | Hako`;
     profileContainer.classList.remove('invisible');
