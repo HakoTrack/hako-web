@@ -1,19 +1,20 @@
 <script>
-  import { onMount } from 'svelte';
-  import Navbar from './components/Navbar.svelte';
-  import Footer from './components/Footer.svelte';
-  import Landing from './views/Landing.svelte';
-  import Feed from './views/Feed.svelte';
-  import Profile from './views/Profile.svelte';
-  import LoginModal from './components/LoginModal.svelte';
-  import SignupModal from './components/SignupModal.svelte';
-  import { AuthService } from './core/auth.js';
-  import { supabase } from './utils/supabase.js';
+  import { onMount } from "svelte";
+  import Navbar from "./components/Navbar.svelte";
+  import Footer from "./components/Footer.svelte";
+  import Landing from "./views/Landing.svelte";
+  import Feed from "./views/Feed.svelte";
+  import Profile from "./views/Profile.svelte";
+  import LoginModal from "./components/LoginModal.svelte";
+  import SignupModal from "./components/SignupModal.svelte";
+  import QuickEditorModal from "./components/QuickEditorModal.svelte";
+  import { AuthService } from "./core/auth.js";
+  import { supabase } from "./utils/supabase.js";
+  import { ui } from "./core/ui.svelte.js";
 
-  let user = null;
-  let currentPath = window.location.pathname;
-  let isLanding = true;
-  let activeModal = null; // 'login' or 'signup' or null
+  let user = $state(null);
+  let currentPath = $state(window.location.pathname);
+  let isLanding = $derived(currentPath === "/" && !user);
 
   onMount(async () => {
     user = await AuthService.getCurrentUser();
@@ -23,8 +24,7 @@
       handleRouting();
     });
 
-    window.addEventListener('popstate', () => {
-      currentPath = window.location.pathname;
+    window.addEventListener("popstate", () => {
       handleRouting();
     });
 
@@ -35,49 +35,34 @@
     currentPath = window.location.pathname;
 
     // Auth Guard
-    if (!user && currentPath !== '/') {
-      navigate('/');
+    if (!user && currentPath !== "/") {
+      navigate("/");
       return;
     }
 
-    if (user && currentPath === '/') {
-      navigate('/feed');
+    if (user && currentPath === "/") {
+      navigate("/feed");
       return;
     }
-
-    isLanding = (currentPath === '/' && !user);
   }
 
   function navigate(path) {
-    window.history.pushState({}, '', path);
-    currentPath = path;
+    window.history.pushState({}, "", path);
     handleRouting();
-  }
-
-  // Handle custom events for login/signup modals (placeholder for now)
-  function showLogin() {
-    activeModal = 'login';
-  }
-
-  function showSignup() {
-    activeModal = 'signup';
-  }
-
-  function closeModal() {
-    activeModal = null;
   }
 </script>
 
-<svelte:window on:show-login={showLogin} on:show-signup={showSignup} />
+<svelte:window
+  on:show-login={() => ui.openModal("login")}
+  on:show-signup={() => ui.openModal("signup")}
+/>
 
-{#if activeModal}
-  <div class="fixed inset-0 z-[100] flex items-center justify-center bg-[#0b1622]/80 backdrop-blur-sm p-4" on:click|self={closeModal}>
-    {#if activeModal === 'login'}
-      <LoginModal close={closeModal} />
-    {:else if activeModal === 'signup'}
-      <SignupModal close={closeModal} />
-    {/if}
-  </div>
+{#if ui.activeModal === "login"}
+  <LoginModal />
+{:else if ui.activeModal === "signup"}
+  <SignupModal />
+{:else if ui.activeModal === "quick-editor"}
+  <QuickEditorModal />
 {/if}
 
 {#if !isLanding}
@@ -85,12 +70,11 @@
 {/if}
 
 <main id="app-view">
-  <!-- Views will be rendered here -->
-  {#if currentPath === '/'}
+  {#if currentPath === "/"}
     <Landing />
-  {:else if currentPath.startsWith('/profile')}
+  {:else if currentPath.startsWith("/profile")}
     <Profile {currentPath} />
-  {:else if currentPath === '/feed'}
+  {:else if currentPath === "/feed"}
     <Feed {user} />
   {:else}
     <div class="text-white p-10">404 - Not Found</div>
