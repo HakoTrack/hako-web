@@ -40,20 +40,30 @@ const QuickEditor = {
   },
 
   openEditor: async function (id) {
-    const username = this.getUsername();
+    const username = this.getUsername().toLowerCase();
     const userListPath = `/data/users/${username}/anime-list.json`;
 
     try {
-      const [userRes, mediaMetadata] = await Promise.all([
-        fetch(userListPath),
-        fetchAnimeById(id)
-      ]);
+      // Fetch media metadata from Supabase (mandatory)
+      const mediaMetadata = await fetchAnimeById(id);
 
-      if (!userRes.ok) throw new Error("User list data failed to load.");
-
-      const userJson = await userRes.json();
-      const userListData = userJson.data || userJson;
-      const userEntry = Array.isArray(userListData) ? userListData.find(item => item.id === id) : {};
+      // Attempt to fetch user list data (optional/legacy)
+      let userEntry = {};
+      try {
+        const userRes = await fetch(userListPath);
+        if (userRes.ok) {
+          const text = await userRes.text();
+          try {
+            const userJson = JSON.parse(text);
+            const userListData = userJson.data || userJson;
+            userEntry = Array.isArray(userListData) ? userListData.find(item => item.id === id) || {} : {};
+          } catch (jsonErr) {
+            console.warn("QuickEditor: User list is not valid JSON, skipping local metadata.");
+          }
+        }
+      } catch (fetchErr) {
+        console.warn("QuickEditor: Could not fetch local user list, defaulting to empty entry.");
+      }
 
       const titleObj = mediaMetadata?.title || {};
       const displayTitle = titleObj.english || titleObj.romaji || titleObj.native || userEntry.title || "Unknown Title";
