@@ -72,7 +72,6 @@ export const initProfile = async (username) => {
     initializeFavorites(profile.id);
     initializeTasteChart(username);
     await populateActivityFeed(username);
-    setupProfileTabs(username, profile.id);
 
     return profile;
   } catch (e) {
@@ -83,65 +82,5 @@ export const initProfile = async (username) => {
   }
 };
 
-export function setupProfileTabs(username, profileId) {
-  const tabs = document.querySelectorAll('.tab-btn');
-
-  tabs.forEach(tab => {
-    tab.addEventListener('click', () => {
-      tabs.forEach(t => {
-        t.classList.remove('tab-active', 'text-white');
-        t.classList.add('text-slate-400');
-      });
-      tab.classList.add('tab-active', 'text-white');
-      tab.classList.remove('text-slate-400');
-
-      const tabName = tab.innerText.toLowerCase();
-
-      // Dispatch custom event to Svelte to handle tab change
-      window.dispatchEvent(new CustomEvent('tab-change', { detail: tabName }));
-    });
-  });
-}
-
-
-function initMediaList(type, profileId) {
-  const wrapper = document.getElementById('media-list-wrapper');
-  if (!wrapper) return;
-
-  // Set context for the generic component
-  wrapper.dataset.type = type;
-
-  // Update sidebar labels/IDs to match what renderMediaList expects
-  const sidebar = document.getElementById('media-categories-sidebar');
-  if (sidebar) {
-    sidebar.id = `${type}-categories-sidebar`;
-
-    const allLabel = sidebar.querySelector('.all-label');
-    if (allLabel) {
-      allLabel.innerText = `All ${type.charAt(0).toUpperCase() + type.slice(1)}`;
-    }
-
-    const activeLabel = sidebar.querySelector('.active-label');
-    if (activeLabel) activeLabel.innerText = type === 'anime' ? 'Watching' : 'Reading';
-
-    const icon = sidebar.querySelector('i');
-    if (icon) {
-      icon.className = 'fa-solid fa-layer-group text-accent mr-2';
-    }
-
-    // Bind category buttons
-    sidebar.querySelectorAll('.category-btn').forEach(btn => {
-      btn.onclick = () => {
-        const sort = document.getElementById('sort-select').value;
-        renderMediaList(type, 'media-list-container', sort, btn.dataset.status, profileId);
-      };
-    });
-  }
-
-  // Initial render
-  renderMediaList(type, 'media-list-container', 'Title', 'all', profileId);
-}
-
 // Global attachment for mockup compatibility
 window.initProfile = initProfile;
-window.setupProfileTabs = setupProfileTabs;
