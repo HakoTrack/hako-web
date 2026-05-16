@@ -15,7 +15,7 @@ export const initProfile = async (username) => {
     const { data: profile, error } = await supabase
       .from('profiles')
       .select('*')
-      .eq('username', username)
+      .ilike('username', username)
       .single();
 
     if (error || !profile) throw new Error('User not found');
