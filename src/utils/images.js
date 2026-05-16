@@ -35,15 +35,20 @@ export const HakoImage = {
    * Helper for Anime/Manga covers using Statically WebP.
    */
   getCover: function (type, id, size = 'medium') {
-    const width = size === 'small' ? 120 : 240;
-    return this.get(`covers/${type}/${id}.jpg`, { w: width, f: 'webp' });
+    const sizes = {
+      small: { w: 120, suffix: '_small' },
+      medium: { w: 240, suffix: '_medium' },
+      large: { w: 480, suffix: '_large' }
+    };
+    const config = sizes[size] || sizes.medium;
+    return this.get(`${type}/covers/${id}${config.suffix}.jpg`, { w: config.w, f: 'webp' });
   },
 
   /**
    * Helper for high-res banners.
    */
   getBanner: function (type, id) {
-    return this.get(`banners/${type}/${id}.jpg`, { w: 1200, f: 'webp', q: 80 });
+    return this.get(`${type}/banners/${id}.jpg`, { w: 1200, f: 'webp', q: 80 });
   }
 };
 
