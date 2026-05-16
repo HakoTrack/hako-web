@@ -170,6 +170,7 @@
     id="media-list-container"
     class="lg:w-[80%] order-1 lg:order-2 space-y-10 min-h-[400px]"
   >
+    <div class="text-white">DEBUG: Status = {filterStatus}</div>
     {#if isLoading}
       <div class="flex items-center justify-center p-20">
         <i class="fa-solid fa-circle-notch fa-spin text-accent text-2xl"></i>
