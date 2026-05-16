@@ -85,10 +85,9 @@ export const initProfile = async (username) => {
 
 export function setupProfileTabs(username, profileId) {
   const tabs = document.querySelectorAll('.tab-btn');
-  const placeholder = 'profile-content-placeholder';
 
   tabs.forEach(tab => {
-    tab.addEventListener('click', async () => {
+    tab.addEventListener('click', () => {
       tabs.forEach(t => {
         t.classList.remove('tab-active', 'text-white');
         t.classList.add('text-slate-400');
@@ -98,27 +97,12 @@ export function setupProfileTabs(username, profileId) {
 
       const tabName = tab.innerText.toLowerCase();
 
-      if (tabName === 'overview') {
-        await loadComponent(placeholder, '/components/profile/overview.html');
-
-        // Re-inject about_me when switching back to overview
-        const { data: profile } = await supabase.from('profiles').select('about_me').ilike('id', profileId).single();
-        const aboutMeEl = document.querySelector('#profile-content-placeholder p.text-slate-400');
-        if (aboutMeEl && profile?.about_me) {
-          aboutMeEl.innerText = profile.about_me;
-        }
-
-        initializeFavorites(profileId);
-        initializeTasteChart(username);
-        await populateActivityFeed(username);
-      }
-      else if (tabName === 'anime' || tabName === 'manga') {
-        await loadComponent(placeholder, '/components/profile/media-list.html');
-        initMediaList(tabName, profileId);
-      }
+      // Dispatch custom event to Svelte to handle tab change
+      window.dispatchEvent(new CustomEvent('tab-change', { detail: tabName }));
     });
   });
 }
+
 
 function initMediaList(type, profileId) {
   const wrapper = document.getElementById('media-list-wrapper');

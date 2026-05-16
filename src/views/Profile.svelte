@@ -13,6 +13,10 @@
 
   onMount(async () => {
     profileData = await initProfile(username);
+
+    window.addEventListener("tab-change", (e) => {
+      activeTab = e.detail;
+    });
   });
 </script>
 
