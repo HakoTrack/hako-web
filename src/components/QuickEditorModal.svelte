@@ -6,6 +6,9 @@
   import { supabase } from "../utils/supabase.js";
   import { AuthService } from "../core/auth.js";
 
+  // Module-level cache to prevent flicker when re-opening titles
+  const favoritesCache = new Map();
+
   let { entry } = ui.modalData || {};
 
   // Reactive tonal profile based on raw metadata
@@ -23,13 +26,19 @@
     // Check initial favorite state
     const user = await AuthService.getCurrentUser();
     if (user) {
-      const { data } = await supabase
-        .from("profile_favorites")
-        .select("id")
-        .eq("profile_id", user.id)
-        .eq("anime_id", entry.id)
-        .maybeSingle();
-      isFavorited = !!data;
+      const cacheKey = `${user.id}-${entry.id}`;
+      if (favoritesCache.has(cacheKey)) {
+        isFavorited = favoritesCache.get(cacheKey);
+      } else {
+        const { data } = await supabase
+          .from("profile_favorites")
+          .select("id")
+          .eq("profile_id", user.id)
+          .eq("anime_id", entry.id)
+          .maybeSingle();
+        isFavorited = !!data;
+        favoritesCache.set(cacheKey, isFavorited);
+      }
     }
   });
 
@@ -46,12 +55,14 @@
           .eq("profile_id", user.id)
           .eq("anime_id", entry.id);
         isFavorited = false;
+        favoritesCache.set(`${user.id}-${entry.id}`, false);
       } else {
         // Add favorite
         await supabase
           .from("profile_favorites")
           .insert({ profile_id: user.id, anime_id: entry.id });
         isFavorited = true;
+        favoritesCache.set(`${user.id}-${entry.id}`, true);
       }
     } catch (err) {
       console.error("Favorite toggle error:", err);
@@ -89,10 +100,11 @@
 <div
   id="quick-editor-overlay"
   class="fixed inset-0 z-[100] flex items-center justify-center bg-[#0b1622]/80 backdrop-blur-sm p-4"
-  on:click|self={close}
+  onclick={close}
 >
   <div
     class="bg-[#151f2e] w-full max-w-[700px] h-[800px] max-h-[90vh] rounded-md shadow-2xl animate-in fade-in zoom-in-95 duration-200 flex flex-col overflow-hidden"
+    onclick={(e) => e.stopPropagation()}
   >
     <!-- Banner Section -->
     <div class="relative w-full h-[160px] bg-[#0b1622] flex-shrink-0">
@@ -100,13 +112,13 @@
         src={HakoImage.getBanner("anime", entry.id)}
         class="w-full h-full object-cover opacity-60"
         alt="banner"
-        on:error={(e) => (e.target.src = "")}
+        onerror={(e) => (e.target.src = "")}
       />
       <div
         class="absolute inset-0 bg-gradient-to-t from-[#151f2e] to-transparent"
       ></div>
       <button
-        on:click={close}
+        onclick={close}
         class="absolute top-4 right-4 text-white/50 hover:text-white transition-colors z-20"
       >
         <i class="fa-solid fa-xmark text-lg"></i>
@@ -118,10 +130,9 @@
           src={HakoImage.getCover("anime", entry.id, "medium")}
           class="w-[100px] h-[140px] rounded shadow-xl border border-[#151f2e] object-cover bg-[#0b1622]"
           alt="cover"
-          on:error={(e) =>
+          onerror={(e) =>
             (e.target.src = "/assets/covers/placeholder_medium.jpg")}
         />
-
         <div class="flex-1 min-w-0">
           <h2
             class="text-white font-bold text-xl leading-tight truncate drop-shadow-md"
@@ -248,13 +259,13 @@
         class="mt-8 pt-6 border-t border-slate-800 flex items-center justify-between flex-shrink-0"
       >
         <button
-          on:click={handleDelete}
+          onclick={handleDelete}
           class="text-red-500/60 hover:text-red-500 text-sm font-bold transition-colors"
           >Delete</button
         >
         <div class="flex items-center space-x-6">
           <button
-            on:click={toggleFavorite}
+            onclick={toggleFavorite}
             class="{isFavorited
               ? 'text-red-500'
               : 'text-slate-400'} hover:scale-110 transition-all"
@@ -262,7 +273,7 @@
             <i class="fa-solid fa-heart text-xl"></i>
           </button>
           <button
-            on:click={save}
+            onclick={save}
             class="bg-blue-500 hover:bg-blue-400 text-white px-8 py-2 rounded text-sm font-bold transition-all shadow-lg shadow-blue-500/20 active:scale-95"
             >Save</button
           >
