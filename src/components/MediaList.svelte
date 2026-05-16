@@ -85,6 +85,10 @@
   id="media-list-wrapper"
   class="flex flex-col lg:flex-row gap-8 mb-12 animate-in fade-in duration-300"
 >
+  <div class="fixed top-0 left-0 bg-black text-white p-2 z-[9999]">
+    DEBUG: filterStatus = {filterStatus}
+  </div>
+
   <aside class="lg:w-[20%] order-2 lg:order-1">
     <div class="sticky top-24 space-y-6">
       <div class="bg-card rounded-xl p-5 space-y-4">
@@ -170,7 +174,6 @@
     id="media-list-container"
     class="lg:w-[80%] order-1 lg:order-2 space-y-10 min-h-[400px]"
   >
-    <div class="text-white">DEBUG: Status = {filterStatus}</div>
     {#if isLoading}
       <div class="flex items-center justify-center p-20">
         <i class="fa-solid fa-circle-notch fa-spin text-accent text-2xl"></i>
