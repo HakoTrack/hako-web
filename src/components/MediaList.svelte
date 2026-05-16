@@ -127,7 +127,7 @@
       >
         <button
           onclick={() => (filterStatus = "all")}
-          class="flex items-center justify-between px-4 py-3 text-sm font-medium {filterStatus ===
+          class="category-btn flex items-center justify-between px-4 py-3 text-sm font-medium {filterStatus ===
           'all'
             ? 'text-white bg-slate-800/50 border-l-4 border-accent'
             : 'text-slate-400 hover:text-white border-l-4 border-transparent'} transition-all w-full"
@@ -140,7 +140,7 @@
         {#each statusGroups as group}
           <button
             onclick={() => (filterStatus = group.id)}
-            class="flex items-center justify-between px-4 py-3 text-sm font-medium {filterStatus ===
+            class="category-btn flex items-center justify-between px-4 py-3 text-sm font-medium {filterStatus ===
             group.id
               ? 'text-white bg-slate-800/50 border-l-4 border-accent'
               : 'text-slate-400 hover:text-white border-l-4 border-transparent'} transition-all w-full"
