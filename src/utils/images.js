@@ -58,7 +58,8 @@ export const HakoImage = {
   prefetchBanner: function (type, id) {
     const url = this.getBanner(type, id);
     const link = document.createElement('link');
-    link.rel = 'prefetch';
+    link.rel = 'preload';
+    link.as = 'image';
     link.href = url;
     document.head.appendChild(link);
   }
