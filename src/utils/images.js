@@ -21,9 +21,7 @@ export const HakoImage = {
     }
 
     // If it's a relative path, assume it's a GitHub asset and route through Statically
-    // Strip leading "assets/" or "/assets/" so it points to repo root
-    // const cleanPath = path.replace(/^\/?assets\//, '');
-    let baseUrl = `https://cdn.statically.io/gh/${GITHUB_USER}/${GITHUB_REPO}@${GITHUB_BRANCH}/${cleanPath}`;
+    let baseUrl = `https://cdn.statically.io/gh/${GITHUB_USER}/${GITHUB_REPO}@${GITHUB_BRANCH}/${path}`;
 
     const params = [];
     if (options.w) params.push(`w=${options.w}`);
