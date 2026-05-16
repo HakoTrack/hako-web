@@ -29,8 +29,8 @@ export const initProfile = async (username) => {
     if (bioEl) bioEl.innerText = profile.bio || "";
 
     // Fallback paths for images, eventually these could move to Supabase too
-    const avatarPath = profile.avatar_url || `/assets/profile/${username}/avatar.jpg`;
-    const bannerPath = profile.banner_url || `/assets/profile/${username}/banner.jpg`;
+    const avatarPath = profile.avatar_url || `/profile/${username}/avatar.jpg`;
+    const bannerPath = profile.banner_url || `/profile/${username}/banner.jpg`;
 
     if (avatarEl) avatarEl.src = window.HakoImage ? window.HakoImage.get(avatarPath.replace(/^\//, ''), { w: 200, f: 'webp' }) : avatarPath;
     if (bannerEl) bannerEl.src = window.HakoImage ? window.HakoImage.get(bannerPath.replace(/^\//, ''), { w: 1200, f: 'webp', q: 80 }) : bannerPath;
