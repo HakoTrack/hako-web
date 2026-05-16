@@ -14,10 +14,6 @@ export const renderMediaList = async function (type = 'anime', containerId = 'an
   const container = document.getElementById(containerId);
   if (!container) return;
 
-  const img = document.createElement('img');
-  img.src = localImagePath;
-  img.onmouseover = () => HakoImage.prefetchBanner(type, item.id);
-
   const config = {
     anime: {
       activeLabel: 'Watching',
@@ -138,6 +134,7 @@ export const renderMediaList = async function (type = 'anime', containerId = 'an
             <img loading=lazy src="${localImagePath}" onerror="this.onerror=null; this.src='${item.image}';"
                  data-media-id="${item.id}"
                  onclick="if(window.openQuickEditor) window.openQuickEditor(${item.id})"
+                 onmouseover="window.HakoImage.prefetchBanner('${type}', ${item.id})"
                  class="media-cover w-12 h-16 object-cover rounded shadow-md group-hover:scale-105 transition-transform inline-block cursor-pointer">
           </td>
           <td class="px-4 py-3">
