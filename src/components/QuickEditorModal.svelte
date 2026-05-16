@@ -97,7 +97,7 @@
         onclick={close}
         class="absolute top-4 right-4 text-white/50 hover:text-white transition-colors z-20"
       >
-        <i class="fa-solid fa-xmark text-lg"></i>
+        <i class="fa-solid fa-xmark text-lg cursor-pointer"></i>
       </button>
       <div
         class="absolute -bottom-10 left-8 flex items-end space-x-6 z-10 w-[calc(100%-4rem)]"
@@ -236,7 +236,7 @@
       >
         <button
           onclick={handleDelete}
-          class="text-red-500/60 hover:text-red-500 text-sm font-bold transition-colors"
+          class="text-red-500/60 hover:text-red-500 text-sm font-bold transition-colors cursor-pointer"
           >Delete</button
         >
         <div class="flex items-center space-x-6">
@@ -246,11 +246,11 @@
               ? 'text-red-500'
               : 'text-slate-400'} hover:scale-110 transition-all"
           >
-            <i class="fa-solid fa-heart text-xl"></i>
+            <i class="fa-solid fa-heart text-xl cursor-pointer"></i>
           </button>
           <button
             onclick={save}
-            class="bg-blue-500 hover:bg-blue-400 text-white px-8 py-2 rounded text-sm font-bold transition-all shadow-lg shadow-blue-500/20 active:scale-95"
+            class="bg-blue-500 hover:bg-blue-400 text-white px-8 py-2 rounded text-sm font-bold transition-all shadow-lg shadow-blue-500/20 active:scale-95 cursor-pointer"
             >Save</button
           >
         </div>
