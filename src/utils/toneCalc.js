@@ -1,6 +1,6 @@
 /**
- * scripts/utils/toneCalc.js
- * Calculates tonal pillar scores for media entries based on AniList metadata.
+ * src/utils/toneCalc.js
+ * Calculates tonal pillar scores for media entries based on metadata.
  */
 
 const SCHEMA = {
@@ -55,36 +55,36 @@ const SCHEMA = {
 
 const TAG_RANK_FLOOR = 60;
 
-export const ToneCalc = {
-  getTonalProfile: function (media) {
-    const scores = { Speculative: 0, Visceral: 0, Cerebral: 0, Emotive: 0, Interpersonal: 0, Lighthearted: 0 };
-    if (!media) return null;
+/**
+ * Calculates tonal pillar scores for a media entry.
+ * @param {Object} media - The media metadata (must contain genres and tags).
+ * @returns {Object} { scores, sorted }
+ */
+export function getTonalProfile(media) {
+  const scores = { Speculative: 0, Visceral: 0, Cerebral: 0, Emotive: 0, Interpersonal: 0, Lighthearted: 0 };
+  if (!media) return { scores, sorted: [] };
 
-    if (media.genres) {
-      media.genres.forEach(genre => {
-        const map = SCHEMA.genres[genre];
-        if (map) {
-          scores[map.primary] += 3;
-          if (map.secondary) scores[map.secondary] += 3;
-        }
-      });
-    }
-
-    if (media.tags) {
-      media.tags.forEach(tag => {
-        if (tag.rank < TAG_RANK_FLOOR) return;
-        const config = SCHEMA.tags[tag.name];
-        if (config) scores[config.p] += config.w;
-      });
-    }
-
-    const sorted = Object.entries(scores)
-      .sort((a, b) => b[1] - a[1])
-      .map(([name, score]) => ({ name, score }));
-
-    return { scores, sorted };
+  if (media.genres) {
+    media.genres.forEach(genre => {
+      const map = SCHEMA.genres[genre];
+      if (map) {
+        scores[map.primary] += 3;
+        if (map.secondary) scores[map.secondary] += 3;
+      }
+    });
   }
-};
 
-// Global attachment for mockup compatibility
-window.ToneCalc = ToneCalc;
+  if (media.tags) {
+    media.tags.forEach(tag => {
+      if (tag.rank < TAG_RANK_FLOOR) return;
+      const config = SCHEMA.tags[tag.name];
+      if (config) scores[config.p] += config.w;
+    });
+  }
+
+  const sorted = Object.entries(scores)
+    .sort((a, b) => b[1] - a[1])
+    .map(([name, score]) => ({ name, score }));
+
+  return { scores, sorted };
+}

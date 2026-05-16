@@ -1,11 +1,16 @@
 <script>
   import { ui } from "../core/ui.svelte.js";
   import { onMount } from "svelte";
+  import { getTonalProfile } from "../utils/toneCalc.js";
 
-  let { entry, tonalProfile } = ui.modalData || {};
+  let { entry } = ui.modalData || {};
+
+  // Reactive tonal profile based on raw metadata
+  let tonalProfile = $derived(getTonalProfile(entry?.rawMetadata));
 
   // Bindable local state for the form
   let status = $state(entry?.status || "planning");
+
   let score = $state(entry?.score || 0);
   let progress = $state(entry?.progress || 0);
   let isFavorited = $state(entry?.isFavorited || false);

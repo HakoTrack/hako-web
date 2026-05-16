@@ -76,10 +76,8 @@ const QuickEditor = {
         rawMetadata: mediaMetadata
       };
 
-      const tonalProfile = window.ToneCalc ? window.ToneCalc.getTonalProfile(mediaMetadata) : null;
-
       // Trigger the Svelte Modal via the global UI state
-      ui.openModal('quick-editor', { entry: hybridEntry, tonalProfile });
+      ui.openModal('quick-editor', { entry: hybridEntry });
 
     } catch (err) {
       console.error("QuickEditor Error:", err);
