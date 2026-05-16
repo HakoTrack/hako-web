@@ -1,6 +1,7 @@
 import { supabase } from '../utils/supabase.js';
+import { HakoImage } from '../utils/images.js';
 
-export async function initializeFavorites(username, profileId) {
+export async function initializeFavorites(profileId) {
   if (!profileId) {
     console.warn("No profileId provided to initializeFavorites");
     return;
@@ -32,7 +33,7 @@ export async function initializeFavorites(username, profileId) {
       if (section) section.classList.remove('hidden');
 
       container.innerHTML = ids.map(id => `
-        <img src="/assets/covers/${subfolder}/${id}_medium.jpg"
+        <img src="${HakoImage.getCover(subfolder, id, 'medium')}"
              class="media-cover rounded w-full aspect-85/115 object-cover cursor-pointer hover:scale-105 transition-transform bg-[#151f2e]"
              data-media-id="${id}"
              onclick="if(window.openQuickEditor) window.openQuickEditor(${id})"

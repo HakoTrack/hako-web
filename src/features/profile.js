@@ -69,7 +69,7 @@ export const initProfile = async (username) => {
       aboutMeEl.innerText = profile.about_me;
     }
 
-    initializeFavorites(username, profile.id);
+    initializeFavorites(profile.id);
     initializeTasteChart(username);
     await populateActivityFeed(username);
     setupProfileTabs(username, profile.id);
