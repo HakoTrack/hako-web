@@ -15,14 +15,17 @@ export const HakoImage = {
   get: function (path, options = {}) {
     if (!path) return "";
 
-    // If the path is already a full URL, don't prepend the base
-    let baseUrl = path;
-    if (!path.startsWith('http')) {
-      baseUrl = `https://cdn.statically.io/gh/${GITHUB_USER}/${GITHUB_REPO}@${GITHUB_BRANCH}/${path}`;
+    // If it's already a full URL, return it as-is
+    if (path.startsWith('http')) {
+      return path;
     }
 
-    const params = [];
+    // If it's a relative path, assume it's a GitHub asset and route through Statically
+    // Strip leading "assets/" or "/assets/" so it points to repo root
+    // const cleanPath = path.replace(/^\/?assets\//, '');
+    let baseUrl = `https://cdn.statically.io/gh/${GITHUB_USER}/${GITHUB_REPO}@${GITHUB_BRANCH}/${cleanPath}`;
 
+    const params = [];
     if (options.w) params.push(`w=${options.w}`);
     if (options.h) params.push(`h=${options.h}`);
     if (options.f) params.push(`f=${options.f}`); // webp, auto
