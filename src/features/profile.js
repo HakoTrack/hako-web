@@ -106,7 +106,7 @@ export function setupProfileTabs(username, profileId) {
           aboutMeEl.innerText = profile.about_me;
         }
 
-        initializeFavorites(username, profileId);
+        initializeFavorites(profileId);
         initializeTasteChart(username);
         await populateActivityFeed(username);
       }
