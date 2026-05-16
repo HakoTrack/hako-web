@@ -4,7 +4,7 @@
  * No API keys or accounts required.
  */
 
-const GITHUB_USER = "hakotrack";
+const GITHUB_USER = "HakoTrack";
 const GITHUB_REPO = "hako-assets";
 const GITHUB_BRANCH = "main";
 
@@ -18,7 +18,7 @@ export const HakoImage = {
     // If the path is already a full URL, don't prepend the base
     let baseUrl = path;
     if (!path.startsWith('http')) {
-      baseUrl = `https://cdn.statically.io/gh/${GITHUB_USER}/${GITHUB_REPO}/${GITHUB_BRANCH}/${path}`;
+      baseUrl = `https://cdn.statically.io/gh/${GITHUB_USER}/${GITHUB_REPO}@${GITHUB_BRANCH}/${path}`;
     }
 
     const params = [];
