@@ -1,4 +1,4 @@
-import { fetchAnimeByIds } from './animeData.js';
+import { fetchAnimeByIds, fetchUserAnimeList } from './animeData.js';
 
 const getScoreColor = (score) => {
   if (!score) return 'text-slate-500';
@@ -9,13 +9,12 @@ const getScoreColor = (score) => {
   return 'text-red-400';
 };
 
-export const renderMediaList = async function (type = 'anime', containerId = 'anime-list-container', sortBy = 'Title', filterStatus = 'all') {
+export const renderMediaList = async function (type = 'anime', containerId = 'anime-list-container', sortBy = 'Title', filterStatus = 'all', profileId = null) {
   const container = document.getElementById(containerId);
   if (!container) return;
 
   const config = {
     anime: {
-      dataPath: `/data/users/shaetsu/anime-list.json`,
       activeLabel: 'Watching',
       sidebarId: 'anime-categories-sidebar'
     },
@@ -28,15 +27,20 @@ export const renderMediaList = async function (type = 'anime', containerId = 'an
   }[type];
 
   try {
-    const listResponse = await fetch(config.dataPath);
-    if (!listResponse.ok) throw new Error(`Failed to fetch user list`);
-    const listData = await listResponse.json();
-
+    let listDataEntries = [];
     let metadata;
+
     if (type === 'anime') {
-      const ids = listData.data.map(item => item.id);
+      if (!profileId) throw new Error("No profileId provided for anime list fetch.");
+      listDataEntries = await fetchUserAnimeList(profileId);
+      const ids = listDataEntries.map(item => item.id);
       metadata = await fetchAnimeByIds(ids);
     } else {
+      const listResponse = await fetch(config.dataPath);
+      if (!listResponse.ok) throw new Error(`Failed to fetch user list`);
+      const listJson = await listResponse.json();
+      listDataEntries = listJson.data || listJson;
+
       const metaResponse = await fetch(config.metaPath);
       if (!metaResponse.ok) throw new Error(`Failed to fetch metadata`);
       metadata = await metaResponse.json();
@@ -54,10 +58,10 @@ export const renderMediaList = async function (type = 'anime', containerId = 'an
     const sidebar = document.getElementById(config.sidebarId) || document.getElementById('media-categories-sidebar');
     if (sidebar) {
       const allBtnCount = sidebar.querySelector('button[data-status="all"] .count');
-      if (allBtnCount) allBtnCount.innerText = listData.data.length;
+      if (allBtnCount) allBtnCount.innerText = listDataEntries.length;
 
       statusGroups.forEach(g => {
-        const count = listData.data.filter(item => item.status.toLowerCase() === g.id).length;
+        const count = listDataEntries.filter(item => item.status.toLowerCase() === g.id).length;
         const countEl = sidebar.querySelector(`button[data-status="${g.id}"] .count`);
         if (countEl) countEl.innerText = count;
       });
@@ -77,12 +81,12 @@ export const renderMediaList = async function (type = 'anime', containerId = 'an
     statusGroups.forEach(group => {
       if (filterStatus !== 'all' && filterStatus !== group.id) return;
 
-      let items = listData.data.filter(item => item.status.toLowerCase() === group.id);
+      let items = listDataEntries.filter(item => item.status.toLowerCase() === group.id);
       if (items.length === 0) return;
 
       items.sort((a, b) => {
-        const metaA = metadata[a.id] || {};
-        const metaB = metadata[b.id] || {};
+        const metaA = metadata[a.id.toString()] || {};
+        const metaB = metadata[b.id.toString()] || {};
         const titleA = (metaA.title?.romaji || a.title || '').toLowerCase();
         const titleB = (metaB.title?.romaji || b.title || '').toLowerCase();
 
@@ -119,7 +123,7 @@ export const renderMediaList = async function (type = 'anime', containerId = 'an
 
       const tbody = section.querySelector(`#group-${group.id}`);
       items.forEach(item => {
-        const meta = metadata[item.id] || {};
+        const meta = metadata[item.id.toString()] || {};
         const total = type === 'manga' ? (meta.chapters || item.total || '?') : (meta.episodes || item.total || '?');
         const displayTitle = meta.title?.romaji || item.title;
         const localImagePath = `/assets/covers/${type}/${item.id}_small.jpg`;

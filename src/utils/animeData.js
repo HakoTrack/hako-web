@@ -37,26 +37,71 @@ export function mapSupabaseAnime(anime) {
 }
 
 /**
- * Fetches a single anime by ID from Supabase.
+ * Helper to parse ISO date strings into legacy { year, month, day } format.
  */
-export async function fetchAnimeById(id) {
+function parseDate(dateString) {
+  if (!dateString) return { year: null, month: null, day: null };
+  const d = new Date(dateString);
+  return {
+    year: d.getUTCFullYear(),
+    month: d.getUTCMonth() + 1,
+    day: d.getUTCDate()
+  };
+}
+
+/**
+ * Maps Supabase profile_anime_list data to the legacy JSON-like format.
+ */
+export function mapSupabaseAnimeListEntry(entry) {
+  if (!entry) return null;
+
+  return {
+    id: entry.anime_id,
+    score: entry.score,
+    progress: entry.progress,
+    status: entry.status,
+    updatedAt: entry.updated_at,
+    advancedScores: entry.advanced_score || {},
+    startedAt: parseDate(entry.started_at),
+    completedAt: parseDate(entry.completed_at),
+    profileId: entry.profile_id
+  };
+}
+
+/**
+ * Fetches the entire anime list for a specific profile.
+ */
+export async function fetchUserAnimeList(profileId) {
   const { data, error } = await supabase
-    .from('anime')
-    .select(`
-      *,
-      anime_genres (genre),
-      anime_studios (studio),
-      anime_tags (name, rank)
-    `)
-    .eq('id', id)
-    .single();
+    .from('profile_anime_list')
+    .select('*')
+    .eq('profile_id', profileId);
 
   if (error) {
-    console.error(`Error fetching anime ${id}:`, error);
+    console.error(`Error fetching anime list for profile ${profileId}:`, error);
+    return [];
+  }
+
+  return data.map(mapSupabaseAnimeListEntry);
+}
+
+/**
+ * Fetches a single anime list entry for a specific user and anime.
+ */
+export async function fetchUserAnimeListEntry(profileId, animeId) {
+  const { data, error } = await supabase
+    .from('profile_anime_list')
+    .select('*')
+    .eq('profile_id', profileId)
+    .eq('anime_id', animeId)
+    .maybeSingle();
+
+  if (error) {
+    console.error(`Error fetching list entry for user ${profileId} and anime ${animeId}:`, error);
     return null;
   }
 
-  return mapSupabaseAnime(data);
+  return data ? mapSupabaseAnimeListEntry(data) : null;
 }
 
 /**
@@ -85,4 +130,27 @@ export async function fetchAnimeByIds(ids) {
     acc[anime.id.toString()] = mapSupabaseAnime(anime);
     return acc;
   }, {});
+}
+
+/**
+ * Fetches a single anime by ID from Supabase.
+ */
+export async function fetchAnimeById(id) {
+  const { data, error } = await supabase
+    .from('anime')
+    .select(`
+      *,
+      anime_genres (genre),
+      anime_studios (studio),
+      anime_tags (name, rank)
+    `)
+    .eq('id', id)
+    .single();
+
+  if (error) {
+    console.error(`Error fetching anime ${id}:`, error);
+    return null;
+  }
+
+  return mapSupabaseAnime(data);
 }

@@ -3,8 +3,9 @@
  * Handles the logic for rapid media entry updates and triggers the Svelte modal.
  */
 
-import { fetchAnimeById } from './animeData.js';
+import { fetchAnimeById, fetchUserAnimeListEntry } from './animeData.js';
 import { ui } from '../core/ui.svelte.js';
+import { AuthService } from '../core/auth.js';
 
 const QuickEditor = {
   /**
@@ -40,29 +41,17 @@ const QuickEditor = {
   },
 
   openEditor: async function (id) {
-    const username = this.getUsername().toLowerCase();
-    const userListPath = `/data/users/${username}/anime-list.json`;
-
     try {
-      // Fetch media metadata from Supabase (mandatory)
+      // 1. Fetch mandatory media metadata
       const mediaMetadata = await fetchAnimeById(id);
+      if (!mediaMetadata) throw new Error("Media metadata not found.");
 
-      // Attempt to fetch user list data (optional/legacy)
+      // 2. Fetch logged-in user's personal progress from Supabase
+      const user = await AuthService.getCurrentUser();
       let userEntry = {};
-      try {
-        const userRes = await fetch(userListPath);
-        if (userRes.ok) {
-          const text = await userRes.text();
-          try {
-            const userJson = JSON.parse(text);
-            const userListData = userJson.data || userJson;
-            userEntry = Array.isArray(userListData) ? userListData.find(item => item.id === id) || {} : {};
-          } catch (jsonErr) {
-            console.warn("QuickEditor: User list is not valid JSON, skipping local metadata.");
-          }
-        }
-      } catch (fetchErr) {
-        console.warn("QuickEditor: Could not fetch local user list, defaulting to empty entry.");
+
+      if (user) {
+        userEntry = await fetchUserAnimeListEntry(user.id, id) || {};
       }
 
       const titleObj = mediaMetadata?.title || {};

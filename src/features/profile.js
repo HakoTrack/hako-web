@@ -92,13 +92,13 @@ export function setupProfileTabs(username, profileId) {
       }
       else if (tabName === 'anime' || tabName === 'manga') {
         await loadComponent(placeholder, '/components/profile/media-list.html');
-        initMediaList(tabName);
+        initMediaList(tabName, profileId);
       }
     });
   });
 }
 
-function initMediaList(type) {
+function initMediaList(type, profileId) {
   const wrapper = document.getElementById('media-list-wrapper');
   if (!wrapper) return;
 
@@ -127,13 +127,13 @@ function initMediaList(type) {
     sidebar.querySelectorAll('.category-btn').forEach(btn => {
       btn.onclick = () => {
         const sort = document.getElementById('sort-select').value;
-        renderMediaList(type, 'media-list-container', sort, btn.dataset.status);
+        renderMediaList(type, 'media-list-container', sort, btn.dataset.status, profileId);
       };
     });
   }
 
   // Initial render
-  renderMediaList(type, 'media-list-container', 'Title', 'all');
+  renderMediaList(type, 'media-list-container', 'Title', 'all', profileId);
 }
 
 // Global attachment for mockup compatibility
