@@ -49,7 +49,7 @@ export const HakoImage = {
    * Helper for high-res banners.
    */
   getBanner: function (type, id) {
-    return this.get(`${type}/banners/${id}.jpg`, { w: 1200, f: 'webp', q: 80 });
+    return this.get(`${type}/banners/${id}.jpg`, { w: 700, f: 'webp', q: 80 });
   },
 
   /**
