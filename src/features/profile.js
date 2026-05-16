@@ -100,7 +100,7 @@ export function setupProfileTabs(username, profileId) {
         await loadComponent(placeholder, '/components/profile/overview.html');
 
         // Re-inject about_me when switching back to overview
-        const { data: profile } = await supabase.from('profiles').select('about_me').eq('id', profileId).single();
+        const { data: profile } = await supabase.from('profiles').select('about_me').ilike('id', profileId).single();
         const aboutMeEl = document.querySelector('#profile-content-placeholder p.text-slate-400');
         if (aboutMeEl && profile?.about_me) {
           aboutMeEl.innerText = profile.about_me;
