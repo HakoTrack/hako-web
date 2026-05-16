@@ -9,6 +9,7 @@
   let metadata = $state({});
   let sortBy = $state("Title");
   let filterStatus = $state("all");
+  let searchQuery = $state("");
   let isLoading = $state(true);
 
   const statusGroups = [
@@ -30,7 +31,6 @@
         const ids = listDataEntries.map((item) => item.id);
         metadata = await fetchAnimeByIds(ids);
       }
-      // Manga logic would go here when schema is ready
     } catch (err) {
       console.error(err);
     } finally {
@@ -52,7 +52,17 @@
       .filter((group) => filterStatus === "all" || filterStatus === group.id)
       .map((group) => {
         let items = listDataEntries
-          .filter((item) => item.status.toLowerCase() === group.id)
+          .filter((item) => {
+            const matchesStatus = item.status.toLowerCase() === group.id;
+            const meta = metadata[item.id.toString()] || {};
+            const title = (
+              meta.title?.romaji ||
+              item.title ||
+              ""
+            ).toLowerCase();
+            const matchesSearch = title.includes(searchQuery.toLowerCase());
+            return matchesStatus && matchesSearch;
+          })
           .sort((a, b) => {
             const metaA = metadata[a.id.toString()] || {};
             const metaB = metadata[b.id.toString()] || {};
@@ -71,99 +81,177 @@
   );
 </script>
 
-<div class="space-y-10 min-h-[400px]">
-  {#if isLoading}
-    <div class="flex items-center justify-center p-20">
-      <i class="fa-solid fa-circle-notch fa-spin text-accent text-2xl"></i>
-    </div>
-  {:else if visibleGroups.length === 0}
-    <div class="p-10 text-center text-[20px] text-slate-500">
-      This list is empty... (≖､≖╬)
-    </div>
-  {:else}
-    {#each visibleGroups as group}
-      <section
-        class="space-y-4 animate-in fade-in slide-in-from-bottom-2 duration-300"
+<div
+  class="flex flex-col lg:flex-row gap-8 mb-12 animate-in fade-in duration-300"
+>
+  <aside class="lg:w-[20%]">
+    <div class="sticky top-24 space-y-6">
+      <div class="bg-card rounded-xl p-5 space-y-4">
+        <div>
+          <label
+            class="text-[10px] font-bold uppercase tracking-widest text-slate-500 block mb-2"
+            >Search List</label
+          >
+          <div class="relative">
+            <input
+              type="text"
+              placeholder="Filter titles..."
+              bind:value={searchQuery}
+              class="w-full bg-[#0b1622] border border-slate-800 rounded-lg px-3 py-2 text-sm text-slate-300 focus:outline-none focus:ring-1 focus:ring-accent pl-9"
+            />
+            <i
+              class="fa-solid fa-search absolute left-3 top-2.5 text-slate-600 text-xs"
+            ></i>
+          </div>
+        </div>
+        <div>
+          <label
+            class="text-[10px] font-bold uppercase tracking-widest text-slate-500 block mb-2"
+            >Sort By</label
+          >
+          <select
+            bind:value={sortBy}
+            class="w-full bg-[#0b1622] border border-slate-800 rounded-lg px-3 py-2 text-sm text-slate-300 focus:outline-none focus:ring-1 focus:ring-accent"
+          >
+            <option>Title</option>
+            <option>Score</option>
+            <option>Progress</option>
+            <option>Last Updated</option>
+          </select>
+        </div>
+      </div>
+
+      <div
+        id="media-categories-sidebar"
+        class="bg-card rounded-xl border border-slate-800 overflow-hidden"
       >
-        <div class="flex items-center space-x-3 mb-6">
-          <div class="w-1.5 h-6 {group.color} rounded-full"></div>
-          <h2 class="text-lg font-bold text-white uppercase tracking-wider">
-            {group.label}
-          </h2>
-        </div>
-        <div class="bg-card rounded-xl overflow-hidden shadow-sm">
-          <table class="w-full text-left border-collapse">
-            <thead>
-              <tr
-                class="text-[10px] uppercase tracking-widest text-slate-500 border-b border-slate-800"
-              >
-                <th class="px-4 py-3 font-bold w-16 text-center"></th>
-                <th class="px-4 py-3 font-bold">Title</th>
-                <th class="px-4 py-3 font-bold text-center">Score</th>
-                <th class="px-4 py-3 font-bold text-center">Progress</th>
-                <th class="px-4 py-3 font-bold text-center">Format</th>
-              </tr>
-            </thead>
-            <tbody>
-              {#each group.items as item}
-                {@const meta = metadata[item.id.toString()] || {}}
-                {@const total =
-                  type === "manga"
-                    ? meta.chapters || item.total || "?"
-                    : meta.episodes || item.total || "?"}
-                {@const displayTitle = meta.title?.romaji || item.title}
+        <button
+          onclick={() => (filterStatus = "all")}
+          class="flex items-center justify-between px-4 py-3 text-sm font-medium {filterStatus ===
+          'all'
+            ? 'text-white bg-slate-800/50 border-l-4 border-accent'
+            : 'text-slate-400 hover:text-white border-l-4 border-transparent'} transition-all w-full"
+        >
+          <span>All {type.charAt(0).toUpperCase() + type.slice(1)}</span>
+          <span class="text-xs text-slate-500 bg-[#0b1622] px-2 py-0.5 rounded"
+            >{listDataEntries.length}</span
+          >
+        </button>
+        {#each statusGroups as group}
+          <button
+            onclick={() => (filterStatus = group.id)}
+            class="flex items-center justify-between px-4 py-3 text-sm font-medium {filterStatus ===
+            group.id
+              ? 'text-white bg-slate-800/50 border-l-4 border-accent'
+              : 'text-slate-400 hover:text-white border-l-4 border-transparent'} transition-all w-full"
+          >
+            <span>{group.label}</span>
+            <span class="text-xs text-slate-500"
+              >{listDataEntries.filter(
+                (i) => i.status.toLowerCase() === group.id,
+              ).length}</span
+            >
+          </button>
+        {/each}
+      </div>
+    </div>
+  </aside>
+
+  <main class="lg:w-[80%] space-y-10 min-h-[400px]">
+    {#if isLoading}
+      <div class="flex items-center justify-center p-20">
+        <i class="fa-solid fa-circle-notch fa-spin text-accent text-2xl"></i>
+      </div>
+    {:else if visibleGroups.length === 0}
+      <div class="p-10 text-center text-[20px] text-slate-500">
+        This list is empty... (≖､≖╬)
+      </div>
+    {:else}
+      {#each visibleGroups as group}
+        <section
+          class="space-y-4 animate-in fade-in slide-in-from-bottom-2 duration-300"
+        >
+          <div class="flex items-center space-x-3 mb-6">
+            <div class="w-1.5 h-6 {group.color} rounded-full"></div>
+            <h2 class="text-lg font-bold text-white uppercase tracking-wider">
+              {group.label}
+            </h2>
+          </div>
+          <div class="bg-card rounded-xl overflow-hidden shadow-sm">
+            <table class="w-full text-left border-collapse">
+              <thead>
                 <tr
-                  class="group hover:bg-slate-800/30 transition-colors border-b border-slate-800/50 last:border-0"
+                  class="text-[10px] uppercase tracking-widest text-slate-500 border-b border-slate-800"
                 >
-                  <td class="p-2 text-center">
-                    <img
-                      loading="lazy"
-                      src={HakoImage.getCover(type, item.id, "small")}
-                      alt={displayTitle}
-                      onerror={(e) =>
-                        (e.target.src =
-                          item.image ||
-                          "/assets/covers/placeholder_medium.jpg")}
-                      data-media-id={item.id}
-                      onclick={() => window.openQuickEditor(item.id)}
-                      onmouseover={() =>
-                        HakoImage.prefetchBanner(type, item.id)}
-                      class="media-cover w-12 h-16 object-cover rounded shadow-md group-hover:scale-105 transition-transform inline-block cursor-pointer"
-                    />
-                  </td>
-                  <td class="px-4 py-3">
-                    <div
-                      class="text-sm font-bold text-slate-200 group-hover:text-accent transition-colors cursor-pointer"
-                      onclick={() => window.openQuickEditor(item.id)}
-                    >
-                      {displayTitle}
-                    </div>
-                    <div class="text-[10px] text-slate-500 mt-1 uppercase">
-                      {meta.genres?.slice(0, 3).join(" • ") || ""}
-                    </div>
-                  </td>
-                  <td class="px-4 py-3 text-center">
-                    <span class="text-sm font-mono {getScoreColor(item.score)}"
-                      >{item.score?.toFixed(1) || "—"}</span
-                    >
-                  </td>
-                  <td class="px-4 py-3 text-center font-mono text-sm">
-                    <span class="text-white">{item.progress}</span><span
-                      class="text-slate-600 mx-1">/</span
-                    ><span class="text-slate-500 text-xs">{total}</span>
-                  </td>
-                  <td class="px-4 py-3 text-center">
-                    <span
-                      class="text-[10px] font-bold bg-[#0b1622] px-2 py-1 rounded text-slate-400 border border-slate-800"
-                      >{meta.format || item.type || "TV"}</span
-                    >
-                  </td>
+                  <th class="px-4 py-3 font-bold w-16 text-center"></th>
+                  <th class="px-4 py-3 font-bold">Title</th>
+                  <th class="px-4 py-3 font-bold text-center">Score</th>
+                  <th class="px-4 py-3 font-bold text-center">Progress</th>
+                  <th class="px-4 py-3 font-bold text-center">Format</th>
                 </tr>
-              {/each}
-            </tbody>
-          </table>
-        </div>
-      </section>
-    {/each}
-  {/if}
+              </thead>
+              <tbody>
+                {#each group.items as item}
+                  {@const meta = metadata[item.id.toString()] || {}}
+                  {@const total =
+                    type === "manga"
+                      ? meta.chapters || item.total || "?"
+                      : meta.episodes || item.total || "?"}
+                  {@const displayTitle = meta.title?.romaji || item.title}
+                  <tr
+                    class="group hover:bg-slate-800/30 transition-colors border-b border-slate-800/50 last:border-0"
+                  >
+                    <td class="p-2 text-center">
+                      <img
+                        loading="lazy"
+                        src={HakoImage.getCover(type, item.id, "small")}
+                        alt={displayTitle}
+                        onerror={(e) =>
+                          (e.target.src =
+                            item.image ||
+                            "/assets/covers/placeholder_medium.jpg")}
+                        data-media-id={item.id}
+                        onclick={() => window.openQuickEditor(item.id)}
+                        onmouseover={() =>
+                          HakoImage.prefetchBanner(type, item.id)}
+                        class="media-cover w-12 h-16 object-cover rounded shadow-md group-hover:scale-105 transition-transform inline-block cursor-pointer"
+                      />
+                    </td>
+                    <td class="px-4 py-3">
+                      <div
+                        class="text-sm font-bold text-slate-200 group-hover:text-accent transition-colors cursor-pointer"
+                        onclick={() => window.openQuickEditor(item.id)}
+                      >
+                        {displayTitle}
+                      </div>
+                      <div class="text-[10px] text-slate-500 mt-1 uppercase">
+                        {meta.genres?.slice(0, 3).join(" • ") || ""}
+                      </div>
+                    </td>
+                    <td class="px-4 py-3 text-center">
+                      <span
+                        class="text-sm font-mono {getScoreColor(item.score)}"
+                        >{item.score?.toFixed(1) || "—"}</span
+                      >
+                    </td>
+                    <td class="px-4 py-3 text-center font-mono text-sm">
+                      <span class="text-white">{item.progress}</span><span
+                        class="text-slate-600 mx-1">/</span
+                      ><span class="text-slate-500 text-xs">{total}</span>
+                    </td>
+                    <td class="px-4 py-3 text-center">
+                      <span
+                        class="text-[10px] font-bold bg-[#0b1622] px-2 py-1 rounded text-slate-400 border border-slate-800"
+                        >{meta.format || item.type || "TV"}</span
+                      >
+                    </td>
+                  </tr>
+                {/each}
+              </tbody>
+            </table>
+          </div>
+        </section>
+      {/each}
+    {/if}
+  </main>
 </div>
