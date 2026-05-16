@@ -3,7 +3,7 @@ import { initializeFavorites } from './favorites.js';
 import { initializeTasteChart } from './taste.js';
 import { populateActivityFeed } from './populateFeed.js';
 import { renderMediaList } from '../utils/renderMediaList.js';
-import '../utils/images.js';
+import { supabase } from '../utils/supabase.js';
 
 export const initProfile = async (username) => {
   const profileContainer = document.getElementById('profile-container');
@@ -11,34 +11,48 @@ export const initProfile = async (username) => {
   if (!profileContainer) return;
 
   try {
-    const response = await fetch(`/data/users/${username}/profile.json`);
-    if (!response.ok) throw new Error('User not found');
-    const data = await response.json();
+    // Fetch profile from Supabase by username
+    const { data: profile, error } = await supabase
+      .from('profiles')
+      .select('*')
+      .eq('username', username)
+      .single();
+
+    if (error || !profile) throw new Error('User not found');
 
     const displayNameEl = document.getElementById('profile-display-name');
     const bioEl = document.getElementById('profile-bio');
     const avatarEl = document.getElementById('profile-avatar');
     const bannerEl = document.getElementById('profile-banner');
 
-    if (displayNameEl) displayNameEl.innerText = data.display_name;
-    if (bioEl) bioEl.innerText = data.bio || "";
+    if (displayNameEl) displayNameEl.innerText = profile.display_name || profile.username;
+    if (bioEl) bioEl.innerText = profile.bio || "";
 
-    // Use HakoImage CDN utility
-    if (avatarEl) avatarEl.src = window.HakoImage.get(`profile/${username}/avatar.jpg`, { w: 200, f: 'webp' });
-    if (bannerEl) bannerEl.src = window.HakoImage.get(`profile/${username}/banner.jpg`, { w: 1200, f: 'webp', q: 80 });
+    // Fallback paths for images, eventually these could move to Supabase too
+    const avatarPath = profile.avatar_url || `/assets/profile/${username}/avatar.jpg`;
+    const bannerPath = profile.banner_url || `/assets/profile/${username}/banner.jpg`;
+
+    if (avatarEl) avatarEl.src = window.HakoImage ? window.HakoImage.get(avatarPath.replace(/^\//, ''), { w: 200, f: 'webp' }) : avatarPath;
+    if (bannerEl) bannerEl.src = window.HakoImage ? window.HakoImage.get(bannerPath.replace(/^\//, ''), { w: 1200, f: 'webp', q: 80 }) : bannerPath;
 
     const roleBadge = document.getElementById('role-badge');
-    if (username === 'shaetsu' && roleBadge) roleBadge.classList.remove('hidden');
+    if (profile.role === 'developer' && roleBadge) roleBadge.classList.remove('hidden');
 
     document.title = `${username}'s Profile | Hako`;
     profileContainer.classList.remove('invisible');
 
     await loadComponent('profile-content-placeholder', '/components/profile/overview.html');
 
-    initializeFavorites(username);
+    // Inject about_me after loading overview
+    const aboutMeEl = document.querySelector('#profile-content-placeholder p.text-slate-400');
+    if (aboutMeEl && profile.about_me) {
+      aboutMeEl.innerText = profile.about_me;
+    }
+
+    initializeFavorites(username, profile.id);
     initializeTasteChart(username);
     await populateActivityFeed(username);
-    setupProfileTabs(username);
+    setupProfileTabs(username, profile.id);
 
   } catch (e) {
     console.error("Profile Init Error:", e);
@@ -47,7 +61,7 @@ export const initProfile = async (username) => {
   }
 };
 
-export function setupProfileTabs(username) {
+export function setupProfileTabs(username, profileId) {
   const tabs = document.querySelectorAll('.tab-btn');
   const placeholder = 'profile-content-placeholder';
 
@@ -64,7 +78,15 @@ export function setupProfileTabs(username) {
 
       if (tabName === 'overview') {
         await loadComponent(placeholder, '/components/profile/overview.html');
-        initializeFavorites(username);
+
+        // Re-inject about_me when switching back to overview
+        const { data: profile } = await supabase.from('profiles').select('about_me').eq('id', profileId).single();
+        const aboutMeEl = document.querySelector('#profile-content-placeholder p.text-slate-400');
+        if (aboutMeEl && profile?.about_me) {
+          aboutMeEl.innerText = profile.about_me;
+        }
+
+        initializeFavorites(username, profileId);
         initializeTasteChart(username);
         await populateActivityFeed(username);
       }

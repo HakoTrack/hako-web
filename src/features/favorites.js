@@ -1,30 +1,30 @@
-export async function initializeFavorites(username) {
-  if (!username) {
-    const pathParts = window.location.pathname.split('/').filter(p => p);
-    username = pathParts[pathParts.length - 1] || 'shaetsu';
+import { supabase } from '../utils/supabase.js';
+
+export async function initializeFavorites(username, profileId) {
+  if (!profileId) {
+    console.warn("No profileId provided to initializeFavorites");
+    return;
   }
 
-  const favoritesPath = `/data/users/${username}/favorites.json`;
-
   try {
-    const response = await fetch(favoritesPath);
-    if (!response.ok) {
-      console.warn(`Favorites load skipped: ${favoritesPath} returned ${response.status}`);
-      return;
-    }
+    // Fetch anime favorites from Supabase
+    const { data: favData, error } = await supabase
+      .from('profile_favorites')
+      .select('anime_id')
+      .eq('profile_id', profileId);
 
-    const favorites = await response.json();
+    if (error) throw error;
 
-    const renderFavorites = (category, containerId, subfolder) => {
+    const animeIds = favData.map(f => f.anime_id);
+
+    const renderFavorites = (category, containerId, subfolder, ids) => {
       const container = document.getElementById(containerId);
       const section = document.getElementById(`fav-${category}-section`);
 
       // If the component hasn't loaded into the DOM yet, we skip
       if (!container) return;
 
-      const ids = favorites[category] || [];
-
-      if (ids.length === 0) {
+      if (!ids || ids.length === 0) {
         if (section) section.classList.add('hidden');
         return;
       }
@@ -40,12 +40,14 @@ export async function initializeFavorites(username) {
       `).join('');
     };
 
-    renderFavorites('anime', 'fav-anime-grid', 'anime');
-    renderFavorites('manga', 'fav-manga-grid', 'manga');
-    renderFavorites('characters', 'fav-characters-grid', 'characters');
-    renderFavorites('staff', 'fav-staff-grid', 'staff');
+    renderFavorites('anime', 'fav-anime-grid', 'anime', animeIds);
+
+    // For now, other categories remain empty or hidden as they aren't in the DB schema yet
+    renderFavorites('manga', 'fav-manga-grid', 'manga', []);
+    renderFavorites('characters', 'fav-characters-grid', 'characters', []);
+    renderFavorites('staff', 'fav-staff-grid', 'staff', []);
 
   } catch (e) {
-    console.error("Error loading favorites:", e);
+    console.error("Error loading favorites from Supabase:", e);
   }
 }
