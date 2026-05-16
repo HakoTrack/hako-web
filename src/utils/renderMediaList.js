@@ -14,6 +14,10 @@ export const renderMediaList = async function (type = 'anime', containerId = 'an
   const container = document.getElementById(containerId);
   if (!container) return;
 
+  const img = document.createElement('img');
+  img.src = localImagePath;
+  img.onmouseover = () => HakoImage.prefetchBanner(type, item.id);
+
   const config = {
     anime: {
       activeLabel: 'Watching',
@@ -157,11 +161,11 @@ export const renderMediaList = async function (type = 'anime', containerId = 'an
     });
 
     if (container.innerHTML === '') {
-      container.innerHTML = `<div class="p-10 text-center font-['Arial',sans-serif] text-[20px] text-slate-500">This list is empty... (≖､≖╬)</div>`;
+      container.innerHTML = `< div class="p-10 text-center font-['Arial',sans-serif] text-[20px] text-slate-500" > This list is empty... (≖､≖╬)</div > `;
     }
 
   } catch (err) {
     console.error(err);
-    container.innerHTML = `<div class="p-10 text-center font-['Arial',sans-serif] text-[20px] text-slate-500">This list is empty... (≖､≖╬)</div>`;
+    container.innerHTML = `< div class="p-10 text-center font-['Arial',sans-serif] text-[20px] text-slate-500" > This list is empty... (≖､≖╬)</div > `;
   }
 };

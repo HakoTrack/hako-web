@@ -24,13 +24,6 @@ export async function initializeFavorites(profileId) {
       const container = document.getElementById(containerId);
       const section = document.getElementById(`fav-${category}-section`);
 
-      // prefetch assets
-      const link = document.createElement('link');
-      link.rel = 'prefetch';
-      link.href = `${HakoImage.getCover(subfolder, ids[0], 'medium')}`;
-      link.href = `${HakoImage.getBanner(subfolder, ids[0])}`;
-      document.head.appendChild(link);
-
       // If the component hasn't loaded into the DOM yet, we skip
       if (!container) return;
 
@@ -45,6 +38,7 @@ export async function initializeFavorites(profileId) {
         <img src="${HakoImage.getCover(subfolder, id, 'medium')}"
              class="media-cover rounded w-full aspect-85/115 object-cover cursor-pointer hover:scale-105 transition-transform bg-[#151f2e]"
              data-media-id="${id}"
+             onmouseover="HakoImage.prefetchBanner('${subfolder}', ${id})"
              onclick="if(window.openQuickEditor) window.openQuickEditor(${id})"
              alt="${category} ${id}"
              onerror="this.onerror=null; this.src='/assets/covers/placeholder_medium.jpg';">

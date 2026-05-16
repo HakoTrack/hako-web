@@ -50,6 +50,17 @@ export const HakoImage = {
    */
   getBanner: function (type, id) {
     return this.get(`${type}/banners/${id}.jpg`, { w: 1200, f: 'webp', q: 80 });
+  },
+
+  /**
+   * Prefetch banner for performance optimization.
+   */
+  prefetchBanner: function (type, id) {
+    const url = this.getBanner(type, id);
+    const link = document.createElement('link');
+    link.rel = 'prefetch';
+    link.href = url;
+    document.head.appendChild(link);
   }
 };
 
