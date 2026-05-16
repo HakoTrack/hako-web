@@ -12,19 +12,20 @@
   let searchQuery = $state('');
   let isLoading = $state(true);
 
-  // Derived to fix closure/reactivity warning
-  let statusGroups = $derived([
+  // Use 'current' as the ID to match the DB string
+  const statusGroups = [
     { id: 'current', label: type === 'anime' ? 'Watching' : 'Reading', color: 'bg-green-500' },
     { id: 'completed', label: 'Completed', color: 'bg-sky-500' },
     { id: 'paused', label: 'Paused', color: 'bg-orange-500' },
     { id: 'dropped', label: 'Dropped', color: 'bg-red-500' },
     { id: 'planning', label: 'Planning', color: 'bg-slate-500' }
-  ]);
+  ];
 
   onMount(async () => {
     try {
       if (type === 'anime') {
         listDataEntries = await fetchUserAnimeList(profileId);
+        console.log("DEBUG: Data entries:", listDataEntries);
         const ids = listDataEntries.map(item => item.id);
         metadata = await fetchAnimeByIds(ids);
       }
@@ -44,34 +45,40 @@
     return 'text-red-400';
   }
 
-  let visibleGroups = $derived(
-    statusGroups
-      .filter(group => filterStatus === 'all' || filterStatus === group.id)
-      .map(group => {
-        let items = listDataEntries
-          .filter(item => {
-            const matchesStatus = item.status.toLowerCase() === group.id;
-            const meta = metadata[item.id.toString()] || {};
-            const title = (meta.title?.romaji || item.title || '').toLowerCase();
-            const matchesSearch = title.includes(searchQuery.toLowerCase());
-            return matchesStatus && matchesSearch;
-          })
-          .sort((a, b) => {
-            const metaA = metadata[a.id.toString()] || {};
-            const metaB = metadata[b.id.toString()] || {};
-            const titleA = (metaA.title?.romaji || a.title || '').toLowerCase();
-            const titleB = (metaB.title?.romaji || b.title || '').toLowerCase();
-            
-            if (sortBy === 'Title') return titleA.localeCompare(titleB);
-            if (sortBy === 'Score') return (b.score || 0) - (a.score || 0);
-            if (sortBy === 'Progress') return (b.progress || 0) - (a.progress || 0);
-            return new Date(b.updatedAt) - new Date(a.updatedAt);
-          });
-        return { ...group, items };
-      })
-      .filter(group => group.items.length > 0)
-  );
+  // The logic that must work: 
+  // 1. If filterStatus is 'all', show everything.
+  // 2. If filterStatus is NOT 'all', only show items where status === filterStatus
+  let visibleGroups = $derived.by(() => {
+    const groups = statusGroups.filter(g => filterStatus === 'all' || g.id === filterStatus);
+    
+    return groups.map(group => {
+      let items = listDataEntries.filter(item => {
+        const itemStatus = (item.status || '').toLowerCase();
+        const matchesStatus = itemStatus === group.id;
+        const meta = metadata[item.id.toString()] || {};
+        const title = (meta.title?.romaji || item.title || '').toLowerCase();
+        const matchesSearch = title.includes(searchQuery.toLowerCase());
+        
+        return matchesStatus && matchesSearch;
+      }).sort((a, b) => {
+        const metaA = metadata[a.id.toString()] || {};
+        const metaB = metadata[b.id.toString()] || {};
+        const titleA = (metaA.title?.romaji || a.title || '').toLowerCase();
+        const titleB = (metaB.title?.romaji || b.title || '').toLowerCase();
+        
+        if (sortBy === 'Title') return titleA.localeCompare(titleB);
+        if (sortBy === 'Score') return (b.score || 0) - (a.score || 0);
+        if (sortBy === 'Progress') return (b.progress || 0) - (a.progress || 0);
+        return new Date(b.updatedAt) - new Date(a.updatedAt);
+      });
+      return { ...group, items };
+    }).filter(group => group.items.length > 0);
+  });
 </script>
+
+<div class="fixed top-20 left-4 bg-black text-white p-2 z-[9999] pointer-events-none">
+  DEBUG: filterStatus = {filterStatus}
+</div>
 
 <div id="media-list-wrapper" class="flex flex-col lg:flex-row gap-8 mb-12 animate-in fade-in duration-300">
   <aside class="lg:w-[20%] order-2 lg:order-1">
