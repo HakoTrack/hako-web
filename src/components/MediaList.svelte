@@ -237,7 +237,7 @@
                         onerror={(e) =>
                           (e.target.src =
                             item.image ||
-                            "/assets/covers/placeholder_medium.jpg")}
+                            "https://ik.imagekit.io/HakoImage/anime/covers/placeholder.jpg?tr=w-240,f=webp")}
                         data-media-id={item.id}
                         onclick={() => window.openQuickEditor(item.id)}
                         onmouseover={() =>

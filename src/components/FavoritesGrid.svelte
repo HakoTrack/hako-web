@@ -54,7 +54,8 @@
             onclick={() => window.openQuickEditor(id)}
             alt="Anime {id}"
             onerror={(e) =>
-              (e.target.src = "/assets/covers/placeholder_medium.jpg")}
+              (e.target.src =
+                "https://ik.imagekit.io/HakoImage/anime/covers/placeholder.jpg?tr=w-240,f=webp")}
           />
         {/each}
       </div>

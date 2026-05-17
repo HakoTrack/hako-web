@@ -73,17 +73,19 @@
 
 <svelte:window on:keydown={handleKeydown} />
 
+<!-- svelte-ignore a11y_no_static_element_interactions -->
+<!-- svelte-ignore a11y_click_events_have_key_events -->
 <div
   id="quick-editor-overlay"
-  class="fixed inset-0 z-[100] flex items-center justify-center bg-[#0b1622]/80 backdrop-blur-sm p-4"
+  class="fixed inset-0 z-100 flex items-center justify-center bg-[#0b1622]/80 backdrop-blur-sm p-4"
   onclick={close}
 >
   <div
-    class="bg-[#151f2e] w-full max-w-[700px] h-[800px] max-h-[90vh] rounded-md shadow-2xl animate-in fade-in zoom-in-95 duration-200 flex flex-col overflow-hidden"
+    class="bg-[#151f2e] w-full max-w-175 h-200 max-h-[90vh] rounded-md shadow-2xl animate-in fade-in zoom-in-95 duration-200 flex flex-col overflow-hidden"
     onclick={(e) => e.stopPropagation()}
   >
     <!-- Banner Section -->
-    <div class="relative w-full h-[160px] bg-[#0b1622] flex-shrink-0">
+    <div class="relative w-full h-40 bg-[#0b1622] shrink-0">
       <img
         src={HakoImage.getBanner("anime", entry.id)}
         class="w-full h-full object-cover opacity-60"
@@ -91,8 +93,9 @@
         onerror={(e) => (e.target.src = "")}
       />
       <div
-        class="absolute inset-0 bg-gradient-to-t from-[#151f2e] to-transparent"
+        class="absolute inset-0 bg-linear-to-t from-[#151f2e] to-transparent"
       ></div>
+      <!-- svelte-ignore a11y_consider_explicit_label -->
       <button
         onclick={close}
         class="absolute top-4 right-4 text-white/50 hover:text-white transition-colors z-20"
@@ -104,10 +107,11 @@
       >
         <img
           src={HakoImage.getCover("anime", entry.id, "medium")}
-          class="w-[100px] h-[140px] rounded shadow-xl border border-[#151f2e] object-cover bg-[#0b1622]"
+          class="w-25 h-35 rounded shadow-xl border border-[#151f2e] object-cover bg-[#0b1622]"
           alt="cover"
           onerror={(e) =>
-            (e.target.src = "/assets/covers/placeholder_medium.jpg")}
+            (e.target.src =
+              "https://ik.imagekit.io/HakoImage/anime/covers/placeholder.jpg?tr=w-240,f=webp")}
         />
         <div class="flex-1 min-w-0">
           <h2
@@ -144,10 +148,9 @@
     <!-- Editor Content -->
     <div class="flex-1 flex flex-col min-h-0 px-8 pt-16 pb-6 overflow-hidden">
       <!-- Controls Grid -->
-      <div
-        class="grid grid-cols-1 md:grid-cols-3 gap-x-6 gap-y-6 flex-shrink-0"
-      >
+      <div class="grid grid-cols-1 md:grid-cols-3 gap-x-6 gap-y-6 shrink-0">
         <div class="space-y-1.5">
+          <!-- svelte-ignore a11y_label_has_associated_control -->
           <label
             class="text-xs font-bold text-slate-400 uppercase tracking-wider"
             >Status</label
@@ -164,6 +167,7 @@
           </select>
         </div>
         <div class="space-y-1.5">
+          <!-- svelte-ignore a11y_label_has_associated_control -->
           <label
             class="text-xs font-bold text-slate-400 uppercase tracking-wider"
             >Score</label
@@ -178,6 +182,7 @@
           />
         </div>
         <div class="space-y-1.5">
+          <!-- svelte-ignore a11y_label_has_associated_control -->
           <label
             class="text-xs font-bold text-slate-400 uppercase tracking-wider"
             >Progress</label
@@ -194,6 +199,7 @@
           </div>
         </div>
         <div class="space-y-1.5">
+          <!-- svelte-ignore a11y_label_has_associated_control -->
           <label
             class="text-xs font-bold text-slate-400 uppercase tracking-wider"
             >Start Date</label
@@ -201,10 +207,11 @@
           <input
             type="date"
             bind:value={startDate}
-            class="w-full bg-[#0b1622] text-slate-200 text-sm rounded border-none p-2.5 focus:ring-2 focus:ring-blue-500/50 outline-none [color-scheme:dark]"
+            class="w-full bg-[#0b1622] text-slate-200 text-sm rounded border-none p-2.5 focus:ring-2 focus:ring-blue-500/50 outline-none scheme-dark]"
           />
         </div>
         <div class="space-y-1.5">
+          <!-- svelte-ignore a11y_label_has_associated_control -->
           <label
             class="text-xs font-bold text-slate-400 uppercase tracking-wider"
             >Finish Date</label
@@ -212,15 +219,16 @@
           <input
             type="date"
             bind:value={finishDate}
-            class="w-full bg-[#0b1622] text-slate-200 text-sm rounded border-none p-2.5 focus:ring-2 focus:ring-blue-500/50 outline-none [color-scheme:dark]"
+            class="w-full bg-[#0b1622] text-slate-200 text-sm rounded border-none p-2.5 focus:ring-2 focus:ring-blue-500/50 outline-none scheme-dark]"
           />
         </div>
       </div>
 
       <!-- Scrollable Description Area -->
       <div class="mt-8 flex-1 flex flex-col min-h-0">
+        <!-- svelte-ignore a11y_label_has_associated_control -->
         <label
-          class="text-xs font-bold text-slate-400 uppercase tracking-wider block mb-2 flex-shrink-0"
+          class="text-xs font-bold text-slate-400 uppercase tracking-wider block mb-2 shrink-0"
           >Description</label
         >
         <div
@@ -232,7 +240,7 @@
 
       <!-- Footer -->
       <div
-        class="mt-8 pt-6 border-t border-slate-800 flex items-center justify-between flex-shrink-0"
+        class="mt-8 pt-6 border-t border-slate-800 flex items-center justify-between shrink-0"
       >
         <button
           onclick={handleDelete}
@@ -240,6 +248,7 @@
           >Delete</button
         >
         <div class="flex items-center space-x-6">
+          <!-- svelte-ignore a11y_consider_explicit_label -->
           <button
             onclick={toggleFavorite}
             class="{isFavorited

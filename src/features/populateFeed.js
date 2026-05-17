@@ -106,7 +106,7 @@ function renderListUpdate(activity, username, animeDb) {
              data-media-id="${mediaId}"
              onclick="if(window.openQuickEditor) window.openQuickEditor(${mediaId})"
              class="media-cover w-16 h-24 rounded shadow-lg object-cover cursor-pointer hover:scale-105 transition-transform bg-[#151f2e]"
-             onerror="this.onerror=null; this.src='/assets/covers/placeholder_medium.jpg';">
+             onerror="this.onerror=null; this.src='https://ik.imagekit.io/HakoImage/anime/covers/placeholder.jpg';">
         <div class="ml-4 flex-1">
           <h4 class="text-white font-bold leading-tight cursor-pointer hover:text-accent transition-colors"
               onclick="if(window.openQuickEditor) window.openQuickEditor(${mediaId})">
