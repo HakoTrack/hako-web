@@ -18,6 +18,7 @@ export function mapSupabaseAnime(anime) {
     format: anime.format,
     status: anime.status,
     episodes: anime.episodes,
+    duration: anime.duration,
     season: anime.season,
     seasonYear: anime.season_year,
     genres: anime.anime_genres?.map(g => g.genre) || [],
