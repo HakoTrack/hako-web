@@ -1,8 +1,11 @@
 <script>
   import { onMount } from "svelte";
-  import { openQuickEditor } from "../core/ui.svelte.js";
-  import { fetchAnimeByIds, fetchUserAnimeList } from "../utils/animeData.js";
-  import { HakoImage } from "../utils/images.js";
+  import { openQuickEditor } from "../../core/ui.svelte.js";
+  import {
+    fetchAnimeByIds,
+    fetchUserAnimeList,
+  } from "../../utils/animeData.js";
+  import { HakoImage } from "../../utils/images.js";
 
   let { type = "anime", profileId } = $props();
 

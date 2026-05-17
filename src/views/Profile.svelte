@@ -1,8 +1,9 @@
 <script>
   import { onMount } from "svelte";
   import { initProfile } from "../features/profile.js";
-  import MediaList from "../components/MediaList.svelte";
-  import ProfileOverview from "../components/ProfileOverview.svelte";
+  import MediaList from "../components/profile/MediaList.svelte";
+  import Stats from "../components/profile/Stats.svelte";
+  import Overview from "../components/profile/Overview.svelte";
 
   let { currentPath } = $props();
 
@@ -106,9 +107,13 @@
 
     <div class="py-8 min-h-[400px]">
       {#if activeTab === "overview" && profileData}
-        <ProfileOverview {profileData} />
+        <Overview {profileData} />
       {:else if activeTab === "anime" && profileData}
-        <MediaList type="anime" profileId={profileData.id} />
+        <AnimeList {profileData} />
+      {:else if activeTab === "manga" && profileData}
+        <MangaList {profileData} />
+      {:else if activeTab === "stats" && profileData}
+        <Stats {profileData} />
       {/if}
     </div>
   </div>
