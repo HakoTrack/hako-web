@@ -1,8 +1,6 @@
 import { AuthService } from './auth.js';
 import { loadComponent } from '../utils/loadComponent.js';
-import { Modal } from '../utils/modal.js';
-import { renderLoginPage } from '../modules/auth/login.js';
-import { renderSignupPage } from '../modules/auth/signup.js';
+import { ui } from './ui.svelte.js';
 import { supabase } from '../utils/supabase.js';
 import { HakoImage } from '../utils/images.js';
 
@@ -82,34 +80,11 @@ export const handleRouting = async () => {
 };
 
 export function showLoginModal() {
-  Modal.create(renderLoginPage(), 'Welcome Back');
-  initLoginForm();
+  ui.openModal('login');
 }
 
 export function showSignupModal() {
-  Modal.create(renderSignupPage(), 'Join Hako');
-  initSignupForm();
-}
-
-function initLoginForm() {
-  const form = document.getElementById('login-form');
-  if (!form) return;
-
-  form.addEventListener('submit', async (e) => {
-    e.preventDefault();
-    const email = document.getElementById('email').value;
-    const password = document.getElementById('password').value;
-
-    try {
-      const { data, error } = await supabase.auth.signInWithPassword({ email, password });
-      if (error) throw error;
-      Modal.close();
-      window.history.pushState({}, '', '/feed');
-      handleRouting();
-    } catch (error) {
-      alert(error.message);
-    }
-  });
+  ui.openModal('signup');
 }
 
 function updateNavbar(user) {
@@ -141,32 +116,5 @@ function updateNavbar(user) {
   document.getElementById('nav-branding')?.addEventListener('click', () => {
     window.history.pushState({}, '', user ? '/feed' : '/');
     handleRouting();
-  });
-}
-
-function initSignupForm() {
-  const form = document.getElementById('signup-form');
-  if (!form) return;
-
-  form.addEventListener('submit', async (e) => {
-    e.preventDefault();
-    const email = document.getElementById('email').value;
-    const password = document.getElementById('password').value;
-    const confirmPassword = document.getElementById('confirm-password').value;
-
-    if (password !== confirmPassword) {
-      alert("Passwords do not match");
-      return;
-    }
-
-    try {
-      const { error } = await supabase.auth.signUp({ email, password });
-      if (error) throw error;
-      alert("Signup successful! Please check your email for verification.");
-      Modal.close();
-      handleRouting();
-    } catch (error) {
-      alert(error.message);
-    }
   });
 }
