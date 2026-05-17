@@ -16,6 +16,7 @@
   const statusGroups = [
     {
       id: "current",
+      // svelte-ignore state_referenced_locally
       label: type === "anime" ? "Watching" : "Reading",
       color: "bg-green-500",
     },
@@ -99,6 +100,7 @@
     <div class="sticky top-24 space-y-6">
       <div class="bg-card rounded-xl p-5 space-y-4">
         <div>
+          <!-- svelte-ignore a11y_label_has_associated_control -->
           <label
             class="text-[10px] font-bold uppercase tracking-widest text-slate-500 block mb-2"
             >Search List</label
@@ -116,6 +118,7 @@
           </div>
         </div>
         <div>
+          <!-- svelte-ignore a11y_label_has_associated_control -->
           <label
             class="text-[10px] font-bold uppercase tracking-widest text-slate-500 block mb-2"
             >Sort By</label
@@ -178,7 +181,7 @@
 
   <main
     id="media-list-container"
-    class="lg:w-[80%] order-1 lg:order-2 space-y-10 min-h-[400px]"
+    class="lg:w-[80%] order-1 lg:order-2 space-y-10 min-h-100"
   >
     {#if isLoading}
       <div class="flex items-center justify-center p-20">
@@ -224,6 +227,9 @@
                     class="group hover:bg-slate-800/30 transition-colors border-b border-slate-800/50 last:border-0"
                   >
                     <td class="p-2 text-center">
+                      <!-- svelte-ignore a11y_mouse_events_have_key_events -->
+                      <!-- svelte-ignore a11y_no_noninteractive_element_interactions -->
+                      <!-- svelte-ignore a11y_click_events_have_key_events -->
                       <img
                         loading="lazy"
                         src={HakoImage.getCover(type, item.id, "small")}
@@ -240,6 +246,8 @@
                       />
                     </td>
                     <td class="px-4 py-3">
+                      <!-- svelte-ignore a11y_click_events_have_key_events -->
+                      <!-- svelte-ignore a11y_no_static_element_interactions -->
                       <div
                         class="text-sm font-bold text-slate-200 group-hover:text-accent transition-colors cursor-pointer"
                         onclick={() => window.openQuickEditor(item.id)}

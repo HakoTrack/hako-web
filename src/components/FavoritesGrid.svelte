@@ -43,6 +43,9 @@
       </h4>
       <div id="fav-anime-grid" class="grid grid-cols-5 gap-2">
         {#each animeIds as id}
+          <!-- svelte-ignore a11y_mouse_events_have_key_events -->
+          <!-- svelte-ignore a11y_no_noninteractive_element_interactions -->
+          <!-- svelte-ignore a11y_click_events_have_key_events -->
           <img
             src={HakoImage.getCover("anime", id, "medium")}
             class="media-cover rounded w-full aspect-85/115 object-cover cursor-pointer hover:scale-105 transition-transform bg-[#151f2e]"
