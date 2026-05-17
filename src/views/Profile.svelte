@@ -15,10 +15,6 @@
 
   onMount(async () => {
     profileData = await initProfile(username);
-
-    window.addEventListener("tab-change", (e) => {
-      activeTab = e.detail;
-    });
   });
 </script>
 
@@ -103,15 +99,21 @@
           ? 'tab-active text-white'
           : 'text-slate-400'}">Manga</button
       >
+      <button
+        onclick={() => (activeTab = "stats")}
+        class="tab-btn pb-4 font-semibold {activeTab === 'stats'
+          ? 'tab-active text-white'
+          : 'text-slate-400'}">Stats</button
+      >
     </div>
 
     <div class="py-8 min-h-[400px]">
       {#if activeTab === "overview" && profileData}
         <Overview {profileData} />
       {:else if activeTab === "anime" && profileData}
-        <AnimeList {profileData} />
+        <MediaList type="anime" profileId={profileData.id} />
       {:else if activeTab === "manga" && profileData}
-        <MangaList {profileData} />
+        <MediaList type="manga" profileId={profileData.id} />
       {:else if activeTab === "stats" && profileData}
         <Stats {profileData} />
       {/if}
