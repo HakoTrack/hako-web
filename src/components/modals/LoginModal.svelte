@@ -1,6 +1,6 @@
 <script>
-  import { supabase } from "../utils/supabase.js";
-  import { ui } from "../core/ui.svelte.js";
+  import { supabase } from "../../utils/supabase.js";
+  import { ui } from "../../core/ui.svelte.js";
 
   let email = "";
   let password = "";

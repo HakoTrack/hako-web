@@ -1,5 +1,5 @@
 <script>
-  import { ui } from "../core/ui.svelte.js";
+  import { ui } from "../../core/ui.svelte.js";
 </script>
 
 <div
