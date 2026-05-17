@@ -19,6 +19,17 @@ export const initProfile = async (username) => {
 
     if (error || !profile) throw new Error('User not found');
 
+    // Fetch user anime list entries to enable stats calculation
+    const { data: animeList, error: animeError } = await supabase
+      .from('profile_anime_list')
+      .select('anime_id, progress, score, status')
+      .eq('profile_id', profile.id);
+
+    if (animeError) console.error("Error fetching anime list for stats:", animeError);
+
+    // Attach list to profile object for downstream consumption
+    profile.animeList = animeList || [];
+
     const displayNameEl = document.getElementById('profile-display-name');
     const bioEl = document.getElementById('profile-bio');
     const avatarEl = document.getElementById('profile-avatar');

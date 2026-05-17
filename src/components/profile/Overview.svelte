@@ -1,6 +1,43 @@
 <script>
+  import { onMount } from "svelte";
   import FavoritesGrid from "../FavoritesGrid.svelte";
+  import { fetchAnimeByIds } from "../../utils/animeData.js";
+
   let { profileData } = $props();
+  let metadata = $state({});
+  let stats = $derived.by(() => {
+    const list = profileData?.animeList || [];
+    const total = list.length;
+
+    let totalMinutes = 0;
+    let totalScore = 0;
+    let scoredCount = 0;
+
+    list.forEach((entry) => {
+      const meta = metadata[entry.anime_id] || {};
+      if (meta.duration && entry.progress) {
+        totalMinutes += entry.progress * meta.duration;
+      }
+      if (entry.score && entry.score > 0) {
+        totalScore += entry.score;
+        scoredCount++;
+      }
+    });
+
+    return {
+      total,
+      daysWatched: (totalMinutes / 1440).toFixed(1),
+      meanScore:
+        scoredCount > 0 ? (totalScore / scoredCount).toFixed(1) : "0.0",
+    };
+  });
+
+  onMount(async () => {
+    if (profileData?.animeList) {
+      const ids = profileData.animeList.map((a) => a.anime_id);
+      metadata = await fetchAnimeByIds(ids);
+    }
+  });
 </script>
 
 <div class="grid grid-cols-1 lg:grid-cols-12 gap-8 mb-12">
@@ -126,16 +163,20 @@
             Anime
           </h4>
           <div class="flex justify-between text-xs mb-1">
-            <span>Total</span><span class="text-white">342</span>
+            <span>Total</span><span class="text-white">{stats.total}</span>
           </div>
           <div class="flex justify-between text-xs mb-1">
-            <span>Days Watched</span><span class="text-white">84.5</span>
+            <span>Days Watched</span><span class="text-white"
+              >{stats.daysWatched}</span
+            >
           </div>
           <div class="flex justify-between text-xs">
-            <span>Mean Score</span><span class="text-white font-bold">8.4</span>
+            <span>Mean Score</span><span class="text-white font-bold"
+              >{stats.meanScore}</span
+            >
           </div>
         </div>
-        <!-- Manga Stats -->
+        <!-- Manga Stats (Placeholder) -->
         <div class="border-b border-slate-800 pb-4">
           <h4
             class="text-[10px] uppercase text-accent font-bold mb-2 tracking-widest"
@@ -150,40 +191,6 @@
           </div>
           <div class="flex justify-between text-xs">
             <span>Mean Score</span><span class="text-white font-bold">7.9</span>
-          </div>
-        </div>
-        <!-- Light Novel Stats -->
-        <div class="border-b border-slate-800 pb-4">
-          <h4
-            class="text-[10px] uppercase text-accent font-bold mb-2 tracking-widest"
-          >
-            Light Novels
-          </h4>
-          <div class="flex justify-between text-xs mb-1">
-            <span>Total</span><span class="text-white">42</span>
-          </div>
-          <div class="flex justify-between text-xs mb-1">
-            <span>Volumes</span><span class="text-white">128</span>
-          </div>
-          <div class="flex justify-between text-xs">
-            <span>Mean Score</span><span class="text-white font-bold">8.1</span>
-          </div>
-        </div>
-        <!-- Visual Novel Stats -->
-        <div>
-          <h4
-            class="text-[10px] uppercase text-accent font-bold mb-2 tracking-widest"
-          >
-            Visual Novels
-          </h4>
-          <div class="flex justify-between text-xs mb-1">
-            <span>Total</span><span class="text-white">18</span>
-          </div>
-          <div class="flex justify-between text-xs mb-1">
-            <span>Hours Played</span><span class="text-white">650</span>
-          </div>
-          <div class="flex justify-between text-xs">
-            <span>Mean Score</span><span class="text-white font-bold">9.2</span>
           </div>
         </div>
       </div>
