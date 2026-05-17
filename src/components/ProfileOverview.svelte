@@ -1,5 +1,6 @@
 <script>
   let { profileData } = $props();
+  import FavoritesGrid from "./FavoritesGrid.svelte";
 </script>
 
 <div class="grid grid-cols-1 lg:grid-cols-12 gap-8 mb-12">
@@ -92,65 +93,7 @@
       </div>
     </div>
 
-    <div class="bg-card p-6 rounded-xl shadow-md space-y-6">
-      <h3 class="text-white font-bold flex items-center mb-4">
-        <i class="fa-solid fa-heart text-accent mr-2"></i> Favorites
-      </h3>
-
-      <div id="fav-anime-section">
-        <h4
-          class="text-[10px] uppercase text-slate-500 font-bold mb-3 tracking-widest"
-        >
-          Anime
-        </h4>
-        <div id="fav-anime-grid" class="grid grid-cols-5 gap-2"></div>
-      </div>
-
-      <div id="fav-manga-section" class="hidden">
-        <h4
-          class="text-[10px] uppercase text-slate-500 font-bold mb-3 tracking-widest"
-        >
-          Manga
-        </h4>
-        <div id="fav-manga-grid" class="grid grid-cols-5 gap-2"></div>
-      </div>
-
-      <div id="fav-light-novels-section" class="hidden">
-        <h4
-          class="text-[10px] uppercase text-slate-500 font-bold mb-3 tracking-widest"
-        >
-          Light Novels
-        </h4>
-        <div id="fav-light-novels-grid" class="grid grid-cols-5 gap-2"></div>
-      </div>
-
-      <div id="fav-visual-novels-section" class="hidden">
-        <h4
-          class="text-[10px] uppercase text-slate-500 font-bold mb-3 tracking-widest"
-        >
-          Visual Novels
-        </h4>
-        <div id="fav-visual-novels-grid" class="grid grid-cols-5 gap-2"></div>
-      </div>
-
-      <div id="fav-characters-section" class="hidden">
-        <h4
-          class="text-[10px] uppercase text-slate-500 font-bold mb-3 tracking-widest"
-        >
-          Characters
-        </h4>
-        <div id="fav-characters-grid" class="grid grid-cols-5 gap-2"></div>
-      </div>
-
-      <div id="fav-people-section" class="hidden">
-        <h4
-          class="text-[10px] uppercase text-slate-500 font-bold mb-3 tracking-widest"
-        >
-          People
-        </h4>
-        <div id="fav-people-grid" class="grid grid-cols-5 gap-2"></div>
-      </div>
-    </div>
+    <FavoritesGrid profileId={profileData.id} />
   </div>
 
   <!-- RIGHT COLUMN: Content (Activity Feed) -->
