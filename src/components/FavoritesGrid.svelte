@@ -14,7 +14,8 @@
       const { data, error } = await supabase
         .from("profile_favorites")
         .select("anime_id")
-        .eq("profile_id", profileId);
+        .eq("profile_id", profileId)
+        .order("id", { ascending: true });
 
       if (error) throw error;
 

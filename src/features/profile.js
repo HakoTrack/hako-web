@@ -1,8 +1,6 @@
 import { loadComponent } from '../utils/loadComponent.js';
-import { initializeFavorites } from './favorites.js';
 import { initializeTasteChart } from './taste.js';
 import { populateActivityFeed } from './populateFeed.js';
-import { renderMediaList } from '../utils/renderMediaList.js';
 import { supabase } from '../utils/supabase.js';
 
 export const initProfile = async (username) => {
@@ -69,7 +67,6 @@ export const initProfile = async (username) => {
       aboutMeEl.innerText = profile.about_me;
     }
 
-    initializeFavorites(profile.id);
     initializeTasteChart(username);
     await populateActivityFeed(username);
 
