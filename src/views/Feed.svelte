@@ -11,7 +11,7 @@
   });
 </script>
 
-<div class="max-w-[1000px] mx-auto py-12 px-4">
+<div class="max-w-250 mx-auto py-12 px-4">
   <div class="flex items-center justify-between mb-8">
     <h1 class="text-3xl font-bold text-white">Activity Feed</h1>
     <div class="flex space-x-2">
