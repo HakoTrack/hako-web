@@ -5,9 +5,7 @@
   import Landing from "./views/Landing.svelte";
   import Feed from "./views/Feed.svelte";
   import Profile from "./views/Profile.svelte";
-  import LoginModal from "./components/LoginModal.svelte";
-  import SignupModal from "./components/SignupModal.svelte";
-  import QuickEditorModal from "./components/QuickEditorModal.svelte";
+  import ModalWrapper from "./components/modals/ModalWrapper.svelte";
   import { AuthService } from "./core/auth.js";
   import { supabase } from "./utils/supabase.js";
   import { ui } from "./core/ui.svelte.js";
@@ -57,13 +55,7 @@
   on:show-signup={() => ui.openModal("signup")}
 />
 
-{#if ui.activeModal === "login"}
-  <LoginModal />
-{:else if ui.activeModal === "signup"}
-  <SignupModal />
-{:else if ui.activeModal === "quick-editor"}
-  <QuickEditorModal />
-{/if}
+<ModalWrapper />
 
 {#if !isLanding}
   <Navbar {user} />
