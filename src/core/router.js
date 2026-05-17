@@ -1,7 +1,6 @@
 import { AuthService } from './auth.js';
 import { loadComponent } from '../utils/loadComponent.js';
 import { ui } from './ui.svelte.js';
-import { supabase } from '../utils/supabase.js';
 import { HakoImage } from '../utils/images.js';
 
 export const handleRouting = async () => {
@@ -68,11 +67,6 @@ export const handleRouting = async () => {
     await loadComponent('app-view', '/profile/profile.html');
     const { initProfile } = await import('../features/profile.js');
     await initProfile(username);
-  } else if (pathParts.length === 0 || pathParts[0] === 'feed') {
-    await loadComponent('app-view', '/views/feed.html');
-    const { populateActivityFeed } = await import('../features/populateFeed.js');
-    const username = user?.email?.split('@')[0] || 'shaetsu';
-    await populateActivityFeed(username);
   } else {
     await loadComponent('app-view', '/views/404.html');
     document.title = '404 - Page Not Found | Hako';
