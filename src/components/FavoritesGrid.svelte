@@ -1,4 +1,5 @@
 <script>
+  import { openQuickEditor } from "../core/ui.svelte.js";
   import { onMount } from "svelte";
   import { supabase } from "../utils/supabase.js";
   import { HakoImage } from "../utils/images.js";
@@ -51,7 +52,7 @@
             class="media-cover rounded w-full aspect-85/115 object-cover cursor-pointer hover:scale-105 transition-transform bg-[#151f2e]"
             data-media-id={id}
             onmouseover={() => HakoImage.prefetchBanner("anime", id)}
-            onclick={() => window.openQuickEditor(id)}
+            onclick={() => openQuickEditor(id)}
             alt="Anime {id}"
             onerror={(e) =>
               (e.target.src =

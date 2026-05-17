@@ -4,6 +4,7 @@ import { Modal } from '../utils/modal.js';
 import { renderLoginPage } from '../modules/auth/login.js';
 import { renderSignupPage } from '../modules/auth/signup.js';
 import { supabase } from '../utils/supabase.js';
+import { HakoImage } from '../utils/images.js';
 
 export const handleRouting = async () => {
   const user = await AuthService.getCurrentUser();
@@ -48,7 +49,7 @@ export const handleRouting = async () => {
       await loadComponent('app-view', '/views/landing.html');
 
       // Load hero background
-      const heroUrl = window.HakoImage.get('landing.jpg', { f: 'avif' });
+      const heroUrl = HakoImage.get('landing.jpg', { f: 'avif' });
       const view = document.getElementById('landing-view');
 
       if (view) {

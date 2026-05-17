@@ -2,6 +2,7 @@ import { loadComponent } from '../utils/loadComponent.js';
 import { initializeTasteChart } from './taste.js';
 import { populateActivityFeed } from './populateFeed.js';
 import { supabase } from '../utils/supabase.js';
+import { HakoImage } from '../utils/images.js';
 
 export const initProfile = async (username) => {
   const profileContainer = document.getElementById('profile-container');
@@ -30,8 +31,8 @@ export const initProfile = async (username) => {
     const avatarPath = profile.avatar_url || `/profile/${username}/avatar.jpg`;
     const bannerPath = profile.banner_url || `/profile/${username}/banner.jpg`;
 
-    if (avatarEl) avatarEl.src = window.HakoImage ? window.HakoImage.get(avatarPath.replace(/^\//, ''), { w: 200, f: 'webp' }) : avatarPath;
-    if (bannerEl) bannerEl.src = window.HakoImage ? window.HakoImage.get(bannerPath.replace(/^\//, ''), { w: 1200, f: 'webp', q: 80 }) : bannerPath;
+    if (avatarEl) avatarEl.src = HakoImage ? HakoImage.get(avatarPath.replace(/^\//, ''), { w: 200, f: 'webp' }) : avatarPath;
+    if (bannerEl) bannerEl.src = HakoImage ? HakoImage.get(bannerPath.replace(/^\//, ''), { w: 1200, f: 'webp', q: 80 }) : bannerPath;
 
     const roleBadge = document.getElementById('role-badge');
     const ROLES = {
@@ -55,7 +56,6 @@ export const initProfile = async (username) => {
       }
     }
 
-
     document.title = `${username}'s Profile | Hako`;
     profileContainer.classList.remove('invisible');
 
@@ -72,7 +72,6 @@ export const initProfile = async (username) => {
 
     return profile;
   } catch (e) {
-
     console.error("Profile Init Error:", e);
     await loadComponent('app-view', '/views/404.html');
     document.title = 'User Not Found | Hako';

@@ -1,5 +1,6 @@
 <script>
   import { onMount } from "svelte";
+  import { openQuickEditor } from "../core/ui.svelte.js";
   import { fetchAnimeByIds, fetchUserAnimeList } from "../utils/animeData.js";
   import { HakoImage } from "../utils/images.js";
 
@@ -239,7 +240,7 @@
                             item.image ||
                             "https://ik.imagekit.io/HakoImage/anime/covers/placeholder.jpg?tr=w-240,f=webp")}
                         data-media-id={item.id}
-                        onclick={() => window.openQuickEditor(item.id)}
+                        onclick={() => openQuickEditor(item.id)}
                         onmouseover={() =>
                           HakoImage.prefetchBanner(type, item.id)}
                         class="media-cover w-12 h-16 object-cover rounded shadow-md group-hover:scale-105 transition-transform inline-block cursor-pointer"
@@ -250,7 +251,7 @@
                       <!-- svelte-ignore a11y_no_static_element_interactions -->
                       <div
                         class="text-sm font-bold text-slate-200 group-hover:text-accent transition-colors cursor-pointer"
-                        onclick={() => window.openQuickEditor(item.id)}
+                        onclick={() => openQuickEditor(item.id)}
                       >
                         {displayTitle}
                       </div>

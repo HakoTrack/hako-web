@@ -63,6 +63,3 @@ export const HakoImage = {
     document.head.appendChild(link);
   }
 };
-
-// Also attach to window for component compatibility
-window.HakoImage = HakoImage;
