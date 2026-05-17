@@ -9,7 +9,7 @@ export const FeedService = {
       .from('posts')
       .select(`
         *,
-        author:profiles(username, avatar_url)
+        author:profiles!posts_author_id_fkey(username, avatar_url)
       `)
       .eq('target_profile_id', profileId)
       .order('created_at', { ascending: false })
@@ -27,7 +27,7 @@ export const FeedService = {
       .from('posts')
       .select(`
         *,
-        author:profiles(username, avatar_url)
+        author:profiles!posts_author_id_fkey(username, avatar_url)
       `)
       .order('created_at', { ascending: false })
       .range(page * pageSize, (page + 1) * pageSize - 1);
@@ -57,13 +57,40 @@ export const FeedService = {
       .from('posts')
       .select(`
         *,
-        author:profiles(username, avatar_url)
+        author:profiles!posts_author_id_fkey(username, avatar_url)
       `)
       .in('author_id', followedIds)
       .order('created_at', { ascending: false })
       .range(page * pageSize, (page + 1) * pageSize - 1);
-
     if (error) throw error;
     return data || [];
+  },
+
+  /**
+   * Creates a new post in the feed.
+   */
+  async createPost(userId, targetProfileId, type, metadata = {}, content = null) {
+    const { error } = await supabase.from('posts').insert({
+      author_id: userId,
+      target_profile_id: targetProfileId,
+      post_type: type,
+      metadata: metadata,
+      content: content
+    });
+    if (error) throw error;
+  },
+
+  async createListUpdatePost(userId, targetProfileId, entryId, title, progress, total, action = 'updated') {
+    return this.createPost(userId, targetProfileId, 'list_update', {
+      media_id: entryId,
+      title: title,
+      action: action,
+      progress: progress,
+      total: total
+    });
+  },
+
+  async createThoughtPost(userId, targetProfileId, content) {
+    return this.createPost(userId, targetProfileId, 'thought', {}, content);
   }
 };

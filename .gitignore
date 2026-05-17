@@ -31,3 +31,6 @@ tools/
 public/assets/
 mockup/
 landingMockup.html
+
+# legacy
+public_old/

@@ -1,10 +1,35 @@
 <script>
   import { onMount } from "svelte";
   import FavoritesGrid from "../FavoritesGrid.svelte";
-  import { fetchAnimeByIds } from "../../utils/animeData.js";
+  import FeedWrapper from "../feed/FeedWrapper.svelte";
+  import { fetchMediaByIds } from "../../utils/mediaData.js";
 
   let { profileData } = $props();
   let metadata = $state({});
+
+  const statusGroups = [
+    { id: "current", label: "Watching", color: "bg-green-500" },
+    { id: "completed", label: "Completed", color: "bg-sky-500" },
+    { id: "paused", label: "Paused", color: "bg-orange-500" },
+    { id: "dropped", label: "Dropped", color: "bg-red-500" },
+    { id: "planning", label: "Planning", color: "bg-slate-500" },
+  ];
+
+  let statusDistribution = $derived.by(() => {
+    const list = profileData?.animeList || [];
+    const total = list.length;
+    return statusGroups.map((group) => {
+      const count = list.filter(
+        (i) => (i.status || "").toLowerCase() === group.id,
+      ).length;
+      return {
+        ...group,
+        count,
+        percent: total > 0 ? (count / total) * 100 : 0,
+      };
+    });
+  });
+
   let stats = $derived.by(() => {
     const list = profileData?.animeList || [];
     const total = list.length;
@@ -14,9 +39,12 @@
     let scoredCount = 0;
 
     list.forEach((entry) => {
-      const meta = metadata[entry.anime_id] || {};
-      if (meta.duration && entry.progress) {
-        totalMinutes += entry.progress * meta.duration;
+      const meta = metadata[entry.media_id.toString()] || {};
+      const duration = Number(meta.duration || 0);
+      const progress = Number(entry.progress || 0);
+
+      if (duration > 0 && progress > 0) {
+        totalMinutes += progress * duration;
       }
       if (entry.score && entry.score > 0) {
         totalScore += entry.score;
@@ -34,8 +62,8 @@
 
   onMount(async () => {
     if (profileData?.animeList) {
-      const ids = profileData.animeList.map((a) => a.anime_id);
-      metadata = await fetchAnimeByIds(ids);
+      const ids = profileData.animeList.map((a) => a.media_id);
+      metadata = await fetchMediaByIds(ids, "anime");
     }
   });
 </script>
@@ -140,11 +168,7 @@
           View All
         </div>
       </div>
-      <div id="activity-feed-container" class="space-y-6">
-        <div class="text-slate-600 text-sm italic">
-          Migration in progress...
-        </div>
-      </div>
+      <FeedWrapper profileId={profileData.id} />
     </div>
   </div>
 
@@ -162,6 +186,7 @@
           >
             Anime
           </h4>
+
           <div class="flex justify-between text-xs mb-1">
             <span>Total</span><span class="text-white">{stats.total}</span>
           </div>
@@ -170,10 +195,25 @@
               >{stats.daysWatched}</span
             >
           </div>
-          <div class="flex justify-between text-xs">
+          <div class="flex justify-between text-xs mb-4">
             <span>Mean Score</span><span class="text-white font-bold"
               >{stats.meanScore}</span
             >
+          </div>
+
+          <!-- Bar Graph -->
+          <div
+            class="h-2 w-full bg-slate-800 rounded-full flex overflow-hidden"
+          >
+            {#each statusDistribution as group}
+              {#if group.percent > 0}
+                <div
+                  class={group.color}
+                  style="width: {group.percent}%"
+                  title="{group.label}: {group.count}"
+                ></div>
+              {/if}
+            {/each}
           </div>
         </div>
         <!-- Manga Stats (Placeholder) -->

@@ -1,10 +1,9 @@
 <script>
-  import { onMount } from "svelte";
   import { AuthService } from "../core/auth.js";
 
-  export let user = null;
+  let { user = null } = $props();
 
-  $: username = user?.email?.split("@")[0] || "shaetsu";
+  let username = $derived(user?.email?.split("@")[0] || "shaetsu");
 
   async function handleLogout() {
     await AuthService.logout();
@@ -22,7 +21,7 @@
       <div
         id="nav-branding"
         class="text-2xl font-bold tracking-tighter flex items-center cursor-pointer select-none group"
-        on:click={() => navigate(user ? "/feed" : "/")}
+        onclick={() => navigate(user ? "/feed" : "/")}
       >
         <span
           class="font-['Zen_Antique_Soft'] font-bold text-accent mr-2 text-[2rem] leading-8"
@@ -34,13 +33,18 @@
           <a
             href="/feed"
             class="nav-link"
-            on:click|preventDefault={() => navigate("/feed")}>Feed</a
+            onclick={(e) => {
+              e.preventDefault();
+              navigate("/feed");
+            }}>Feed</a
           >
           <a
             href="/profile/{username}"
             class="nav-link"
-            on:click|preventDefault={() => navigate(`/profile/${username}`)}
-            >Profile</a
+            onclick={(e) => {
+              e.preventDefault();
+              navigate(`/profile/${username}`);
+            }}>Profile</a
           >
           <a href="#" class="nav-link">Lists</a>
           <a href="#" class="nav-link">Browse</a>
@@ -48,20 +52,22 @@
             href="#"
             id="logout-btn"
             class="nav-link"
-            on:click|preventDefault={handleLogout}>Logout</a
+            onclick={(e) => {
+              e.preventDefault();
+              handleLogout();
+            }}>Logout</a
           >
         {:else}
           <button
             id="nav-login"
             class="nav-link"
-            on:click={() => window.dispatchEvent(new CustomEvent("show-login"))}
+            onclick={() => window.dispatchEvent(new CustomEvent("show-login"))}
             >Login</button
           >
           <button
             id="nav-signup"
             class="nav-link"
-            on:click={() =>
-              window.dispatchEvent(new CustomEvent("show-signup"))}
+            onclick={() => window.dispatchEvent(new CustomEvent("show-signup"))}
             >Sign Up</button
           >
         {/if}

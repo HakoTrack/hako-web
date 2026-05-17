@@ -1,14 +1,32 @@
 <script>
   import { HakoImage } from "../../utils/images.js";
   import { openQuickEditor } from "../../core/ui.svelte.js";
+
   let { post } = $props();
 
-  // Helper for progress calculation
+  // Robust progress calculation with null checks
   const percent = $derived(
     post.post_type === "list_update" && post.metadata?.total > 0
       ? Math.round((post.metadata.progress / post.metadata.total) * 100)
       : 0,
   );
+
+  function getRelativeTime(timestamp) {
+    if (!timestamp) return "Recently";
+    const rtf = new Intl.RelativeTimeFormat("en", { numeric: "auto" });
+    const diff = new Date(timestamp) - new Date();
+    const seconds = Math.round(diff / 1000);
+    const minutes = Math.round(seconds / 60);
+    const hours = Math.round(minutes / 60);
+    const days = Math.round(hours / 24);
+
+    if (Math.abs(seconds) < 60) return rtf.format(seconds, "second");
+    if (Math.abs(minutes) < 60) return rtf.format(minutes, "minute");
+    if (Math.abs(hours) < 24) return rtf.format(hours, "hour");
+    return rtf.format(days, "day");
+  }
+
+  const timeAgo = $derived(getRelativeTime(post.created_at));
 </script>
 
 <div class="bg-card rounded-xl overflow-hidden shadow-md">
@@ -32,7 +50,7 @@
               : "posted a thought"}
           </span>
         </p>
-        <p class="text-[10px] text-slate-500 uppercase">Recently</p>
+        <p class="text-[10px] text-slate-500 uppercase">{timeAgo}</p>
       </div>
     </div>
   </div>
@@ -40,7 +58,6 @@
   <div class="p-6">
     {#if post.post_type === "thought"}
       <p class="text-slate-200 leading-relaxed">{post.content}</p>
-      <!-- Interaction stats for thoughts -->
       <div class="mt-6 flex items-center space-x-6 text-sm text-slate-500">
         <span class="cursor-pointer hover:text-pink-500 transition-colors"
           ><i class="fa-solid fa-heart mr-2"></i> {post.stats?.likes || 0}</span
@@ -56,8 +73,6 @@
       </div>
     {:else if post.post_type === "list_update" && post.metadata}
       <div class="flex items-center">
-        <!-- svelte-ignore a11y_no_noninteractive_element_interactions -->
-        <!-- svelte-ignore a11y_click_events_have_key_events -->
         <img
           loading="lazy"
           src={HakoImage.getCover("anime", post.metadata.media_id, "small")}
@@ -66,8 +81,6 @@
           alt={post.metadata.title}
         />
         <div class="ml-4 flex-1">
-          <!-- svelte-ignore a11y_no_noninteractive_element_interactions -->
-          <!-- svelte-ignore a11y_click_events_have_key_events -->
           <h4
             class="text-white font-bold leading-tight cursor-pointer hover:text-accent transition-colors"
             onclick={() => openQuickEditor(post.metadata.media_id)}
@@ -80,7 +93,6 @@
               >{post.metadata.progress || 0}/{post.metadata.total || "?"}</span
             >
           </p>
-          <!-- Progress bar for list updates -->
           <div
             class="w-full bg-slate-800 h-1 rounded-full mt-3 overflow-hidden"
           >

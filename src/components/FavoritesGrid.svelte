@@ -14,13 +14,13 @@
     try {
       const { data, error } = await supabase
         .from("profile_favorites")
-        .select("anime_id")
+        .select("media_id")
         .eq("profile_id", profileId)
         .order("id", { ascending: true });
 
       if (error) throw error;
 
-      animeIds = data.map((f) => f.anime_id);
+      animeIds = data.map((f) => f.media_id);
       ui.setFavorites(animeIds);
     } catch (e) {
       console.error("Error loading favorites:", e);

@@ -46,10 +46,12 @@
   );
 
   onMount(async () => {
+    console.log("DEBUG: currentPath:", currentPath);
+    console.log("DEBUG: Resolved username:", username);
     try {
       profileData = await ProfileService.getProfileByUsername(username);
     } catch (e) {
-      console.error(e);
+      console.error("DEBUG: Profile fetch error:", e);
     }
   });
 </script>
@@ -147,6 +149,13 @@
           ? 'tab-active text-white'
           : 'text-slate-400'}">Manga</button
       >
+      <!-- Placeholders for future tabs -->
+      <button
+        onclick={() => (activeTab = "light-novels")}
+        class="tab-btn pb-4 font-semibold {activeTab === 'light-novels'
+          ? 'tab-active text-white'
+          : 'text-slate-400'}">Light Novels</button
+      >
       <button
         onclick={() => (activeTab = "stats")}
         class="tab-btn pb-4 font-semibold {activeTab === 'stats'
@@ -156,14 +165,19 @@
     </div>
 
     <div class="py-8 min-h-100">
-      {#if activeTab === "overview" && profileData}
-        <Overview {profileData} />
-      {:else if activeTab === "anime" && profileData}
-        <MediaList type="anime" profileId={profileData.id} />
-      {:else if activeTab === "manga" && profileData}
-        <MediaList type="manga" profileId={profileData.id} />
-      {:else if activeTab === "stats" && profileData}
-        <Stats {profileData} />
+      {#if profileData}
+        <div class:hidden={activeTab !== "overview"}>
+          <Overview {profileData} />
+        </div>
+        <div class:hidden={activeTab !== "anime"}>
+          <MediaList type="anime" profileId={profileData.id} />
+        </div>
+        <div class:hidden={activeTab !== "manga"}>
+          <MediaList type="manga" profileId={profileData.id} />
+        </div>
+        <div class:hidden={activeTab !== "stats"}>
+          <Stats {profileData} />
+        </div>
       {/if}
     </div>
   </div>

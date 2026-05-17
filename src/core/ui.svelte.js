@@ -4,12 +4,13 @@
  */
 
 import { HakoImage } from '../utils/images.js';
-import { fetchAnimeById, fetchUserAnimeListEntry } from '../utils/animeData.js';
+import { fetchMediaById, fetchUserListEntry } from '../utils/mediaData.js';
 import { AuthService } from './auth.js';
 
 let activeModal = $state(null);
 let modalData = $state(null);
 let favoriteIds = $state(new Set());
+let animeListCache = $state(new Map());
 
 export const ui = {
   get activeModal() { return activeModal; },
@@ -38,7 +39,11 @@ export const ui = {
   removeFavorite(id) {
     favoriteIds.delete(id);
     favoriteIds = new Set(favoriteIds); // Trigger reactivity
-  }
+  },
+
+  getAnimeList(profileId) { return animeListCache.get(profileId); },
+  setAnimeList(profileId, data) { animeListCache.set(profileId, data); },
+  invalidateAnimeList(profileId) { animeListCache.delete(profileId); }
 };
 
 function formatDateInput(dateObj) {
@@ -49,16 +54,16 @@ function formatDateInput(dateObj) {
   return `${year}-${month}-${day}`;
 }
 
-export const openQuickEditor = async (id) => {
+export const openQuickEditor = async (id, type = 'anime') => {
   try {
-    const mediaMetadata = await fetchAnimeById(id);
+    const mediaMetadata = await fetchMediaById(id);
     if (!mediaMetadata) throw new Error("Media metadata not found.");
 
     const user = await AuthService.getCurrentUser();
     let userEntry = {};
 
     if (user) {
-      userEntry = await fetchUserAnimeListEntry(user.id, id) || {};
+      userEntry = await fetchUserListEntry(user.id, id, type) || {};
     }
 
     const titleObj = mediaMetadata?.title || {};
@@ -67,15 +72,16 @@ export const openQuickEditor = async (id) => {
 
     const hybridEntry = {
       id: id,
+      type: type, // Ensure type is included
       title: displayTitle,
       description: rawDescription.replace(/\n/g, '<br>'),
       genres: mediaMetadata?.genres || [],
-      banner: HakoImage.getBanner('anime', id),
-      image: HakoImage.getCover('anime', id, 'medium'),
+      banner: HakoImage.getBanner(type, id),
+      image: HakoImage.getCover(type, id, 'medium'),
       status: userEntry.status || 'planning',
       score: userEntry.score || 0,
       progress: userEntry.progress || 0,
-      total: mediaMetadata?.episodes || userEntry.total || '?',
+      total: mediaMetadata?.episodes || mediaMetadata?.chapters || userEntry.total || '?',
       startDate: formatDateInput(userEntry.startedAt),
       finishDate: formatDateInput(userEntry.completedAt),
       isFavorited: userEntry.isFavorited || false,

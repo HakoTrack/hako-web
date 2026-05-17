@@ -1,10 +1,9 @@
 <script>
   import { onMount } from "svelte";
-  import { openQuickEditor } from "../../core/ui.svelte.js";
-  import {
-    fetchAnimeByIds,
-    fetchUserAnimeList,
-  } from "../../utils/animeData.js";
+  import Fuse from "fuse.js";
+  import { openQuickEditor, ui } from "../../core/ui.svelte.js";
+  import { ListService } from "../../services/listService.js";
+  import { MetadataService } from "../../services/metadataService.js";
   import { HakoImage } from "../../utils/images.js";
 
   let { type = "anime", profileId } = $props();
@@ -16,11 +15,17 @@
   let searchQuery = $state("");
   let isLoading = $state(true);
 
-  // Use 'current' as the ID to match the DB string
+  // Memoization variables
+  let lastProcessed = null;
+  let lastListEntries = null;
+  let lastMetadata = null;
+  let lastSortBy = null;
+  let lastFilterStatus = null;
+  let lastSearchQuery = null;
+
   const statusGroups = [
     {
       id: "current",
-      // svelte-ignore state_referenced_locally
       label: type === "anime" ? "Watching" : "Reading",
       color: "bg-green-500",
     },
@@ -32,12 +37,9 @@
 
   onMount(async () => {
     try {
-      if (type === "anime") {
-        listDataEntries = await fetchUserAnimeList(profileId);
-        console.log("DEBUG: Data entries:", listDataEntries);
-        const ids = listDataEntries.map((item) => item.id);
-        metadata = await fetchAnimeByIds(ids);
-      }
+      listDataEntries = await ListService.getList(profileId, type);
+      const ids = listDataEntries.map((item) => item.media_id);
+      metadata = await MetadataService.getMetadata(ids, type);
     } catch (err) {
       console.error(err);
     } finally {
@@ -54,37 +56,47 @@
     return "text-red-400";
   }
 
-  // The logic that must work:
-  // 1. If filterStatus is 'all', show everything.
-  // 2. If filterStatus is NOT 'all', only show items where status === filterStatus
   let visibleGroups = $derived.by(() => {
+    if (
+      lastListEntries === listDataEntries &&
+      lastMetadata === metadata &&
+      lastSortBy === sortBy &&
+      lastFilterStatus === filterStatus &&
+      lastSearchQuery === searchQuery
+    ) {
+      return lastProcessed;
+    }
+
     const groups = statusGroups.filter(
       (g) => filterStatus === "all" || g.id === filterStatus,
     );
 
-    return groups
+    const processedItems = listDataEntries.map((item) => {
+      const meta = metadata[item.media_id?.toString()] || {};
+      return {
+        ...item,
+        meta,
+        displayTitle: meta.title?.romaji || item.title || "",
+      };
+    });
+
+    // Fuzzy search with Fuse.js
+    let itemsToProcess = processedItems;
+    if (searchQuery.length > 0) {
+      const fuse = new Fuse(processedItems, {
+        keys: ["displayTitle"],
+        threshold: 0.3,
+      });
+      itemsToProcess = fuse.search(searchQuery).map((r) => r.item);
+    }
+
+    const result = groups
       .map((group) => {
-        let items = listDataEntries
-          .filter((item) => {
-            const itemStatus = (item.status || "").toLowerCase();
-            const matchesStatus = itemStatus === group.id;
-            const meta = metadata[item.id.toString()] || {};
-            const title = (
-              meta.title?.romaji ||
-              item.title ||
-              ""
-            ).toLowerCase();
-            const matchesSearch = title.includes(searchQuery.toLowerCase());
-
-            return matchesStatus && matchesSearch;
-          })
+        let items = itemsToProcess
+          .filter((item) => (item.status || "").toLowerCase() === group.id)
           .sort((a, b) => {
-            const metaA = metadata[a.id.toString()] || {};
-            const metaB = metadata[b.id.toString()] || {};
-            const titleA = (metaA.title?.romaji || a.title || "").toLowerCase();
-            const titleB = (metaB.title?.romaji || b.title || "").toLowerCase();
-
-            if (sortBy === "Title") return titleA.localeCompare(titleB);
+            if (sortBy === "Title")
+              return a.displayTitle.localeCompare(b.displayTitle);
             if (sortBy === "Score") return (b.score || 0) - (a.score || 0);
             if (sortBy === "Progress")
               return (b.progress || 0) - (a.progress || 0);
@@ -93,18 +105,27 @@
         return { ...group, items };
       })
       .filter((group) => group.items.length > 0);
+
+    lastProcessed = result;
+    lastListEntries = listDataEntries;
+    lastMetadata = metadata;
+    lastSortBy = sortBy;
+    lastFilterStatus = filterStatus;
+    lastSearchQuery = searchQuery;
+
+    return result;
   });
 </script>
 
 <div
   id="media-list-wrapper"
+  data-type={type}
   class="flex flex-col lg:flex-row gap-8 mb-12 animate-in fade-in duration-300"
 >
   <aside class="lg:w-[20%] order-2 lg:order-1">
     <div class="sticky top-24 space-y-6">
       <div class="bg-card rounded-xl p-5 space-y-4">
         <div>
-          <!-- svelte-ignore a11y_label_has_associated_control -->
           <label
             class="text-[10px] font-bold uppercase tracking-widest text-slate-500 block mb-2"
             >Search List</label
@@ -114,7 +135,7 @@
               type="text"
               placeholder="Filter titles..."
               bind:value={searchQuery}
-              class="w-full bg-[#0b1622] border border-slate-800 rounded-lg px-3 py-2 text-sm text-slate-300 focus:outline-none focus:ring-1 focus:ring-accent pl-9"
+              class="w-full bg-[#0b1622] border border-slate-800 rounded-lg px-3 py-2 text-sm text-slate-300 focus:ring-1 focus:ring-accent pl-9"
             />
             <i
               class="fa-solid fa-search absolute left-3 top-2.5 text-slate-600 text-xs"
@@ -122,14 +143,13 @@
           </div>
         </div>
         <div>
-          <!-- svelte-ignore a11y_label_has_associated_control -->
           <label
             class="text-[10px] font-bold uppercase tracking-widest text-slate-500 block mb-2"
             >Sort By</label
           >
           <select
             bind:value={sortBy}
-            class="w-full bg-[#0b1622] border border-slate-800 rounded-lg px-3 py-2 text-sm text-slate-300 focus:outline-none focus:ring-1 focus:ring-accent"
+            class="w-full bg-[#0b1622] border border-slate-800 rounded-lg px-3 py-2 text-sm text-slate-300 focus:ring-1 focus:ring-accent"
           >
             <option>Title</option>
             <option>Score</option>
@@ -139,10 +159,7 @@
         </div>
       </div>
 
-      <div
-        id="media-categories-sidebar"
-        class="bg-card rounded-xl border border-slate-800 overflow-hidden"
-      >
+      <div class="bg-card rounded-xl border border-slate-800 overflow-hidden">
         <div class="p-4">
           <h3
             class="text-xs font-bold uppercase tracking-widest text-white flex items-center"
@@ -152,7 +169,7 @@
         </div>
         <button
           onclick={() => (filterStatus = "all")}
-          class="category-btn flex items-center justify-between px-4 py-3 text-sm font-medium {filterStatus ===
+          class="flex items-center justify-between px-4 py-3 text-sm font-medium {filterStatus ===
           'all'
             ? 'text-white bg-slate-800/50 border-l-4 border-accent'
             : 'text-slate-400 hover:text-white border-l-4 border-transparent'} transition-all w-full"
@@ -166,7 +183,7 @@
         {#each statusGroups as group}
           <button
             onclick={() => (filterStatus = group.id)}
-            class="category-btn flex items-center justify-between px-4 py-3 text-sm font-medium {filterStatus ===
+            class="flex items-center justify-between px-4 py-3 text-sm font-medium {filterStatus ===
             group.id
               ? 'text-white bg-slate-800/50 border-l-4 border-accent'
               : 'text-slate-400 hover:text-white border-l-4 border-transparent'} transition-all w-full"
@@ -174,7 +191,7 @@
             <span>{group.label}</span>
             <span class="count text-xs text-slate-500"
               >{listDataEntries.filter(
-                (i) => i.status.toLowerCase() === group.id,
+                (i) => (i.status || "").toLowerCase() === group.id,
               ).length}</span
             >
           </button>
@@ -183,17 +200,14 @@
     </div>
   </aside>
 
-  <main
-    id="media-list-container"
-    class="lg:w-[80%] order-1 lg:order-2 space-y-10 min-h-100"
-  >
+  <main class="lg:w-[80%] order-1 lg:order-2 space-y-10 min-h-100">
     {#if isLoading}
       <div class="flex items-center justify-center p-20">
         <i class="fa-solid fa-circle-notch fa-spin text-accent text-2xl"></i>
       </div>
     {:else if visibleGroups.length === 0}
       <div class="p-10 text-center text-[20px] text-slate-500">
-        This list is empty... (≖､≖╬)
+        This box is currently empty... ( ｡_｡)
       </div>
     {:else}
       {#each visibleGroups as group}
@@ -210,51 +224,40 @@
             <table class="w-full text-left border-collapse">
               <thead>
                 <tr
-                  class="text-[10px] uppercase tracking-widest text-slate-500 border-b border-slate-800"
+                  class="text-[10px] uppercase text-slate-500 border-b border-slate-800"
                 >
-                  <th class="px-4 py-3 font-bold w-16 text-center"></th>
-                  <th class="px-4 py-3 font-bold">Title</th>
-                  <th class="px-4 py-3 font-bold text-center">Score</th>
-                  <th class="px-4 py-3 font-bold text-center">Progress</th>
-                  <th class="px-4 py-3 font-bold text-center">Format</th>
+                  <th class="p-4 w-16 text-center"></th>
+                  <th class="p-4">Title</th>
+                  <th class="p-4 text-center">Score</th>
+                  <th class="p-4 text-center">Progress</th>
+                  <th class="p-4 text-center">Format</th>
                 </tr>
               </thead>
               <tbody>
                 {#each group.items as item}
-                  {@const meta = metadata[item.id.toString()] || {}}
+                  {@const meta = item.meta || {}}
                   {@const total =
                     type === "manga"
                       ? meta.chapters || item.total || "?"
                       : meta.episodes || item.total || "?"}
-                  {@const displayTitle = meta.title?.romaji || item.title}
+                  {@const displayTitle = item.displayTitle}
                   <tr
-                    class="group hover:bg-slate-800/30 transition-colors border-b border-slate-800/50 last:border-0"
+                    class="group hover:bg-slate-800/30 border-b border-slate-800/50 last:border-0"
                   >
                     <td class="p-2 text-center">
-                      <!-- svelte-ignore a11y_mouse_events_have_key_events -->
-                      <!-- svelte-ignore a11y_no_noninteractive_element_interactions -->
-                      <!-- svelte-ignore a11y_click_events_have_key_events -->
                       <img
-                        loading="lazy"
-                        src={HakoImage.getCover(type, item.id, "small")}
+                        src={HakoImage.getCover(type, item.media_id, "small")}
+                        class="w-12 h-16 object-cover rounded shadow-md cursor-pointer group-hover:scale-105 transition-transform"
+                        onclick={() => openQuickEditor(item.media_id, type)}
                         alt={displayTitle}
-                        onerror={(e) =>
-                          (e.target.src =
-                            item.image ||
-                            "https://ik.imagekit.io/HakoImage/anime/covers/placeholder.jpg?tr=w-240,f=webp")}
-                        data-media-id={item.id}
-                        onclick={() => openQuickEditor(item.id)}
-                        onmouseover={() =>
-                          HakoImage.prefetchBanner(type, item.id)}
-                        class="media-cover w-12 h-16 object-cover rounded shadow-md group-hover:scale-105 transition-transform inline-block cursor-pointer"
                       />
                     </td>
-                    <td class="px-4 py-3">
-                      <!-- svelte-ignore a11y_click_events_have_key_events -->
-                      <!-- svelte-ignore a11y_no_static_element_interactions -->
+                    <td
+                      class="p-4 cursor-pointer"
+                      onclick={() => openQuickEditor(item.media_id, type)}
+                    >
                       <div
-                        class="text-sm font-bold text-slate-200 group-hover:text-accent transition-colors cursor-pointer"
-                        onclick={() => openQuickEditor(item.id)}
+                        class="text-sm font-bold text-slate-200 group-hover:text-accent transition-colors"
                       >
                         {displayTitle}
                       </div>
@@ -262,18 +265,17 @@
                         {meta.genres?.slice(0, 3).join(" • ") || ""}
                       </div>
                     </td>
-                    <td class="px-4 py-3 text-center">
-                      <span
-                        class="text-sm font-mono {getScoreColor(item.score)}"
-                        >{item.score?.toFixed(1) || "—"}</span
-                      >
-                    </td>
-                    <td class="px-4 py-3 text-center font-mono text-sm">
+                    <td
+                      class="p-4 text-center text-sm font-mono {getScoreColor(
+                        item.score,
+                      )}">{item.score?.toFixed(1) || "—"}</td
+                    >
+                    <td class="p-4 text-center text-sm font-mono text-white">
                       <span class="text-white">{item.progress}</span><span
                         class="text-slate-600 mx-1">/</span
                       ><span class="text-slate-500 text-xs">{total}</span>
                     </td>
-                    <td class="px-4 py-3 text-center">
+                    <td class="p-4 text-center">
                       <span
                         class="text-[10px] font-bold bg-[#0b1622] px-2 py-1 rounded text-slate-400 border border-slate-800"
                         >{meta.format || item.type || "TV"}</span

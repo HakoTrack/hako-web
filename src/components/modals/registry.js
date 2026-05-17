@@ -1,4 +1,4 @@
-import QuickEditorModal from '../QuickEditorModal.svelte';
+import QuickEditorModal from './QuickEditorModal.svelte';
 import LoginModal from './LoginModal.svelte';
 import SignupModal from './SignupModal.svelte';
 

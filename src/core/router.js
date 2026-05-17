@@ -62,11 +62,6 @@ export const handleRouting = async () => {
       document.getElementById('landing-login')?.addEventListener('click', showLoginModal);
       document.getElementById('landing-signup')?.addEventListener('click', showSignupModal);
     }
-  } else if (pathParts.includes('profile')) {
-    const username = pathParts[pathParts.indexOf('profile') + 1] || user?.email?.split('@')[0] || 'shaetsu';
-    await loadComponent('app-view', '/profile/profile.html');
-    const { initProfile } = await import('../features/profile.js');
-    await initProfile(username);
   } else {
     await loadComponent('app-view', '/views/404.html');
     document.title = '404 - Page Not Found | Hako';
