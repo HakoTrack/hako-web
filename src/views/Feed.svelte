@@ -1,14 +1,6 @@
 <script>
-  import { onMount } from "svelte";
-  import { populateActivityFeed } from "../features/populateFeed.js";
-
-  export let user = null;
-
-  $: username = user?.email?.split("@")[0] || "shaetsu";
-
-  onMount(async () => {
-    await populateActivityFeed(username);
-  });
+  import FeedWrapper from "../components/feed/FeedWrapper.svelte";
+  let { user } = $props();
 </script>
 
 <div class="max-w-250 mx-auto py-12 px-4">
@@ -26,13 +18,5 @@
     </div>
   </div>
 
-  <div id="activity-feed-container" class="space-y-6">
-    <div class="bg-card p-6 rounded-xl shadow-md animate-pulse">
-      <div class="flex items-center space-x-3 mb-4">
-        <div class="w-8 h-8 rounded-lg bg-slate-800"></div>
-        <div class="h-4 bg-slate-800 rounded w-1/4"></div>
-      </div>
-      <div class="h-24 bg-slate-800 rounded mb-4"></div>
-    </div>
-  </div>
+  <FeedWrapper userId={user?.id} mode="global" />
 </div>
