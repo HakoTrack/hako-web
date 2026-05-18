@@ -1,4 +1,5 @@
 import { supabase } from '../utils/supabase.js';
+import { ActivityService } from './activityService.js';
 
 export const FeedService = {
   /**
@@ -78,7 +79,11 @@ export const FeedService = {
       content: content
     });
     if (error) throw error;
+
+    // Track activity for the heatmap
+    await ActivityService.trackActivity(userId);
   },
+
 
   async createListUpdatePost(userId, targetProfileId, entryId, title, progress, total, action = 'updated') {
     return this.createPost(userId, targetProfileId, 'list_update', {

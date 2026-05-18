@@ -3,9 +3,18 @@
   import FavoritesGrid from "../FavoritesGrid.svelte";
   import FeedWrapper from "../feed/FeedWrapper.svelte";
   import { fetchMediaByIds } from "../../utils/mediaData.js";
+  import { ActivityService } from "../../services/activityService.js";
+  import { getProfileAffinity } from "../../utils/vibeCalc.js";
+  import Chart from "chart.js/auto";
 
   let { profileData } = $props();
   let metadata = $state({});
+  let heatmapData = $state(Array(161).fill({ date: "", count: 0 }));
+  let totalActivityCount = $derived(
+    heatmapData.reduce((sum, day) => sum + day.count, 0),
+  );
+  let radarChart = $state(null);
+  let chartCanvas = $state(null);
 
   const statusGroups = [
     { id: "current", label: "Watching", color: "bg-green-500" },
@@ -60,11 +69,97 @@
     };
   });
 
+  $effect(() => {
+    if (
+      Object.keys(metadata).length > 0 &&
+      profileData?.animeList &&
+      chartCanvas
+    ) {
+      const affinities = getProfileAffinity(profileData.animeList, metadata);
+      const VIBE_ICONS = {
+        Speculative: "\uf6e2",
+        Visceral: "\uf0e7",
+        Cerebral: "\uf5dc",
+        Emotive: "\uf21e",
+        Interpersonal: "\uf0c0",
+        Lighthearted: "\uf118",
+      };
+
+      if (radarChart) {
+        radarChart.data.datasets[0].data = affinities.map((a) => a.value);
+        radarChart.update();
+      } else {
+        radarChart = new Chart(chartCanvas, {
+          type: "radar",
+          data: {
+            labels: affinities.map((a) => VIBE_ICONS[a.name]),
+            datasets: [
+              {
+                label: "Vibe Affinity",
+                data: affinities.map((a) => a.value),
+                backgroundColor: "rgba(61, 180, 242, 0.2)",
+                borderColor: "#3db4f2",
+                pointBackgroundColor: "#3db4f2",
+                borderWidth: 2,
+              },
+            ],
+          },
+          options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+              legend: { display: false },
+              tooltip: {
+                callbacks: {
+                  title: () => "",
+                  label: (context) => {
+                    const categories = [
+                      "Speculative",
+                      "Visceral",
+                      "Cerebral",
+                      "Emotive",
+                      "Interpersonal",
+                      "Lighthearted",
+                    ];
+                    const label = categories[context.dataIndex];
+                    return [`${label}`, `Affinity: ${context.raw}`];
+                  },
+                },
+              },
+            },
+            scales: {
+              r: {
+                min: 0,
+                max: 100,
+                beginAtZero: true,
+                angleLines: { color: "#2b2d42" },
+                grid: { color: "#2b2d42" },
+                pointLabels: {
+                  font: {
+                    family: "'Font Awesome 6 Free'",
+                    size: 16,
+                    weight: "900",
+                  },
+                  color: "#9fadbd",
+                  padding: 10,
+                },
+                ticks: { display: false, stepSize: 20 },
+              },
+            },
+          },
+        });
+      }
+    }
+  });
+
   onMount(async () => {
     if (profileData?.animeList) {
       const ids = profileData.animeList.map((a) => a.media_id);
       metadata = await fetchMediaByIds(ids, "anime");
     }
+
+    // Fetch and render functional heatmap
+    heatmapData = await ActivityService.getHeatmapData(profileData.id, 160);
   });
 </script>
 
@@ -137,21 +232,45 @@
     <!-- Heatmap -->
     <div class="bg-card p-6 rounded-xl shadow-md">
       <div class="flex justify-between items-center mb-6">
-        <h3 class="text-white font-bold">Activity Heatmap</h3>
-        <span class="text-xs text-slate-500">1,245 updates in 2026</span>
+        <h3 class="text-white font-bold flex items-center">
+          <i class="fa-solid fa-fire text-accent mr-2"></i> Activity Heatmap
+        </h3>
+        <span class="text-xs text-slate-500"
+          >{totalActivityCount} updates in the last 23 weeks</span
+        >
       </div>
       <div class="overflow-x-auto scrollbar-hide">
-        <div id="heatmap" class="flex gap-0.75 min-w-70 lg:min-w-0"></div>
+        <div
+          id="heatmap"
+          class="grid grid-rows-7 grid-flow-col gap-1.5 min-w-max min-h-[110px]"
+        >
+          {#each heatmapData as day}
+            {@const level =
+              day.count === 0
+                ? 0
+                : day.count < 3
+                  ? 1
+                  : day.count < 5
+                    ? 2
+                    : day.count < 10
+                      ? 3
+                      : 4}
+            <div
+              class="heatmap-cell level-{level}"
+              title="{day.date}: {day.count} updates"
+            ></div>
+          {/each}
+        </div>
       </div>
       <div
         class="flex items-center justify-end mt-4 space-x-2 text-[10px] text-slate-500"
       >
         <span>Less</span>
-        <div class="heatmap-cell level-0 w-3 h-3 bg-slate-800"></div>
-        <div class="heatmap-cell level-1 w-3 h-3 bg-green-900"></div>
-        <div class="heatmap-cell level-2 w-3 h-3 bg-green-700"></div>
-        <div class="heatmap-cell level-3 w-3 h-3 bg-green-500"></div>
-        <div class="heatmap-cell level-4 w-3 h-3 bg-green-300"></div>
+        <div class="heatmap-cell level-0"></div>
+        <div class="heatmap-cell level-1"></div>
+        <div class="heatmap-cell level-2"></div>
+        <div class="heatmap-cell level-3"></div>
+        <div class="heatmap-cell level-4"></div>
         <span>More</span>
       </div>
     </div>
@@ -241,7 +360,9 @@
         <i class="fa-solid fa-brain text-accent mr-2"></i> Taste Profile
       </h3>
       <div class="pt-2">
-        <div class="h-50 w-full"><canvas id="genreChart"></canvas></div>
+        <div class="h-[200px] w-full flex justify-center">
+          <canvas bind:this={chartCanvas} id="genreChart"></canvas>
+        </div>
       </div>
       <div
         class="grid grid-cols-2 gap-2 mt-6 text-[9px] uppercase tracking-tighter text-slate-500 font-bold"

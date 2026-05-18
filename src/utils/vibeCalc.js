@@ -88,3 +88,35 @@ export function getVibes(media) {
 
   return { scores, sorted };
 }
+
+/**
+ * Calculates normalized tonal affinity across a list of media entries.
+ * Normalizes scores to 0-100 range based on weighted ratings.
+ * @param {Array} list - User's media list entries
+ * @param {Object} metadata - Metadata map for the media
+ * @returns {Array} List of { name, value } objects for chart rendering
+ */
+export function getProfileAffinity(list, metadata) {
+  const VIBE_CATEGORIES = ["Speculative", "Visceral", "Cerebral", "Emotive", "Interpersonal", "Lighthearted"];
+  const totals = { Speculative: 0, Visceral: 0, Cerebral: 0, Emotive: 0, Interpersonal: 0, Lighthearted: 0 };
+  const weights = { Speculative: 0, Visceral: 0, Cerebral: 0, Emotive: 0, Interpersonal: 0, Lighthearted: 0 };
+
+  list.forEach(entry => {
+    const meta = metadata[entry.media_id.toString()];
+    if (!meta) return;
+
+    const vibes = getVibes(meta);
+    const scoreWeight = (entry.score || 5) / 10; // Normalize rating to 0.5 - 1.0
+
+    VIBE_CATEGORIES.forEach(cat => {
+      totals[cat] += vibes.scores[cat] * scoreWeight;
+      weights[cat] += vibes.scores[cat]; // Track total possible weight
+    });
+  });
+
+  // Normalize: (actual weighted sum / max potential weighted sum) * 100
+  return VIBE_CATEGORIES.map(cat => ({
+    name: cat,
+    value: weights[cat] > 0 ? Math.round((totals[cat] / weights[cat]) * 100) : 0
+  }));
+}

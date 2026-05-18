@@ -1,5 +1,6 @@
 import { supabase } from '../utils/supabase.js';
 import { MetadataService } from './metadataService.js';
+import { ActivityService } from './activityService.js';
 
 const listCache = new Map();
 
@@ -49,12 +50,16 @@ export const ListService = {
 
     if (error) throw error;
 
+    // Track activity for the heatmap
+    await ActivityService.trackActivity(profileId);
+
     // Invalidate caches
     listCache.delete(`${type}_${profileId}`);
     MetadataService.invalidate(mediaId);
 
     return { success: true };
   },
+
 
   invalidateList(profileId, type) {
     listCache.delete(`${type}_${profileId}`);

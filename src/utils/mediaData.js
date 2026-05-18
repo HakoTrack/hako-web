@@ -5,7 +5,6 @@ import { supabase } from './supabase.js';
  */
 export function mapSupabaseMedia(media) {
   if (!media) return null;
-  console.log("DEBUG: Mapping Media Object:", media);
 
   return {
     media_id: media.id,
@@ -96,7 +95,6 @@ export async function fetchMediaByIds(ids, type) {
     console.error(`Error fetching media from unified table:`, error);
     return {};
   }
-  console.log("DEBUG: Raw Fetch Result:", data);
 
   return data.reduce((acc, item) => {
     acc[item.id.toString()] = mapSupabaseMedia(item);
