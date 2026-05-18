@@ -21,5 +21,15 @@ export const ProfileService = {
 
     profile.animeList = animeList || [];
     return profile;
+  },
+  async getProfileById(id) {
+    const { data: profile, error } = await supabase
+      .from('profiles')
+      .select('*')
+      .eq('id', id)
+      .single();
+
+    if (error || !profile) return null;
+    return profile;
   }
 };

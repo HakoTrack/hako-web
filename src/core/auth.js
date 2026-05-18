@@ -7,6 +7,26 @@ export const AuthService = {
     return session?.user ?? null;
   },
 
+  async getProfileByUsername(username) {
+    const { data, error } = await supabase
+      .from('profiles')
+      .select('*, animeList:profile_list(*)')
+      .eq('username', username)
+      .single();
+    if (error) return null;
+    return data;
+  },
+
+  async getProfileById(id) {
+    const { data, error } = await supabase
+      .from('profiles')
+      .select('*')
+      .eq('id', id)
+      .single();
+    if (error) return null;
+    return data;
+  },
+
   // Sign out logic
   async logout() {
     await supabase.auth.signOut();

@@ -1,9 +1,9 @@
 <script>
   import { AuthService } from "../core/auth.js";
 
-  let { user = null } = $props();
+  let { user = null, profile = null } = $props();
 
-  let username = $derived(user?.email?.split("@")[0]);
+  let username = $derived(profile?.username || "user");
 
   async function handleLogout() {
     await AuthService.logout();

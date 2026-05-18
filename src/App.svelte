@@ -7,12 +7,24 @@
   import Profile from "./views/Profile.svelte";
   import ModalWrapper from "./components/modals/ModalWrapper.svelte";
   import { AuthService } from "./core/auth.js";
+  import { ProfileService } from "./services/profileService.js";
   import { supabase } from "./utils/supabase.js";
   import { ui } from "./core/ui.svelte.js";
 
   let user = $state(null);
+  let profile = $state(null);
   let currentPath = $state(window.location.pathname);
   let isLanding = $derived(currentPath === "/" && !user);
+
+  $effect(() => {
+    if (user) {
+      ProfileService.getProfileById(user.id).then((p) => {
+        profile = p;
+      });
+    } else {
+      profile = null;
+    }
+  });
 
   onMount(async () => {
     user = await AuthService.getCurrentUser();
@@ -58,7 +70,7 @@
 <ModalWrapper />
 
 {#if !isLanding}
-  <Navbar {user} />
+  <Navbar {user} {profile} />
 {/if}
 
 <main id="app-view">
