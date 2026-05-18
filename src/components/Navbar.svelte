@@ -93,7 +93,7 @@
             items={[
               {
                 label: "Profile",
-                action: () => navigate(`/profile/${username}`),
+                action: () => navigate(`/user/${username}`),
                 icon: "fa-user",
               },
               {
