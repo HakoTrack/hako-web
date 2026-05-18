@@ -7,6 +7,7 @@
 </script>
 
 <div class="bg-card p-8 rounded-lg shadow-xl w-full max-w-md relative">
+  <!-- svelte-ignore a11y_consider_explicit_label -->
   <button
     onclick={close}
     class="absolute top-4 right-4 text-slate-500 hover:text-white cursor-pointer"

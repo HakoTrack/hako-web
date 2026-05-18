@@ -12,6 +12,8 @@
     currentPath.split("/").filter((p) => p && p !== "user")[0],
   );
   let profileData = $state(null);
+  // this works, putting this here to shut up IDE
+  // svelte-ignore state_referenced_locally
   let currentActiveTab = $state(activeTab);
 
   // Sync internal state directly with props
@@ -75,7 +77,7 @@
       class="object-top w-full h-full object-cover bg-[#151f2e]"
     />
     <div
-      class="absolute inset-0 bg-linear-to-t from-[#0b1622] to-transparent"
+      class="absolute bottom-0 left-0 w-full h-60 bg-linear-to-t from-[#0b1622] via-[#0b1622]/50 to-transparent"
     ></div>
   </div>
 
@@ -122,6 +124,7 @@
             class="bg-accent hover:bg-opacity-90 text-white px-6 py-2 rounded-lg font-bold text-sm transition-all shadow-lg shadow-blue-500/10"
             >Follow</button
           >
+          <!-- svelte-ignore a11y_consider_explicit_label -->
           <button
             class="bg-slate-800 hover:bg-slate-700 text-white p-2 rounded-lg transition-all"
             ><i class="fa-solid fa-ellipsis"></i></button

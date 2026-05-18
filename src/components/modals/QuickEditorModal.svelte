@@ -89,6 +89,8 @@
   }
 </script>
 
+<!-- svelte-ignore a11y_click_events_have_key_events -->
+<!-- svelte-ignore a11y_no_static_element_interactions -->
 <div
   class="bg-[#151f2e] w-full max-w-175 h-200 max-h-[90vh] rounded-md shadow-2xl animate-in fade-in zoom-in-95 duration-200 flex flex-col overflow-hidden"
   onclick={(e) => e.stopPropagation()}
@@ -96,7 +98,7 @@
   <!-- Banner Section -->
   <div class="relative w-full h-40 bg-[#0b1622] shrink-0">
     <img
-      src={HakoImage.getBanner(mediaType, entry.id)}
+      src={HakoImage.getBanner(mediaType, entry.id, 700)}
       class="w-full h-full object-cover opacity-60"
       alt="banner"
       onerror={(e) => (e.target.src = "")}

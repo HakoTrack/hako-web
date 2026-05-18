@@ -23,10 +23,9 @@ export function mapSupabaseMedia(media) {
     season: media.season,
     seasonYear: media.season_year,
     genres: media.genres?.map(g => g.genre) || [],
-    creators: media.creators?.map(c => ({ name: c.creator_name, role: c.role })) || [],
-    tags: media.tags?.map(t => ({ name: t.name, rank: t.rank })) || [],
-    startDate: parseDate(media.start_date),
-    endDate: parseDate(media.end_date)
+    tags: media.tags?.map(t => ({ name: t.tag, rank: t.rank })) || [],
+    startDate: { year: media.start_year, month: media.start_month, day: media.start_day },
+    endDate: { year: media.end_year, month: media.end_month, day: media.end_day }
   };
 }
 
@@ -52,7 +51,7 @@ export function mapSupabaseListEntry(entry) {
     progress: entry.progress,
     status: entry.status,
     updatedAt: entry.updated_at,
-    advancedScores: entry.advanced_score || {},
+    advancedScores: entry.advanced_scores || {},
     startedAt: parseDate(entry.started_at),
     completedAt: parseDate(entry.completed_at),
     profileId: entry.profile_id
@@ -65,13 +64,19 @@ export function mapSupabaseListEntry(entry) {
 export async function fetchUserListEntry(profileId, mediaId, type) {
   const { data, error } = await supabase
     .from('profile_list')
-    .select('*')
+    .select(`
+        media_id, score, progress, status, updated_at, advanced_scores, profile_id,
+        started_at, completed_at
+    `)
     .eq('profile_id', profileId)
     .eq('media_id', mediaId)
     .eq('media_type', type)
     .single();
 
-  if (error) return null;
+  if (error) {
+    console.error("DEBUG: fetchUserListEntry error:", error);
+    return null;
+  }
   return mapSupabaseListEntry(data);
 }
 
@@ -85,8 +90,8 @@ export async function fetchMediaByIds(ids, type) {
     .from('media')
     .select(`
       *,
-      genres!fk_media_genres(genre),
-      tags(tag, rank)
+      genres (genre),
+      tags (tag, rank)
     `)
     .eq('media_type', type)
     .in('id', ids);
@@ -110,12 +115,15 @@ export async function fetchMediaById(id) {
     .from('media')
     .select(`
       *,
-      genres!fk_media_genres(genre),
-      tags(tag, rank)
+      genres (genre),
+      tags (tag, rank)
     `)
     .eq('id', id)
     .single();
 
-  if (error) return null;
+  if (error) {
+    console.error("DEBUG: fetchMediaById error:", error);
+    return null;
+  }
   return mapSupabaseMedia(data);
 }

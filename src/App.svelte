@@ -5,6 +5,7 @@
   import Landing from "./views/Landing.svelte";
   import Feed from "./views/Feed.svelte";
   import Profile from "./views/Profile.svelte";
+  import AnimeDetail from "./views/AnimeDetail.svelte";
   import ModalWrapper from "./components/modals/ModalWrapper.svelte";
   import { AuthService } from "./core/auth.js";
   import { ProfileService } from "./services/profileService.js";
@@ -17,6 +18,14 @@
   let mediaType = $state("anime");
 
   let isLanding = $derived(currentPath === "/" && !user);
+
+  $effect(() => {
+    // Auth Guard: Redirect to landing if not logged in and not already on landing
+    if (user === null && currentPath !== "/") {
+      window.history.pushState({}, "", "/");
+      handleRouting();
+    }
+  });
 
   $effect(() => {
     if (user) {
@@ -65,8 +74,13 @@
   {#if currentPath === "/"}
     <Landing />
   {:else if currentPath.startsWith("/user")}
-    <!-- Profile view handles its own internal routing -->
-    <Profile {currentPath} {activeTab} {mediaType} />
+    {#key currentPath}
+      <Profile {currentPath} {activeTab} {mediaType} />
+    {/key}
+  {:else if currentPath.startsWith("/anime/")}
+    {#key currentPath}
+      <AnimeDetail mediaId={currentPath.split("/")[2]} />
+    {/key}
   {:else if currentPath === "/feed"}
     <Feed {user} />
   {:else}

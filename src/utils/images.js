@@ -48,8 +48,8 @@ export const HakoImage = {
   /**
    * Helper for high-res banners using dynamic ImageKit transforms.
    */
-  getBanner: function (type, id) {
-    return this.get(`${type}/banners/${id}.jpg`, { w: 1200, f: 'webp', q: 80 });
+  getBanner: function (type, id, width = 1920) {
+    return this.get(`${type}/banners/${id}.jpg`, { w: width, f: 'webp', q: 80 });
   },
 
   /**
