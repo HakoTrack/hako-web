@@ -3,7 +3,7 @@
 
   let { user = null } = $props();
 
-  let username = $derived(user?.email?.split("@")[0] || "shaetsu");
+  let username = $derived(user?.email?.split("@")[0]);
 
   async function handleLogout() {
     await AuthService.logout();
@@ -18,6 +18,8 @@
 <nav class="navbar bg-nav text-white px-4 py-3 sticky top-0 z-50 shadow-lg">
   <div class="max-w-375 mx-auto lg:px-8 flex items-center justify-between">
     <div class="flex items-center space-x-8">
+      <!-- svelte-ignore a11y_click_events_have_key_events -->
+      <!-- svelte-ignore a11y_no_static_element_interactions -->
       <div
         id="nav-branding"
         class="text-2xl font-bold tracking-tighter flex items-center cursor-pointer select-none group"
@@ -46,8 +48,11 @@
               navigate(`/profile/${username}`);
             }}>Profile</a
           >
+          <!-- svelte-ignore a11y_invalid_attribute -->
           <a href="#" class="nav-link">Lists</a>
+          <!-- svelte-ignore a11y_invalid_attribute -->
           <a href="#" class="nav-link">Browse</a>
+          <!-- svelte-ignore a11y_invalid_attribute -->
           <a
             href="#"
             id="logout-btn"

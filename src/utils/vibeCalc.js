@@ -56,7 +56,7 @@ const SCHEMA = {
 const TAG_RANK_FLOOR = 60;
 
 /**
- * Calculates tonal pillar scores for a media entry.
+ * Calculates vibe scores for a media entry.
  * @param {Object} media - The media metadata (must contain genres and tags).
  * @returns {Object} { scores, sorted }
  */

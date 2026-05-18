@@ -242,7 +242,7 @@
       <div class="overflow-x-auto scrollbar-hide">
         <div
           id="heatmap"
-          class="grid grid-rows-7 grid-flow-col gap-1.5 min-w-max min-h-[110px]"
+          class="grid grid-rows-7 grid-flow-col gap-1.5 min-w-max min-h-27.5"
         >
           {#each heatmapData as day}
             {@const level =
@@ -360,7 +360,7 @@
         <i class="fa-solid fa-brain text-accent mr-2"></i> Taste Profile
       </h3>
       <div class="pt-2">
-        <div class="h-[200px] w-full flex justify-center">
+        <div class="h-50 w-full flex justify-center">
           <canvas bind:this={chartCanvas} id="genreChart"></canvas>
         </div>
       </div>

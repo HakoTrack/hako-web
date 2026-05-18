@@ -73,6 +73,8 @@
       </div>
     {:else if post.post_type === "list_update" && post.metadata}
       <div class="flex items-center">
+        <!-- svelte-ignore a11y_no_noninteractive_element_interactions -->
+        <!-- svelte-ignore a11y_click_events_have_key_events -->
         <img
           loading="lazy"
           src={HakoImage.getCover("anime", post.metadata.media_id, "small")}
@@ -81,6 +83,8 @@
           alt={post.metadata.title}
         />
         <div class="ml-4 flex-1">
+          <!-- svelte-ignore a11y_no_noninteractive_element_interactions -->
+          <!-- svelte-ignore a11y_click_events_have_key_events -->
           <h4
             class="text-white font-bold leading-tight cursor-pointer hover:text-accent transition-colors"
             onclick={() => openQuickEditor(post.metadata.media_id)}

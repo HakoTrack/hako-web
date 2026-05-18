@@ -80,7 +80,7 @@ function updateNavbar(user) {
   const navLinks = document.querySelector('.hidden.md\\:flex.space-x-6');
   if (!navLinks) return;
 
-  const username = user?.email?.split('@')[0] || 'shaetsu';
+  const username = user?.email?.split('@')[0];
 
   if (user) {
     navLinks.innerHTML = `
