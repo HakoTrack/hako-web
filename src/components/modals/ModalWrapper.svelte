@@ -3,7 +3,15 @@
   import { MODAL_REGISTRY } from "./registry.js";
 
   let Component = $derived(MODAL_REGISTRY[ui.activeModal]);
+
+  function handleKeydown(e) {
+    if (ui.activeModal && e.key === "Escape") {
+      ui.closeModal();
+    }
+  }
 </script>
+
+<svelte:window on:keydown={handleKeydown} />
 
 {#if ui.activeModal && Component}
   <!-- svelte-ignore a11y_click_events_have_key_events -->

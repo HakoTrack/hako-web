@@ -98,25 +98,37 @@ export function getVibes(media) {
  */
 export function getProfileAffinity(list, metadata) {
   const VIBE_CATEGORIES = ["Speculative", "Visceral", "Cerebral", "Emotive", "Interpersonal", "Lighthearted"];
-  const totals = { Speculative: 0, Visceral: 0, Cerebral: 0, Emotive: 0, Interpersonal: 0, Lighthearted: 0 };
-  const weights = { Speculative: 0, Visceral: 0, Cerebral: 0, Emotive: 0, Interpersonal: 0, Lighthearted: 0 };
+  const categoryTotals = { Speculative: 0, Visceral: 0, Cerebral: 0, Emotive: 0, Interpersonal: 0, Lighthearted: 0 };
+  let grandTotalPoints = 0;
 
   list.forEach(entry => {
     const meta = metadata[entry.media_id.toString()];
     if (!meta) return;
 
     const vibes = getVibes(meta);
-    const scoreWeight = (entry.score || 5) / 10; // Normalize rating to 0.5 - 1.0
+    const scoreMultiplier = (entry.score || 3) / 10; // Influence of rating
 
     VIBE_CATEGORIES.forEach(cat => {
-      totals[cat] += vibes.scores[cat] * scoreWeight;
-      weights[cat] += vibes.scores[cat]; // Track total possible weight
+      const weightedScore = vibes.scores[cat] * scoreMultiplier;
+      categoryTotals[cat] += weightedScore;
+      grandTotalPoints += weightedScore;
     });
   });
 
-  // Normalize: (actual weighted sum / max potential weighted sum) * 100
-  return VIBE_CATEGORIES.map(cat => ({
+  // 1. Get raw relative percentages
+  const rawValues = VIBE_CATEGORIES.map(cat => ({
     name: cat,
-    value: weights[cat] > 0 ? Math.round((totals[cat] / weights[cat]) * 100) : 0
+    val: grandTotalPoints > 0 ? (categoryTotals[cat] / grandTotalPoints) * 100 : 0
+  }));
+
+  const vals = rawValues.map(x => x.val);
+  const min = Math.min(...vals);
+  const max = Math.max(...vals);
+
+  // 2. Stretch them to a range of 40-100 to make the chart more dynamic
+  // Formula: ((x - min) / (max - min)) * (targetMax - targetMin) + targetMin
+  return rawValues.map(item => ({
+    name: item.name,
+    value: max === min ? 50 : Math.round(((item.val - min) / (max - min)) * 80 + 10)
   }));
 }

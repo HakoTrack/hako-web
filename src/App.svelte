@@ -8,12 +8,14 @@
   import ModalWrapper from "./components/modals/ModalWrapper.svelte";
   import { AuthService } from "./core/auth.js";
   import { ProfileService } from "./services/profileService.js";
-  import { supabase } from "./utils/supabase.js";
   import { ui } from "./core/ui.svelte.js";
 
   let user = $state(null);
   let profile = $state(null);
   let currentPath = $state(window.location.pathname);
+  let activeTab = $state("overview");
+  let mediaType = $state("anime");
+
   let isLanding = $derived(currentPath === "/" && !user);
 
   $effect(() => {
@@ -26,40 +28,26 @@
     }
   });
 
-  onMount(async () => {
-    user = await AuthService.getCurrentUser();
-
-    supabase.auth.onAuthStateChange((event, session) => {
-      user = session?.user ?? null;
-      handleRouting();
-    });
-
-    window.addEventListener("popstate", () => {
-      handleRouting();
-    });
-
-    handleRouting();
-  });
-
+  // Updated routing logic to handle /user/ paths
   function handleRouting() {
     currentPath = window.location.pathname;
+    const pathParts = currentPath.split("/").filter((p) => p);
 
-    // Auth Guard
-    if (!user && currentPath !== "/") {
-      navigate("/");
-      return;
-    }
-
-    if (user && currentPath === "/") {
-      navigate("/feed");
-      return;
+    if (pathParts[0] === "user") {
+      // pathParts[2] is the mediaType (e.g., 'anime')
+      activeTab = pathParts[2] || "overview";
+      mediaType = pathParts[2] || "anime";
     }
   }
 
-  function navigate(path) {
-    window.history.pushState({}, "", path);
+  onMount(() => {
+    AuthService.getCurrentUser().then((u) => {
+      user = u;
+    });
+
+    window.addEventListener("popstate", handleRouting);
     handleRouting();
-  }
+  });
 </script>
 
 <svelte:window
@@ -76,8 +64,9 @@
 <main id="app-view">
   {#if currentPath === "/"}
     <Landing />
-  {:else if currentPath.startsWith("/profile")}
-    <Profile {currentPath} />
+  {:else if currentPath.startsWith("/user")}
+    <!-- Profile view handles its own internal routing -->
+    <Profile {currentPath} {activeTab} {mediaType} />
   {:else if currentPath === "/feed"}
     <Feed {user} />
   {:else}

@@ -6,13 +6,18 @@
   import Stats from "../components/profile/Stats.svelte";
   import Overview from "../components/profile/Overview.svelte";
 
-  let { currentPath } = $props();
+  let { currentPath, activeTab = "overview", mediaType = "anime" } = $props();
 
   let username = $derived(
-    currentPath.split("/").filter((p) => p && p !== "profile")[0],
+    currentPath.split("/").filter((p) => p && p !== "user")[0],
   );
   let profileData = $state(null);
-  let activeTab = $state("overview");
+  let currentActiveTab = $state(activeTab);
+
+  // Sync internal state directly with props
+  $effect(() => {
+    currentActiveTab = activeTab;
+  });
 
   const ROLES = {
     owner: {
@@ -46,8 +51,6 @@
   );
 
   onMount(async () => {
-    console.log("DEBUG: currentPath:", currentPath);
-    console.log("DEBUG: Resolved username:", username);
     try {
       profileData = await ProfileService.getProfileByUsername(username);
     } catch (e) {
@@ -119,7 +122,6 @@
             class="bg-accent hover:bg-opacity-90 text-white px-6 py-2 rounded-lg font-bold text-sm transition-all shadow-lg shadow-blue-500/10"
             >Follow</button
           >
-          <!-- svelte-ignore a11y_consider_explicit_label -->
           <button
             class="bg-slate-800 hover:bg-slate-700 text-white p-2 rounded-lg transition-all"
             ><i class="fa-solid fa-ellipsis"></i></button
@@ -132,33 +134,47 @@
       class="profile-tabs flex space-x-8 border-b border-slate-800 mb-8 overflow-x-auto whitespace-nowrap scrollbar-hide"
     >
       <button
-        onclick={() => (activeTab = "overview")}
-        class="tab-btn pb-4 font-semibold {activeTab === 'overview'
+        onclick={() => {
+          currentActiveTab = "overview";
+          window.history.pushState({}, "", `/user/${username}`);
+        }}
+        class="tab-btn pb-4 font-semibold {currentActiveTab === 'overview'
           ? 'tab-active text-white'
           : 'text-slate-400'}">Overview</button
       >
       <button
-        onclick={() => (activeTab = "anime")}
-        class="tab-btn pb-4 font-semibold {activeTab === 'anime'
+        onclick={() => {
+          currentActiveTab = "anime";
+          window.history.pushState({}, "", `/user/${username}/anime`);
+        }}
+        class="tab-btn pb-4 font-semibold {currentActiveTab === 'anime'
           ? 'tab-active text-white'
           : 'text-slate-400'}">Anime</button
       >
       <button
-        onclick={() => (activeTab = "manga")}
-        class="tab-btn pb-4 font-semibold {activeTab === 'manga'
+        onclick={() => {
+          currentActiveTab = "manga";
+          window.history.pushState({}, "", `/user/${username}/manga`);
+        }}
+        class="tab-btn pb-4 font-semibold {currentActiveTab === 'manga'
           ? 'tab-active text-white'
           : 'text-slate-400'}">Manga</button
       >
-      <!-- Placeholders for future tabs -->
       <button
-        onclick={() => (activeTab = "light-novels")}
-        class="tab-btn pb-4 font-semibold {activeTab === 'light-novels'
+        onclick={() => {
+          currentActiveTab = "light-novels";
+          window.history.pushState({}, "", `/user/${username}/light_novels`);
+        }}
+        class="tab-btn pb-4 font-semibold {currentActiveTab === 'light-novels'
           ? 'tab-active text-white'
           : 'text-slate-400'}">Light Novels</button
       >
       <button
-        onclick={() => (activeTab = "stats")}
-        class="tab-btn pb-4 font-semibold {activeTab === 'stats'
+        onclick={() => {
+          currentActiveTab = "stats";
+          window.history.pushState({}, "", `/user/${username}/stats`);
+        }}
+        class="tab-btn pb-4 font-semibold {currentActiveTab === 'stats'
           ? 'tab-active text-white'
           : 'text-slate-400'}">Stats</button
       >
@@ -166,16 +182,19 @@
 
     <div class="py-8 min-h-100">
       {#if profileData}
-        <div class:hidden={activeTab !== "overview"}>
+        <div class:hidden={currentActiveTab !== "overview"}>
           <Overview {profileData} />
         </div>
-        <div class:hidden={activeTab !== "anime"}>
+        <div class:hidden={currentActiveTab !== "anime"}>
           <MediaList type="anime" profileId={profileData.id} />
         </div>
-        <div class:hidden={activeTab !== "manga"}>
+        <div class:hidden={currentActiveTab !== "manga"}>
           <MediaList type="manga" profileId={profileData.id} />
         </div>
-        <div class:hidden={activeTab !== "stats"}>
+        <div class:hidden={currentActiveTab !== "light-novels"}>
+          <MediaList type="light_novels" profileId={profileData.id} />
+        </div>
+        <div class:hidden={currentActiveTab !== "stats"}>
           <Stats {profileData} />
         </div>
       {/if}

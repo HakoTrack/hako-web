@@ -1,5 +1,5 @@
 /**
- * scripts/utils/images.js
+ * src/utils/images.js
  * Handles image URL construction for ImageKit (Media) and Supabase (Profiles).
  */
 
@@ -32,20 +32,21 @@ export const HakoImage = {
   },
 
   /**
-   * Helper for Anime/Manga covers using ImageKit WebP.
+   * Helper for Anime/Manga covers using dynamic ImageKit transforms.
    */
   getCover: function (type, id, size = 'medium') {
-    const sizes = {
-      small: { w: 120, suffix: '_small' },
-      medium: { w: 240, suffix: '_medium' },
-      large: { w: 480, suffix: '_large' }
+    const widths = {
+      small: 120,
+      medium: 240,
+      large: 480
     };
-    const config = sizes[size] || sizes.medium;
-    return this.get(`${type}/covers/${id}${config.suffix}.jpg`, { w: config.w, f: 'webp' });
+    const width = widths[size] || widths.medium;
+    // Removed hardcoded suffix and rely on dynamic ImageKit transformation
+    return this.get(`${type}/covers/${id}.jpg`, { w: width, f: 'webp' });
   },
 
   /**
-   * Helper for high-res banners.
+   * Helper for high-res banners using dynamic ImageKit transforms.
    */
   getBanner: function (type, id) {
     return this.get(`${type}/banners/${id}.jpg`, { w: 1200, f: 'webp', q: 80 });

@@ -75,7 +75,14 @@
       profileData?.animeList &&
       chartCanvas
     ) {
-      const affinities = getProfileAffinity(profileData.animeList, metadata);
+      // Filter list: exclude 'planning'
+      const activeEntries = profileData.animeList.filter((entry) =>
+        ["completed", "current", "dropped"].includes(
+          entry.status?.toLowerCase(),
+        ),
+      );
+
+      const affinities = getProfileAffinity(activeEntries, metadata);
       const VIBE_ICONS = {
         Speculative: "\uf6e2",
         Visceral: "\uf0e7",

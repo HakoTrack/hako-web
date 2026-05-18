@@ -1,5 +1,8 @@
 <script>
   import { AuthService } from "../core/auth.js";
+  import { HakoImage } from "../utils/images.js";
+  import { ui } from "../core/ui.svelte.js";
+  import Dropdown from "./common/Dropdown.svelte";
 
   let { user = null, profile = null } = $props();
 
@@ -18,8 +21,6 @@
 <nav class="navbar bg-nav text-white px-4 py-3 sticky top-0 z-50 shadow-lg">
   <div class="max-w-375 mx-auto lg:px-8 flex items-center justify-between">
     <div class="flex items-center space-x-8">
-      <!-- svelte-ignore a11y_click_events_have_key_events -->
-      <!-- svelte-ignore a11y_no_static_element_interactions -->
       <div
         id="nav-branding"
         class="text-2xl font-bold tracking-tighter flex items-center cursor-pointer select-none group"
@@ -41,27 +42,22 @@
             }}>Feed</a
           >
           <a
-            href="/profile/{username}"
+            href="/user/{username}"
             class="nav-link"
             onclick={(e) => {
               e.preventDefault();
-              navigate(`/profile/${username}`);
+              navigate(`/user/${username}`);
             }}>Profile</a
           >
-          <!-- svelte-ignore a11y_invalid_attribute -->
-          <a href="#" class="nav-link">Lists</a>
-          <!-- svelte-ignore a11y_invalid_attribute -->
-          <a href="#" class="nav-link">Browse</a>
-          <!-- svelte-ignore a11y_invalid_attribute -->
           <a
-            href="#"
-            id="logout-btn"
+            href="/user/{username}/anime"
             class="nav-link"
             onclick={(e) => {
               e.preventDefault();
-              handleLogout();
-            }}>Logout</a
+              navigate(`/user/${username}/anime`);
+            }}>Lists</a
           >
+          <a href="#" class="nav-link">Browse</a>
         {:else}
           <button
             id="nav-login"
@@ -90,11 +86,61 @@
       </div>
       <div class="flex items-center space-x-3">
         <i class="fa-solid fa-bell cursor-pointer hover:text-accent"></i>
-        <div
-          class="w-8 h-8 rounded-full bg-accent flex items-center justify-center font-bold text-xs"
-        >
-          {username.charAt(0).toUpperCase()}
-        </div>
+        {#if user}
+          <Dropdown
+            items={[
+              {
+                label: "Profile",
+                action: () => navigate(`/profile/${username}`),
+                icon: "fa-user",
+              },
+              {
+                label: "Lists",
+                action: () => navigate("/lists"),
+                icon: "fa-list",
+              },
+              {
+                label: "Theme",
+                action: () => ui.openModal("theme"),
+                icon: "fa-palette",
+              },
+              {
+                label: "Settings",
+                action: () => ui.openModal("settings"),
+                icon: "fa-cog",
+              },
+              {
+                label: "Logout",
+                action: handleLogout,
+                icon: "fa-right-from-bracket",
+              },
+            ]}
+          >
+            {#if profile?.avatar_url}
+              <img
+                src={HakoImage.get(profile.avatar_url, {
+                  w: 32,
+                  h: 32,
+                  f: "webp",
+                })}
+                class="w-8 h-8 rounded-full object-cover border border-slate-700 cursor-pointer"
+                alt="{username}'s avatar"
+              />
+            {:else}
+              <div
+                class="w-8 h-8 rounded-full bg-accent flex items-center justify-center font-bold text-xs cursor-pointer"
+              >
+                {username.charAt(0).toUpperCase()}
+              </div>
+            {/if}
+          </Dropdown>
+        {:else}
+          <div
+            class="w-8 h-8 rounded-full bg-slate-700 flex items-center justify-center"
+          >
+            <i class="fa-solid fa-user text-slate-400"></i>
+          </div>
+        {/if}
       </div>
     </div>
   </div>

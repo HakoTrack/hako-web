@@ -5,7 +5,7 @@ export const ProfileService = {
     const { data: profile, error } = await supabase
       .from('profiles')
       .select('*')
-      .ilike('username', username)
+      .eq('username', username)
       .single();
 
     if (error || !profile) throw new Error('User not found');
