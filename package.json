@@ -28,7 +28,8 @@
     "@vercel/speed-insights": "^2.0.0",
     "chart.js": "^4.5.1",
     "fuse.js": "^7.3.0",
-    "svelte": "^5.55.7"
+    "svelte": "^5.55.7",
+    "zod": "^4.4.3"
   },
   "devDependencies": {
     "@sveltejs/vite-plugin-svelte": "^7.1.2",

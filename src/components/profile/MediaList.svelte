@@ -6,8 +6,7 @@
   import { MetadataService } from "../../services/metadataService";
   import { HakoImage } from "../../utils/images";
   import { fetchMediaById } from "../../utils/mediaData";
-  import type { ListEntry } from "../../types/Media";
-  import type { Media } from "../../types/Media";
+  import type { Media, ListEntry } from "../../types/index";
 
   let { type = "anime", profileId } = $props<{
     type?: string;

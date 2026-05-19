@@ -4,10 +4,12 @@
   import { HakoImage } from "../utils/images";
   import { getVibes } from "../utils/vibeCalc";
   import { openQuickEditor } from "../core/ui.svelte";
+  import type { Media } from "../types/index";
 
-  import type { Media } from "../types/Media";
-
-  let { mediaId } = $props();
+  let { mediaId, type = "anime" } = $props<{
+    mediaId: string;
+    type?: string;
+  }>();
   let media: Media | null = $state(null);
   let isLoading = $state(true);
 
@@ -16,29 +18,29 @@
 
   onMount(async () => {
     try {
-      media = await fetchMediaById(mediaId);
-      if (media) {
-        console.log("DEBUG: All media keys:", Object.keys(media));
-        console.log("DEBUG: Full media object:", $state.snapshot(media));
-      }
+      media = await fetchMediaById(Number(mediaId));
     } catch (e) {
-      console.error("Failed to fetch anime:", e);
+      console.error("Failed to fetch media:", e);
     } finally {
       isLoading = false;
     }
   });
+
+  async function handleOpenEditor(media: Media) {
+    openQuickEditor(media, type);
+  }
 </script>
 
 {#if isLoading}
   <div class="flex items-center justify-center p-20 text-white">Loading...</div>
 {:else if !media}
-  <div class="text-white p-10 text-center">Anime not found.</div>
+  <div class="text-white p-10 text-center">Media not found.</div>
 {:else}
   <div class="relative">
     <!-- Full-width Banner -->
     <div class="w-full h-80 relative overflow-hidden bg-[#0b1622]">
       <img
-        src={HakoImage.getBanner("anime", media.media_id)}
+        src={HakoImage.getBanner(type, media.media_id)}
         class="w-full h-full object-cover opacity-50"
         alt="Banner"
       />
@@ -52,11 +54,11 @@
       <div class="relative -mt-20 flex items-end space-x-6 pb-8">
         <!-- Cover -->
         <button
-          onclick={() => media && openQuickEditor(media.media_id, "anime")}
+          onclick={() => handleOpenEditor(media!)}
           class="hover:scale-105 transition-transform duration-200 cursor-pointer focus:outline-none"
         >
           <img
-            src={HakoImage.getCover("anime", media.media_id, "large")}
+            src={HakoImage.getCover(type, media.media_id, "large")}
             class="media-cover w-40 h-56 rounded-xl border-4 border-[#0b1622] shadow-2xl object-cover bg-[#151f2e]"
             data-media-id={media.media_id}
             alt={media.title.romaji}
@@ -104,7 +106,7 @@
 
         <!-- Sidebar Metadata -->
         <div class="space-y-6">
-          <!-- Vibes (Moved above Info) -->
+          <!-- Vibes -->
           <div class="bg-card p-6 rounded-xl shadow-lg">
             <h3 class="text-white font-bold mb-4">Vibes</h3>
             <div class="flex flex-wrap gap-2">
@@ -127,18 +129,21 @@
                 >
               </div>
               <div class="flex justify-between">
-                <span>Episodes</span><span class="text-white"
-                  >{media.episodes || "N/A"}</span
+                <span>{type === "anime" ? "Episodes" : "Chapters"}</span><span
+                  class="text-white"
+                  >{(type === "anime" ? media.episodes : media.chapters) ||
+                    "N/A"}</span
                 >
               </div>
               <div class="flex justify-between">
                 <span>Duration</span><span class="text-white"
-                  >{media.duration} mins</span
+                  >{media.duration || "N/A"}
+                  {type === "anime" ? "mins" : ""}</span
                 >
               </div>
               <div class="flex justify-between">
                 <span>Season</span><span class="text-white"
-                  >{media.season} {media.seasonYear}</span
+                  >{media.season || ""} {media.seasonYear || ""}</span
                 >
               </div>
               <div class="flex justify-between">

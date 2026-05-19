@@ -1,0 +1,69 @@
+import { z } from 'zod';
+
+// --- Media & List Interfaces ---
+export interface Media {
+  media_id: number;
+  title: {
+    romaji: string;
+    english: string | null;
+    native: string | null;
+  };
+  description: string;
+  format: string;
+  status: string;
+  episodes: number | null;
+  chapters: number | null;
+  volumes: number | null;
+  duration: number | null;
+  season: string | null;
+  seasonYear: number | null;
+  genres: string[];
+  tags: Array<{ name: string; rank: number }>;
+  startDate: { year: number | null; month: number | null; day: number | null };
+  endDate: { year: number | null; month: number | null; day: number | null };
+}
+
+export interface ListEntry {
+  media_id: number;
+  score: number | null;
+  progress: number | null;
+  status: string;
+  updatedAt: string;
+  advancedScores: Record<string, any>;
+  startedAt: { year: number | null; month: number | null; day: number | null };
+  completedAt: { year: number | null; month: number | null; day: number | null };
+  profileId: string;
+}
+
+// --- Zod Schemas & Inferred Types ---
+export const PostMetadataSchema = z.object({
+  media_id: z.number().optional(),
+  title: z.string().optional(),
+  action: z.string().optional(),
+  progress: z.number().optional(),
+  total: z.union([z.number(), z.string()]).optional(),
+});
+export type PostMetadata = z.infer<typeof PostMetadataSchema>;
+
+export const AuthorSchema = z.object({
+  username: z.string(),
+  avatar_url: z.string().nullable(),
+});
+export type Author = z.infer<typeof AuthorSchema>;
+
+export const PostSchema = z.object({
+  id: z.string(),
+  author_id: z.string(),
+  target_profile_id: z.string(),
+  post_type: z.enum(['thought', 'list_update']),
+  metadata: PostMetadataSchema.nullable(),
+  content: z.string().nullable(),
+  created_at: z.string(),
+  author: AuthorSchema,
+  stats: z.object({
+    likes: z.number(),
+    comments: z.number(),
+    shares: z.number(),
+  }).optional(),
+});
+export type Post = z.infer<typeof PostSchema>;

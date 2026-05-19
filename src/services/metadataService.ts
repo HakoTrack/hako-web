@@ -1,5 +1,5 @@
 import { fetchMediaByIds } from '../utils/mediaData';
-import type { Media } from '../types/Media';
+import type { Media } from '../types/index';
 
 const cache = new Map<string, Media>();
 

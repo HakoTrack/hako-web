@@ -3,7 +3,7 @@
  * Calculates tonal pillar scores for media entries based on metadata.
  */
 
-import type { Media, ListEntry } from '../types/Media';
+import type { Media, ListEntry } from '../types/index';
 
 export interface VibeScore {
   Speculative: number;

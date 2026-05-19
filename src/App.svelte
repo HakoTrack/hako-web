@@ -5,7 +5,7 @@
   import Landing from "./views/Landing.svelte";
   import Feed from "./views/Feed.svelte";
   import Profile from "./views/Profile.svelte";
-  import AnimeDetail from "./views/AnimeDetail.svelte";
+  import MediaDetail from "./views/MediaDetail.svelte";
   import ModalWrapper from "./components/modals/ModalWrapper.svelte";
   import { AuthService } from "./core/auth";
   import { ProfileService } from "./services/profileService.ts";
@@ -91,7 +91,7 @@
     {/key}
   {:else if currentPath.startsWith("/anime/")}
     {#key currentPath}
-      <AnimeDetail mediaId={currentPath.split("/")[2]} />
+      <MediaDetail mediaId={currentPath.split("/")[2]} type="anime" />
     {/key}
   {:else if currentPath === "/feed"}
     <Feed {user} />

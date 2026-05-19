@@ -1,5 +1,5 @@
 import { supabase } from './supabase';
-import type { Media, ListEntry } from '../types/Media';
+import type { Media, ListEntry } from '../types/index';
 
 /**
  * Maps Supabase relational media data to the legacy JSON-like format
