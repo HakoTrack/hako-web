@@ -1,9 +1,9 @@
 <script>
-  import { openQuickEditor } from "../core/ui.svelte.js";
+  import { openQuickEditor } from "../core/ui.svelte.ts";
   import { onMount } from "svelte";
-  import { supabase } from "../utils/supabase.js";
-  import { HakoImage } from "../utils/images.js";
-  import { ui } from "../core/ui.svelte.js";
+  import { HakoImage } from "../utils/images";
+  import { fetchMediaById } from "../utils/mediaData";
+  import { FavoritesService } from "../services/favoritesService.ts";
 
   let { profileId } = $props();
 
@@ -12,22 +12,20 @@
 
   onMount(async () => {
     try {
-      const { data, error } = await supabase
-        .from("profile_favorites")
-        .select("media_id")
-        .eq("profile_id", profileId)
-        .order("id", { ascending: true });
-
-      if (error) throw error;
-
-      animeIds = data.map((f) => f.media_id);
-      ui.setFavorites(animeIds);
+      // Centralized fetch via FavoritesService
+      const ids = await FavoritesService.syncFavorites(profileId);
+      animeIds = ids;
     } catch (e) {
       console.error("Error loading favorites:", e);
     } finally {
       isLoading = false;
     }
   });
+
+  async function handleOpenEditor(id) {
+    const media = await fetchMediaById(id);
+    if (media) openQuickEditor(media, "anime");
+  }
 </script>
 
 <div class="bg-card p-6 rounded-xl shadow-md space-y-6">
@@ -52,7 +50,7 @@
             class="media-cover rounded w-full aspect-85/115 object-cover cursor-pointer hover:scale-105 transition-transform bg-[#151f2e]"
             data-media-id={id}
             onmouseover={() => HakoImage.prefetchBanner("anime", id)}
-            onclick={() => openQuickEditor(id)}
+            onclick={() => handleOpenEditor(id)}
             alt="Anime {id}"
             onerror={(e) =>
               (e.target.src =

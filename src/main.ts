@@ -1,7 +1,7 @@
 import './styles/global.css';
 import { mount } from 'svelte';
 import App from './App.svelte';
-import './utils/images.js';
+import './utils/images';
 import { injectSpeedInsights } from '@vercel/speed-insights';
 import { inject } from '@vercel/analytics';
 
@@ -13,7 +13,7 @@ inject();
 
 // 4. Mount the Svelte app
 const app = mount(App, {
-  target: document.getElementById('app'),
+  target: document.getElementById('app')!,
 });
 
 export default app;

@@ -1,6 +1,6 @@
 <script>
   import { onMount } from "svelte";
-  import { HakoImage } from "../utils/images.js";
+  import { HakoImage } from "../utils/images.ts";
 
   let loaded = false;
   let heroUrl = "";

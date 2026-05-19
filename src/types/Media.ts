@@ -1,0 +1,33 @@
+export interface Media {
+  media_id: number;
+  title: {
+    romaji: string;
+    english: string | null;
+    native: string | null;
+  };
+  description: string;
+  format: string;
+  status: string;
+  episodes: number | null;
+  chapters: number | null;
+  volumes: number | null;
+  duration: number | null;
+  season: string | null;
+  seasonYear: number | null;
+  genres: string[];
+  tags: Array<{ name: string; rank: number }>;
+  startDate: { year: number | null; month: number | null; day: number | null };
+  endDate: { year: number | null; month: number | null; day: number | null };
+}
+
+export interface ListEntry {
+  media_id: number;
+  score: number | null;
+  progress: number | null;
+  status: string;
+  updatedAt: string;
+  advancedScores: Record<string, any>;
+  startedAt: { year: number | null; month: number | null; day: number | null };
+  completedAt: { year: number | null; month: number | null; day: number | null };
+  profileId: string;
+}

@@ -2,9 +2,9 @@
   import { onMount } from "svelte";
   import FavoritesGrid from "../FavoritesGrid.svelte";
   import FeedWrapper from "../feed/FeedWrapper.svelte";
-  import { fetchMediaByIds } from "../../utils/mediaData.js";
-  import { ActivityService } from "../../services/activityService.js";
-  import { getProfileAffinity } from "../../utils/vibeCalc.js";
+  import { fetchMediaByIds } from "../../utils/mediaData";
+  import { ActivityService } from "../../services/activityService.ts";
+  import { getProfileAffinity } from "../../utils/vibeCalc.ts";
   import Chart from "chart.js/auto";
 
   let { profileData } = $props();
@@ -25,7 +25,7 @@
   ];
 
   let statusDistribution = $derived.by(() => {
-    const list = profileData?.animeList || [];
+    const list = profileData?.mediaLists?.anime || [];
     const total = list.length;
     return statusGroups.map((group) => {
       const count = list.filter(
@@ -40,7 +40,7 @@
   });
 
   let stats = $derived.by(() => {
-    const list = profileData?.animeList || [];
+    const list = profileData?.mediaLists?.anime || [];
     const total = list.length;
 
     let totalMinutes = 0;
@@ -72,11 +72,11 @@
   $effect(() => {
     if (
       Object.keys(metadata).length > 0 &&
-      profileData?.animeList &&
+      profileData?.mediaLists?.anime &&
       chartCanvas
     ) {
       // Filter list: exclude 'planning'
-      const activeEntries = profileData.animeList.filter((entry) =>
+      const activeEntries = profileData.mediaLists.anime.filter((entry) =>
         ["completed", "current", "dropped"].includes(
           entry.status?.toLowerCase(),
         ),
@@ -160,8 +160,8 @@
   });
 
   onMount(async () => {
-    if (profileData?.animeList) {
-      const ids = profileData.animeList.map((a) => a.media_id);
+    if (profileData?.mediaLists?.anime) {
+      const ids = profileData.mediaLists.anime.map((a) => a.media_id);
       metadata = await fetchMediaByIds(ids, "anime");
     }
 

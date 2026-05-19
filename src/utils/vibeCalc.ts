@@ -1,9 +1,38 @@
 /**
- * src/utils/toneCalc.js
+ * src/utils/vibeCalc.ts
  * Calculates tonal pillar scores for media entries based on metadata.
  */
 
-const SCHEMA = {
+import type { Media, ListEntry } from '../types/Media';
+
+export interface VibeScore {
+  Speculative: number;
+  Visceral: number;
+  Cerebral: number;
+  Emotive: number;
+  Interpersonal: number;
+  Lighthearted: number;
+}
+
+export interface VibePillar {
+  name: string;
+  score: number;
+}
+
+export interface VibeResult {
+  scores: VibeScore;
+  sorted: VibePillar[];
+}
+
+export interface VibeAffinity {
+  name: string;
+  value: number;
+}
+
+const SCHEMA: {
+  genres: Record<string, { primary: keyof VibeScore; secondary?: keyof VibeScore }>;
+  tags: Record<string, { p: keyof VibeScore; w: number }>;
+} = {
   genres: {
     "Action": { primary: "Visceral" },
     "Adventure": { primary: "Speculative", secondary: "Visceral" },
@@ -55,17 +84,12 @@ const SCHEMA = {
 
 const TAG_RANK_FLOOR = 60;
 
-/**
- * Calculates vibe scores for a media entry.
- * @param {Object} media - The media metadata (must contain genres and tags).
- * @returns {Object} { scores, sorted }
- */
-export function getVibes(media) {
-  const scores = { Speculative: 0, Visceral: 0, Cerebral: 0, Emotive: 0, Interpersonal: 0, Lighthearted: 0 };
+export function getVibes(media: Media | null): VibeResult {
+  const scores: VibeScore = { Speculative: 0, Visceral: 0, Cerebral: 0, Emotive: 0, Interpersonal: 0, Lighthearted: 0 };
   if (!media) return { scores, sorted: [] };
 
   if (media.genres) {
-    media.genres.forEach(genre => {
+    media.genres.forEach((genre: string) => {
       const map = SCHEMA.genres[genre];
       if (map) {
         scores[map.primary] += 3;
@@ -75,30 +99,24 @@ export function getVibes(media) {
   }
 
   if (media.tags) {
-    media.tags.forEach(tag => {
+    media.tags.forEach((tag: { name: string; rank: number }) => {
       if (tag.rank < TAG_RANK_FLOOR) return;
       const config = SCHEMA.tags[tag.name];
       if (config) scores[config.p] += config.w;
     });
   }
 
-  const sorted = Object.entries(scores)
+  const sorted: VibePillar[] = Object.entries(scores)
     .sort((a, b) => b[1] - a[1])
-    .map(([name, score]) => ({ name, score }));
+    .map(([name, score]) => ({ name: name as keyof VibeScore, score }));
 
   return { scores, sorted };
 }
 
-/**
- * Calculates normalized tonal affinity across a list of media entries.
- * Normalizes scores to 0-100 range based on weighted ratings.
- * @param {Array} list - User's media list entries
- * @param {Object} metadata - Metadata map for the media
- * @returns {Array} List of { name, value } objects for chart rendering
- */
-export function getProfileAffinity(list, metadata) {
-  const VIBE_CATEGORIES = ["Speculative", "Visceral", "Cerebral", "Emotive", "Interpersonal", "Lighthearted"];
-  const categoryTotals = { Speculative: 0, Visceral: 0, Cerebral: 0, Emotive: 0, Interpersonal: 0, Lighthearted: 0 };
+export function getProfileAffinity(list: ListEntry[], metadata: Record<string, Media>): VibeAffinity[] {
+  const VIBE_CATEGORIES: (keyof VibeScore)[] = ["Speculative", "Visceral", "Cerebral", "Emotive", "Interpersonal", "Lighthearted"];
+  const categoryTotals: VibeScore = { Speculative: 0, Visceral: 0, Cerebral: 0, Emotive: 0, Interpersonal: 0, Lighthearted: 0 };
+  const weights: VibeScore = { Speculative: 0, Visceral: 0, Cerebral: 0, Emotive: 0, Interpersonal: 0, Lighthearted: 0 };
   let grandTotalPoints = 0;
 
   list.forEach(entry => {
@@ -106,16 +124,16 @@ export function getProfileAffinity(list, metadata) {
     if (!meta) return;
 
     const vibes = getVibes(meta);
-    const scoreMultiplier = (entry.score || 3) / 10; // Influence of rating
+    const scoreMultiplier = (entry.score || 3) / 10;
 
     VIBE_CATEGORIES.forEach(cat => {
       const weightedScore = vibes.scores[cat] * scoreMultiplier;
       categoryTotals[cat] += weightedScore;
+      weights[cat] += vibes.scores[cat];
       grandTotalPoints += weightedScore;
     });
   });
 
-  // 1. Get raw relative percentages
   const rawValues = VIBE_CATEGORIES.map(cat => ({
     name: cat,
     val: grandTotalPoints > 0 ? (categoryTotals[cat] / grandTotalPoints) * 100 : 0
@@ -125,8 +143,6 @@ export function getProfileAffinity(list, metadata) {
   const min = Math.min(...vals);
   const max = Math.max(...vals);
 
-  // 2. Stretch them to a range of 40-100 to make the chart more dynamic
-  // Formula: ((x - min) / (max - min)) * (targetMax - targetMin) + targetMin
   return rawValues.map(item => ({
     name: item.name,
     value: max === min ? 50 : Math.round(((item.val - min) / (max - min)) * 80 + 10)

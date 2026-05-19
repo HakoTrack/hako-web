@@ -1,15 +1,11 @@
 <script>
-  import { ui } from "../../core/ui.svelte.js";
-
-  function close() {
-    ui.closeModal();
-  }
+  import { ui } from "../../core/ui.svelte.ts";
 </script>
 
 <div class="bg-card p-8 rounded-lg shadow-xl w-full max-w-md relative">
   <!-- svelte-ignore a11y_consider_explicit_label -->
   <button
-    onclick={close}
+    onclick={() => closeModal()}
     class="absolute top-4 right-4 text-slate-500 hover:text-white cursor-pointer"
   >
     <i class="fa-solid fa-xmark"></i>

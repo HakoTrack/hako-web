@@ -1,9 +1,10 @@
-import { supabase } from './supabase.js';
+import { supabase } from './supabase';
+import type { Media, ListEntry } from '../types/Media';
 
 /**
  * Maps Supabase relational media data to the legacy JSON-like format
  */
-export function mapSupabaseMedia(media) {
+export function mapSupabaseMedia(media: any): Media | null {
   if (!media) return null;
 
   return {
@@ -22,14 +23,14 @@ export function mapSupabaseMedia(media) {
     duration: media.duration,
     season: media.season,
     seasonYear: media.season_year,
-    genres: media.genres?.map(g => g.genre) || [],
-    tags: media.tags?.map(t => ({ name: t.tag, rank: t.rank })) || [],
+    genres: media.genres?.map((g: any) => g.genre) || [],
+    tags: media.tags?.map((t: any) => ({ name: t.tag, rank: t.rank })) || [],
     startDate: { year: media.start_year, month: media.start_month, day: media.start_day },
     endDate: { year: media.end_year, month: media.end_month, day: media.end_day }
   };
 }
 
-function parseDate(dateString) {
+function parseDate(dateString: string | null) {
   if (!dateString) return { year: null, month: null, day: null };
   const d = new Date(dateString);
   return {
@@ -42,7 +43,7 @@ function parseDate(dateString) {
 /**
  * Maps Supabase profile_list data to a normalized format.
  */
-export function mapSupabaseListEntry(entry) {
+export function mapSupabaseListEntry(entry: any): ListEntry | null {
   if (!entry) return null;
 
   return {
@@ -61,7 +62,7 @@ export function mapSupabaseListEntry(entry) {
 /**
  * Fetches a single user list entry.
  */
-export async function fetchUserListEntry(profileId, mediaId, type) {
+export async function fetchUserListEntry(profileId: string, mediaId: number, type: string): Promise<ListEntry | null> {
   const { data, error } = await supabase
     .from('profile_list')
     .select(`
@@ -83,7 +84,7 @@ export async function fetchUserListEntry(profileId, mediaId, type) {
 /**
  * Fetches multiple media by IDs from Supabase using the unified 'media' table.
  */
-export async function fetchMediaByIds(ids, type) {
+export async function fetchMediaByIds(ids: number[], type: string): Promise<Record<string, Media>> {
   if (!ids || ids.length === 0) return {};
 
   const { data, error } = await supabase
@@ -101,8 +102,9 @@ export async function fetchMediaByIds(ids, type) {
     return {};
   }
 
-  return data.reduce((acc, item) => {
-    acc[item.id.toString()] = mapSupabaseMedia(item);
+  return data.reduce((acc: Record<string, Media>, item: any) => {
+    const mapped = mapSupabaseMedia(item);
+    if (mapped) acc[item.id.toString()] = mapped;
     return acc;
   }, {});
 }
@@ -110,7 +112,7 @@ export async function fetchMediaByIds(ids, type) {
 /**
  * Fetches a single media by ID.
  */
-export async function fetchMediaById(id) {
+export async function fetchMediaById(id: number): Promise<Media | null> {
   const { data, error } = await supabase
     .from('media')
     .select(`

@@ -1,5 +1,15 @@
 import { supabase } from '../utils/supabase.js';
 
+interface ActivitySummary {
+  activity_date: string;
+  activity_count: number;
+}
+
+interface HeatmapDay {
+  date: string;
+  count: number;
+}
+
 /**
  * Service for tracking user activity for features like heatmaps.
  */
@@ -9,7 +19,7 @@ export const ActivityService = {
    * @param {string} profileId
    * @param {string} [date] - ISO date string (YYYY-MM-DD), defaults to today
    */
-  async trackActivity(profileId, date = new Date().toISOString().split('T')[0]) {
+  async trackActivity(profileId: string, date: string = new Date().toISOString().split('T')[0]): Promise<void> {
     const { error } = await supabase.rpc('increment_activity', {
       target_profile_id: profileId,
       target_date: date
@@ -27,7 +37,7 @@ export const ActivityService = {
    * @param {string} startDate
    * @param {string} endDate
    */
-  async getActivitySummary(profileId, startDate, endDate) {
+  async getActivitySummary(profileId: string, startDate: string, endDate: string): Promise<ActivitySummary[]> {
     const { data, error } = await supabase
       .from('activity_summary')
       .select('activity_date, activity_count')
@@ -40,7 +50,7 @@ export const ActivityService = {
       console.error("Error fetching activity summary:", error);
       return [];
     }
-    return data;
+    return data || [];
   },
 
   /**
@@ -48,7 +58,7 @@ export const ActivityService = {
    * @param {string} profileId
    * @param {number} days
    */
-  async getHeatmapData(profileId, days = 160) {
+  async getHeatmapData(profileId: string, days: number = 160): Promise<HeatmapDay[]> {
     const endDate = new Date();
     const startDate = new Date();
     startDate.setDate(endDate.getDate() - days);
@@ -59,8 +69,8 @@ export const ActivityService = {
       endDate.toISOString().split('T')[0]
     );
 
-    const activityMap = new Map(activityData.map(a => [a.activity_date, a.activity_count]));
-    const result = [];
+    const activityMap = new Map<string, number>(activityData.map((a: ActivitySummary) => [a.activity_date, a.activity_count]));
+    const result: HeatmapDay[] = [];
 
     for (let i = days; i >= 0; i--) {
       const date = new Date();

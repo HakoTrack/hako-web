@@ -1,10 +1,10 @@
 <script>
   import { onMount } from "svelte";
   import Fuse from "fuse.js";
-  import { openQuickEditor, ui } from "../../core/ui.svelte.js";
+  import { openQuickEditor, ui } from "../../core/ui.svelte.ts";
   import { ListService } from "../../services/listService.js";
   import { MetadataService } from "../../services/metadataService.js";
-  import { HakoImage } from "../../utils/images.js";
+  import { HakoImage } from "../../utils/images.ts";
 
   let { type = "anime", profileId } = $props();
 
@@ -38,9 +38,14 @@
 
   onMount(async () => {
     try {
-      listDataEntries = await ListService.getList(profileId, type);
-      const ids = listDataEntries.map((item) => item.media_id);
-      metadata = await MetadataService.getMetadata(ids, type);
+      const result = await ListService.getList(profileId, type);
+      if (result.success) {
+        listDataEntries = result.data;
+        const ids = listDataEntries.map((item) => item.media_id);
+        metadata = await MetadataService.getMetadata(ids, type);
+      } else {
+        console.error("Error loading list:", result.error);
+      }
     } catch (err) {
       console.error(err);
     } finally {

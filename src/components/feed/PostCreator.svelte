@@ -1,7 +1,7 @@
 <script>
   import { supabase } from "../../utils/supabase.js";
   import { AuthService } from "../../core/auth.js";
-  import { FeedService } from "../../services/feedService.js";
+  import { FeedService } from "../../services/feedService.ts";
 
   let { targetProfileId, onPostCreated } = $props();
   let content = $state("");

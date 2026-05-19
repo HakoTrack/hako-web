@@ -1,11 +1,16 @@
 import { supabase } from '../utils/supabase.js';
-import { MetadataService } from './metadataService.js';
-import { ActivityService } from './activityService.js';
+import { type Result, success, failure } from '../utils/result';
+import { MetadataService } from './metadataService';
+import { ActivityService } from './activityService';
 
-const listCache = new Map();
+interface ListConfig {
+  table: string;
+  idField: string;
+}
 
-// All lists now use the unified 'profile_list' table
-const TYPE_CONFIG = {
+const listCache = new Map<string, any[]>();
+
+const TYPE_CONFIG: Record<string, ListConfig> = {
   anime: { table: 'profile_list', idField: 'media_id' },
   manga: { table: 'profile_list', idField: 'media_id' },
   light_novels: { table: 'profile_list', idField: 'media_id' },
@@ -13,12 +18,12 @@ const TYPE_CONFIG = {
 };
 
 export const ListService = {
-  async getList(profileId, type) {
+  async getList(profileId: string, type: string): Promise<Result<any[]>> {
     const config = TYPE_CONFIG[type];
-    if (!config) throw new Error(`Unsupported media type: ${type}`);
+    if (!config) return failure(`Unsupported media type: ${type}`);
 
     const cacheKey = `${type}_${profileId}`;
-    if (listCache.has(cacheKey)) return listCache.get(cacheKey);
+    if (listCache.has(cacheKey)) return success(listCache.get(cacheKey)!);
 
     const { data, error } = await supabase
       .from(config.table)
@@ -26,15 +31,16 @@ export const ListService = {
       .eq('profile_id', profileId)
       .eq('media_type', type);
 
-    if (error) throw error;
+    if (error) return failure(error.message);
 
-    listCache.set(cacheKey, data);
-    return data;
+    const list = data || [];
+    listCache.set(cacheKey, list);
+    return success(list);
   },
 
-  async updateListEntry(profileId, type, mediaId, updates) {
+  async updateListEntry(profileId: string, type: string, mediaId: number, updates: Record<string, any>): Promise<Result<void>> {
     const config = TYPE_CONFIG[type];
-    if (!config) throw new Error(`Unsupported media type: ${type}`);
+    if (!config) return failure(`Unsupported media type: ${type}`);
 
     const { error } = await supabase
       .from(config.table)
@@ -48,20 +54,17 @@ export const ListService = {
         { onConflict: 'profile_id, media_id, media_type' }
       );
 
-    if (error) throw error;
+    if (error) return failure(error.message);
 
-    // Track activity for the heatmap
     await ActivityService.trackActivity(profileId);
 
-    // Invalidate caches
     listCache.delete(`${type}_${profileId}`);
     MetadataService.invalidate(mediaId);
 
-    return { success: true };
+    return success(undefined);
   },
 
-
-  invalidateList(profileId, type) {
+  invalidateList(profileId: string, type: string): void {
     listCache.delete(`${type}_${profileId}`);
   }
 };

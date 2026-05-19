@@ -1,12 +1,14 @@
-<script>
+<script lang="ts">
   import { onMount } from "svelte";
-  import { fetchMediaById } from "../utils/mediaData.js";
-  import { HakoImage } from "../utils/images.js";
-  import { getVibes } from "../utils/vibeCalc.js";
-  import { openQuickEditor } from "../core/ui.svelte.js";
+  import { fetchMediaById } from "../utils/mediaData";
+  import { HakoImage } from "../utils/images";
+  import { getVibes } from "../utils/vibeCalc";
+  import { openQuickEditor } from "../core/ui.svelte";
+
+  import type { Media } from "../types/Media";
 
   let { mediaId } = $props();
-  let media = $state(null);
+  let media: Media | null = $state(null);
   let isLoading = $state(true);
 
   // Reactive vibe calculation
@@ -15,8 +17,10 @@
   onMount(async () => {
     try {
       media = await fetchMediaById(mediaId);
-      console.log("DEBUG: All media keys:", Object.keys(media));
-      console.log("DEBUG: Full media object:", $state.snapshot(media));
+      if (media) {
+        console.log("DEBUG: All media keys:", Object.keys(media));
+        console.log("DEBUG: Full media object:", $state.snapshot(media));
+      }
     } catch (e) {
       console.error("Failed to fetch anime:", e);
     } finally {
@@ -48,7 +52,7 @@
       <div class="relative -mt-20 flex items-end space-x-6 pb-8">
         <!-- Cover -->
         <button
-          onclick={() => openQuickEditor(media.media_id, "anime")}
+          onclick={() => media && openQuickEditor(media.media_id, "anime")}
           class="hover:scale-105 transition-transform duration-200 cursor-pointer focus:outline-none"
         >
           <img

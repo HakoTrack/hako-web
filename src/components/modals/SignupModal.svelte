@@ -1,5 +1,5 @@
 <script>
-  import { ui } from "../../core/ui.svelte.js";
+  import { ui, closeModal } from "../../core/ui.svelte.ts";
 </script>
 
 <div
@@ -7,7 +7,7 @@
 >
   <!-- svelte-ignore a11y_consider_explicit_label -->
   <button
-    onclick={() => ui.closeModal()}
+    onclick={() => closeModal()}
     class="absolute top-4 right-4 text-slate-500 hover:text-white cursor-pointer"
   >
     <i class="fa-solid fa-xmark"></i>

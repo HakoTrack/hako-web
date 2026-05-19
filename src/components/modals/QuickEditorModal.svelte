@@ -1,50 +1,58 @@
 <script>
-  import { ui } from "../../core/ui.svelte.js";
-  import { getVibes } from "../../utils/vibeCalc.js";
-  import { HakoImage } from "../../utils/images.js";
+  import { ui, closeModal } from "../../core/ui.svelte.ts";
+  import { getVibes } from "../../utils/vibeCalc.ts";
+  import { HakoImage } from "../../utils/images.ts";
   import { supabase } from "../../utils/supabase.js";
-  import { AuthService } from "../../core/auth.js";
-  import { FeedService } from "../../services/feedService.js";
+  import { AuthService } from "../../core/auth";
+  import { FeedService } from "../../services/feedService.ts";
   import { ListService } from "../../services/listService.js";
+  import { FavoritesService } from "../../services/favoritesService.ts";
 
-  let { entry } = ui.modalData || {};
-  const mediaType = entry.type || "anime";
+  let { entry } = $props();
 
-  // Reactive vibes based on raw metadata
+  // Use derived for values that depend directly on 'entry' props
+  let mediaType = $derived(entry.type || "anime");
   let vibes = $derived(getVibes(entry?.rawMetadata));
-
-  // Determine favorite status reactively from the global Set
   let isFavorited = $derived(ui.favoriteIds.has(entry.id));
 
-  // Bindable local state for the form
-  let status = $state(entry?.status || "planning");
-  let score = $state(entry?.score || 0);
-  let progress = $state(entry?.progress || 0);
-  let startDate = $state(entry?.startDate || "");
-  let finishDate = $state(entry?.finishDate || "");
+  // Initialize local state to empty/defaults, to be updated by $effect
+  let status = $state("planning");
+  let score = $state(0);
+  let progress = $state(0);
+  let startDate = $state("");
+  let finishDate = $state("");
   let isSaving = $state(false);
 
+  // Sync state whenever the entry prop changes
+  $effect(() => {
+    status = entry.status || "planning";
+    score = entry.score || 0;
+    progress = entry.progress || 0;
+
+    // Convert object-based dates to YYYY-MM-DD for the date input
+    startDate = entry.startedAt?.year
+      ? `${entry.startedAt.year}-${String(entry.startedAt.month).padStart(2, "0")}-${String(entry.startedAt.day).padStart(2, "0")}`
+      : "";
+    finishDate = entry.completedAt?.year
+      ? `${entry.completedAt.year}-${String(entry.completedAt.month).padStart(2, "0")}-${String(entry.completedAt.day).padStart(2, "0")}`
+      : "";
+
+    // Sync favorite status
+    if (entry?.id) {
+      supabase
+        .from("profile_favorites")
+        .select("media_id")
+        .eq("media_id", entry.id)
+        .then(({ data }) => {
+          if (data && data.length > 0) ui.addFavorite(entry.id);
+          else ui.removeFavorite(entry.id);
+        });
+    }
+  });
   async function toggleFavorite() {
     const user = await AuthService.getCurrentUser();
     if (!user) return;
-
-    try {
-      if (isFavorited) {
-        await supabase
-          .from("profile_favorites")
-          .delete()
-          .eq("profile_id", user.id)
-          .eq("media_id", entry.id);
-        ui.removeFavorite(entry.id);
-      } else {
-        await supabase
-          .from("profile_favorites")
-          .insert({ profile_id: user.id, media_id: entry.id });
-        ui.addFavorite(entry.id);
-      }
-    } catch (err) {
-      console.error("Favorite toggle error:", err);
-    }
+    await FavoritesService.toggle(user.id, entry.id, isFavorited);
   }
 
   async function save() {
@@ -53,15 +61,22 @@
     if (!user) return;
 
     try {
-      await ListService.updateListEntry(user.id, mediaType, entry.id, {
-        status,
-        score: score > 0 && score <= 10 ? score : null,
-        progress,
-        started_at: startDate || null,
-        completed_at: finishDate || null,
-      });
+      const updateResult = await ListService.updateListEntry(
+        user.id,
+        mediaType,
+        entry.id,
+        {
+          status,
+          score: score > 0 && score <= 10 ? score : null,
+          progress,
+          started_at: startDate || null,
+          completed_at: finishDate || null,
+        },
+      );
 
-      await FeedService.createListUpdatePost(
+      if (!updateResult.success) throw new Error(updateResult.error);
+
+      const postResult = await FeedService.createListUpdatePost(
         user.id,
         user.id,
         entry.id,
@@ -70,6 +85,8 @@
         entry.total,
         status === "completed" ? "completed" : "updated",
       );
+
+      if (!postResult.success) throw new Error(postResult.error);
 
       ui.closeModal();
     } catch (err) {
@@ -82,10 +99,6 @@
 
   function handleDelete() {
     if (confirm("Delete this entry?")) ui.closeModal();
-  }
-
-  function close() {
-    ui.closeModal();
   }
 </script>
 
@@ -108,8 +121,8 @@
     ></div>
     <!-- svelte-ignore a11y_consider_explicit_label -->
     <button
-      onclick={close}
-      class="absolute top-4 right-4 text-white/50 hover:text-white transition-colors z-20"
+      onclick={() => closeModal()}
+      class="absolute top-4 right-4 text-white/50 hover:text-white transition-colors z-50"
     >
       <i class="fa-solid fa-xmark text-lg cursor-pointer"></i>
     </button>

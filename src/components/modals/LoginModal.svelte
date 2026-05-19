@@ -1,6 +1,6 @@
 <script>
   import { supabase } from "../../utils/supabase.js";
-  import { ui } from "../../core/ui.svelte.js";
+  import { ui, closeModal } from "../../core/ui.svelte.ts";
 
   let email = "";
   let password = "";
@@ -14,7 +14,7 @@
         password,
       });
       if (error) throw error;
-      ui.closeModal();
+      closeModal();
       window.history.pushState({}, "", "/feed");
       window.dispatchEvent(new PopStateEvent("popstate"));
     } catch (error) {
@@ -26,7 +26,7 @@
 <div class="bg-card p-8 rounded-lg shadow-xl w-full max-w-md relative">
   <!-- svelte-ignore a11y_consider_explicit_label -->
   <button
-    onclick={() => ui.closeModal()}
+    onclick={() => closeModal()}
     class="absolute top-4 right-4 text-slate-500 hover:text-white cursor-pointer"
   >
     <i class="fa-solid fa-xmark"></i>

@@ -7,21 +7,23 @@
   import Profile from "./views/Profile.svelte";
   import AnimeDetail from "./views/AnimeDetail.svelte";
   import ModalWrapper from "./components/modals/ModalWrapper.svelte";
-  import { AuthService } from "./core/auth.js";
-  import { ProfileService } from "./services/profileService.js";
-  import { ui } from "./core/ui.svelte.js";
+  import { AuthService } from "./core/auth";
+  import { ProfileService } from "./services/profileService.ts";
+  import { supabase } from "./utils/supabase.js";
+  import { openModal } from "./core/ui.svelte.ts";
 
   let user = $state(null);
   let profile = $state(null);
   let currentPath = $state(window.location.pathname);
   let activeTab = $state("overview");
   let mediaType = $state("anime");
+  let authInitialized = $state(false);
 
-  let isLanding = $derived(currentPath === "/" && !user);
+  let isLanding = $derived(authInitialized && currentPath === "/" && !user);
 
   $effect(() => {
     // Auth Guard: Redirect to landing if not logged in and not already on landing
-    if (user === null && currentPath !== "/") {
+    if (authInitialized && user === null && currentPath !== "/") {
       window.history.pushState({}, "", "/");
       handleRouting();
     }
@@ -29,8 +31,15 @@
 
   $effect(() => {
     if (user) {
-      ProfileService.getProfileById(user.id).then((p) => {
-        profile = p;
+      ProfileService.getProfileById(user.id).then((result) => {
+        if (result.success) {
+          profile = result.data;
+        } else {
+          console.error(
+            "DEBUG: Failed to load profile for navbar:",
+            result.error,
+          );
+        }
       });
     } else {
       profile = null;
@@ -43,15 +52,18 @@
     const pathParts = currentPath.split("/").filter((p) => p);
 
     if (pathParts[0] === "user") {
-      // pathParts[2] is the mediaType (e.g., 'anime')
       activeTab = pathParts[2] || "overview";
       mediaType = pathParts[2] || "anime";
     }
   }
 
-  onMount(() => {
-    AuthService.getCurrentUser().then((u) => {
-      user = u;
+  onMount(async () => {
+    user = await AuthService.getCurrentUser();
+    authInitialized = true;
+
+    supabase.auth.onAuthStateChange((event, session) => {
+      user = session?.user ?? null;
+      handleRouting();
     });
 
     window.addEventListener("popstate", handleRouting);
@@ -60,8 +72,8 @@
 </script>
 
 <svelte:window
-  on:show-login={() => ui.openModal("login")}
-  on:show-signup={() => ui.openModal("signup")}
+  on:show-login={() => openModal("login")}
+  on:show-signup={() => openModal("signup")}
 />
 
 <ModalWrapper />

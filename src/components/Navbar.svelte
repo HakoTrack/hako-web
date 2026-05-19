@@ -1,12 +1,40 @@
 <script>
-  import { AuthService } from "../core/auth.js";
-  import { HakoImage } from "../utils/images.js";
-  import { ui } from "../core/ui.svelte.js";
+  import { AuthService } from "../core/auth";
+  import { HakoImage } from "../utils/images.ts";
+  import { ui } from "../core/ui.svelte.ts";
   import Dropdown from "./common/Dropdown.svelte";
 
   let { user = null, profile = null } = $props();
 
   let username = $derived(profile?.username || "user");
+
+  let dropdownItems = $derived([
+    {
+      label: "Profile",
+      action: () => navigate(`/user/${username}`),
+      icon: "fa-user",
+    },
+    {
+      label: "Lists",
+      action: () => navigate(`/user/${username}/anime`),
+      icon: "fa-list",
+    },
+    {
+      label: "Theme",
+      action: () => ui.openModal("theme"),
+      icon: "fa-palette",
+    },
+    {
+      label: "Settings",
+      action: () => ui.openModal("settings"),
+      icon: "fa-cog",
+    },
+    {
+      label: "Logout",
+      action: handleLogout,
+      icon: "fa-right-from-bracket",
+    },
+  ]);
 
   async function handleLogout() {
     await AuthService.logout();
@@ -21,8 +49,6 @@
 <nav class="navbar bg-nav text-white px-4 py-3 sticky top-0 z-50 shadow-lg">
   <div class="max-w-375 mx-auto lg:px-8 flex items-center justify-between">
     <div class="flex items-center space-x-8">
-      <!-- svelte-ignore a11y_click_events_have_key_events -->
-      <!-- svelte-ignore a11y_no_static_element_interactions -->
       <div
         id="nav-branding"
         class="text-2xl font-bold tracking-tighter flex items-center cursor-pointer select-none group"
@@ -89,35 +115,7 @@
       <div class="flex items-center space-x-3">
         <i class="fa-solid fa-bell cursor-pointer hover:text-accent"></i>
         {#if user}
-          <Dropdown
-            items={[
-              {
-                label: "Profile",
-                action: () => navigate(`/user/${username}`),
-                icon: "fa-user",
-              },
-              {
-                label: "Lists",
-                action: () => navigate("/lists"),
-                icon: "fa-list",
-              },
-              {
-                label: "Theme",
-                action: () => ui.openModal("theme"),
-                icon: "fa-palette",
-              },
-              {
-                label: "Settings",
-                action: () => ui.openModal("settings"),
-                icon: "fa-cog",
-              },
-              {
-                label: "Logout",
-                action: handleLogout,
-                icon: "fa-right-from-bracket",
-              },
-            ]}
-          >
+          <Dropdown items={dropdownItems}>
             {#if profile?.avatar_url}
               <img
                 src={HakoImage.get(profile.avatar_url, {

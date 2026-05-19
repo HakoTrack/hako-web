@@ -1,27 +1,38 @@
-<script>
+<script lang="ts">
   import { onMount } from "svelte";
-  import { ProfileService } from "../services/profileService.js";
-  import { HakoImage } from "../utils/images.js";
+  import { ProfileService, type Profile } from "../services/profileService";
+  import { HakoImage } from "../utils/images";
   import MediaList from "../components/profile/MediaList.svelte";
   import Stats from "../components/profile/Stats.svelte";
   import Overview from "../components/profile/Overview.svelte";
 
-  let { currentPath, activeTab = "overview", mediaType = "anime" } = $props();
+  let { currentPath, activeTab = "overview" } = $props();
 
-  let username = $derived(
-    currentPath.split("/").filter((p) => p && p !== "user")[0],
-  );
-  let profileData = $state(null);
-  // this works, putting this here to shut up IDE
-  // svelte-ignore state_referenced_locally
-  let currentActiveTab = $state(activeTab);
+  let username = $derived(currentPath.split("/")[2]);
+  let profileData: Profile | null = $state(null);
+  let currentActiveTab = $derived(activeTab);
 
-  // Sync internal state directly with props
-  $effect(() => {
-    currentActiveTab = activeTab;
-  });
+  function switchTab(tab: string, path: string) {
+    currentActiveTab = tab;
+    window.history.pushState({}, "", path);
+  }
 
-  const ROLES = {
+  const tabs = $derived([
+    { id: "overview", label: "Overview", path: `/user/${username}` },
+    { id: "anime", label: "Anime", path: `/user/${username}/anime` },
+    { id: "manga", label: "Manga", path: `/user/${username}/manga` },
+    {
+      id: "light-novels",
+      label: "Light Novels",
+      path: `/user/${username}/light_novels`,
+    },
+    { id: "stats", label: "Stats", path: `/user/${username}/stats` },
+  ]);
+
+  const ROLES: Record<
+    string,
+    { label: string; romaji: string; color: string; title: string }
+  > = {
     owner: {
       label: "総帥",
       romaji: "Sousui",
@@ -49,20 +60,28 @@
   };
 
   let roleConfig = $derived(
-    profileData?.role ? ROLES[profileData.role.toLowerCase()] : null,
+    (profileData as any)?.role
+      ? ROLES[(profileData as any).role.toLowerCase()]
+      : null,
   );
 
   onMount(async () => {
+    if (username === "user") return;
     try {
-      profileData = await ProfileService.getProfileByUsername(username);
+      const result = await ProfileService.getProfileByUsername(username);
+      if (result.success) {
+        profileData = result.data;
+      } else {
+        console.error("DEBUG: Profile fetch error:", result.error);
+      }
     } catch (e) {
-      console.error("DEBUG: Profile fetch error:", e);
+      console.error("DEBUG: Profile fetch exception:", e);
     }
   });
 </script>
 
 <div id="profile-container" class={!profileData ? "invisible" : ""}>
-  <!-- Parallax Banner Container -->
+  <!-- Banner -->
   <div
     class="fixed top-0 left-0 mt-15 w-full h-75 md:h-100 -z-10 overflow-hidden"
   >
@@ -84,7 +103,6 @@
   <div
     class="relative z-10 bg-transparent max-w-375 mx-auto px-4 sm:px-6 lg:px-8"
   >
-    <!-- Spacer to reveal the fixed banner initially -->
     <div class="h-50 md:h-75"></div>
 
     <div class="relative pb-8">
@@ -133,56 +151,23 @@
       </div>
     </div>
 
+    <!-- Tabs -->
     <div
       class="profile-tabs flex space-x-8 border-b border-slate-800 mb-8 overflow-x-auto whitespace-nowrap scrollbar-hide"
     >
-      <button
-        onclick={() => {
-          currentActiveTab = "overview";
-          window.history.pushState({}, "", `/user/${username}`);
-        }}
-        class="tab-btn pb-4 font-semibold {currentActiveTab === 'overview'
-          ? 'tab-active text-white'
-          : 'text-slate-400'}">Overview</button
-      >
-      <button
-        onclick={() => {
-          currentActiveTab = "anime";
-          window.history.pushState({}, "", `/user/${username}/anime`);
-        }}
-        class="tab-btn pb-4 font-semibold {currentActiveTab === 'anime'
-          ? 'tab-active text-white'
-          : 'text-slate-400'}">Anime</button
-      >
-      <button
-        onclick={() => {
-          currentActiveTab = "manga";
-          window.history.pushState({}, "", `/user/${username}/manga`);
-        }}
-        class="tab-btn pb-4 font-semibold {currentActiveTab === 'manga'
-          ? 'tab-active text-white'
-          : 'text-slate-400'}">Manga</button
-      >
-      <button
-        onclick={() => {
-          currentActiveTab = "light-novels";
-          window.history.pushState({}, "", `/user/${username}/light_novels`);
-        }}
-        class="tab-btn pb-4 font-semibold {currentActiveTab === 'light-novels'
-          ? 'tab-active text-white'
-          : 'text-slate-400'}">Light Novels</button
-      >
-      <button
-        onclick={() => {
-          currentActiveTab = "stats";
-          window.history.pushState({}, "", `/user/${username}/stats`);
-        }}
-        class="tab-btn pb-4 font-semibold {currentActiveTab === 'stats'
-          ? 'tab-active text-white'
-          : 'text-slate-400'}">Stats</button
-      >
+      {#each tabs as tab}
+        <button
+          onclick={() => switchTab(tab.id, tab.path)}
+          class="tab-btn pb-4 font-semibold {currentActiveTab === tab.id
+            ? 'tab-active text-white'
+            : 'text-slate-400'}"
+        >
+          {tab.label}
+        </button>
+      {/each}
     </div>
 
+    <!-- Content -->
     <div class="py-8 min-h-100">
       {#if profileData}
         <div class:hidden={currentActiveTab !== "overview"}>
