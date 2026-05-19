@@ -1,32 +1,37 @@
-<script>
+<script lang="ts">
   import { onMount } from "svelte";
   import Fuse from "fuse.js";
-  import { openQuickEditor, ui } from "../../core/ui.svelte.ts";
-  import { ListService } from "../../services/listService.js";
-  import { MetadataService } from "../../services/metadataService.js";
-  import { HakoImage } from "../../utils/images.ts";
+  import { openQuickEditor } from "../../core/ui.svelte";
+  import { ListService } from "../../services/listService";
+  import { MetadataService } from "../../services/metadataService";
+  import { HakoImage } from "../../utils/images";
+  import { fetchMediaById } from "../../utils/mediaData";
+  import type { ListEntry } from "../../types/Media";
+  import type { Media } from "../../types/Media";
 
-  let { type = "anime", profileId } = $props();
+  let { type = "anime", profileId } = $props<{
+    type?: string;
+    profileId: string;
+  }>();
 
-  let listDataEntries = $state([]);
-  let metadata = $state({});
+  let listDataEntries: ListEntry[] = $state([]);
+  let metadata: Record<string, Media> = $state({});
   let sortBy = $state("Title");
   let filterStatus = $state("all");
   let searchQuery = $state("");
   let isLoading = $state(true);
 
   // Memoization variables
-  let lastProcessed = null;
-  let lastListEntries = null;
-  let lastMetadata = null;
-  let lastSortBy = null;
-  let lastFilterStatus = null;
-  let lastSearchQuery = null;
+  let lastProcessed: any = null;
+  let lastListEntries: ListEntry[] | null = null;
+  let lastMetadata: Record<string, Media> | null = null;
+  let lastSortBy: string | null = null;
+  let lastFilterStatus: string | null = null;
+  let lastSearchQuery: string | null = null;
 
-  const statusGroups = [
+  const statusGroups = $derived([
     {
       id: "current",
-      // svelte-ignore state_referenced_locally
       label: type === "anime" ? "Watching" : "Reading",
       color: "bg-green-500",
     },
@@ -34,7 +39,7 @@
     { id: "paused", label: "Paused", color: "bg-orange-500" },
     { id: "dropped", label: "Dropped", color: "bg-red-500" },
     { id: "planning", label: "Planning", color: "bg-slate-500" },
-  ];
+  ]);
 
   onMount(async () => {
     try {
@@ -53,13 +58,18 @@
     }
   });
 
-  function getScoreColor(score) {
+  function getScoreColor(score: number | null): string {
     if (!score) return "text-slate-500";
     if (score >= 9) return "text-green-400";
     if (score >= 8) return "text-blue-400";
     if (score >= 7) return "text-slate-400";
     if (score >= 5) return "text-yellow-400";
     return "text-red-400";
+  }
+
+  async function handleOpenEditor(id: number) {
+    const media = await fetchMediaById(id);
+    if (media) openQuickEditor(media, type);
   }
 
   let visibleGroups = $derived.by(() => {
@@ -82,7 +92,7 @@
       return {
         ...item,
         meta,
-        displayTitle: meta.title?.romaji || item.title || "",
+        displayTitle: (meta as any).title?.romaji || (item as any).title || "",
       };
     });
 
@@ -93,7 +103,7 @@
         keys: ["displayTitle"],
         threshold: 0.3,
       });
-      itemsToProcess = fuse.search(searchQuery).map((r) => r.item);
+      itemsToProcess = fuse.search(searchQuery).map((r: any) => r.item);
     }
 
     const result = groups
@@ -106,7 +116,9 @@
             if (sortBy === "Score") return (b.score || 0) - (a.score || 0);
             if (sortBy === "Progress")
               return (b.progress || 0) - (a.progress || 0);
-            return new Date(b.updatedAt) - new Date(a.updatedAt);
+            return (
+              new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime()
+            );
           });
         return { ...group, items };
       })
@@ -132,7 +144,6 @@
     <div class="sticky top-24 space-y-6">
       <div class="bg-card rounded-xl p-5 space-y-4">
         <div>
-          <!-- svelte-ignore a11y_label_has_associated_control -->
           <label
             class="text-[10px] font-bold uppercase tracking-widest text-slate-500 block mb-2"
             >Search List</label
@@ -150,7 +161,6 @@
           </div>
         </div>
         <div>
-          <!-- svelte-ignore a11y_label_has_associated_control -->
           <label
             class="text-[10px] font-bold uppercase tracking-widest text-slate-500 block mb-2"
             >Sort By</label
@@ -199,7 +209,7 @@
             <span>{group.label}</span>
             <span class="count text-xs text-slate-500"
               >{listDataEntries.filter(
-                (i) => (i.status || "").toLowerCase() === group.id,
+                (i: any) => (i.status || "").toLowerCase() === group.id,
               ).length}</span
             >
           </button>
@@ -253,18 +263,16 @@
                     class="group hover:bg-slate-800/30 border-b border-slate-800/50 last:border-0"
                   >
                     <td class="p-2 text-center">
-                      <!-- svelte-ignore a11y_no_noninteractive_element_interactions -->
-                      <!-- svelte-ignore a11y_click_events_have_key_events -->
                       <img
                         src={HakoImage.getCover(type, item.media_id, "small")}
                         class="w-12 h-16 object-cover rounded shadow-md cursor-pointer group-hover:scale-105 transition-transform"
-                        onclick={() => openQuickEditor(item.media_id, type)}
+                        onclick={() => handleOpenEditor(item.media_id)}
                         alt={displayTitle}
                       />
                     </td>
                     <td
                       class="p-4 cursor-pointer"
-                      onclick={() => openQuickEditor(item.media_id, type)}
+                      onclick={() => handleOpenEditor(item.media_id)}
                     >
                       <div
                         class="text-sm font-bold text-slate-200 group-hover:text-accent transition-colors"
@@ -272,7 +280,7 @@
                         {displayTitle}
                       </div>
                       <div class="text-[10px] text-slate-500 mt-1 uppercase">
-                        {meta.genres?.slice(0, 3).join(" • ") || ""}
+                        {(meta as any).genres?.slice(0, 3).join(" • ") || ""}
                       </div>
                     </td>
                     <td
