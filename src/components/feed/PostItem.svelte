@@ -83,14 +83,14 @@
         <!-- svelte-ignore a11y_click_events_have_key_events -->
         <img
           loading="lazy"
-          src={HakoImage.getCover("anime", post.metadata.media_id, "small")}
+          src={HakoImage.getCover(post.metadata.media_id, "small")}
           onclick={() => handleOpenEditor(post.metadata.media_id)}
           class="media-cover w-16 h-24 rounded shadow-lg object-cover cursor-pointer hover:scale-105 transition-transform bg-[#151f2e]"
           data-media-id={post.metadata.media_id}
           alt={post.metadata.title}
           onerror={(e) =>
             (e.target.src =
-              "https://ik.imagekit.io/HakoImage/anime/covers/placeholder.jpg?tr=w-240,f=webp")}
+              "https://ik.imagekit.io/HakoImage/covers/placeholder.jpg?tr=w-240,f=webp")}
         />
         <div class="ml-4 flex-1">
           <!-- svelte-ignore a11y_no_noninteractive_element_interactions -->

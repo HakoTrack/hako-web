@@ -1,5 +1,14 @@
-import { supabase } from './supabase';
+import { supabase } from './supabase.js';
 import type { Media, ListEntry } from '../types/index';
+
+/**
+ * Text processing utilities
+ */
+
+export function formatDescription(description: string | null | undefined): string {
+  if (!description) return "";
+  return description.replace(/\n/g, '<br />');
+}
 
 /**
  * Maps Supabase relational media data to the legacy JSON-like format
@@ -75,34 +84,45 @@ export async function fetchUserListEntry(profileId: string, mediaId: number, typ
     .single();
 
   if (error) {
-    console.error("DEBUG: fetchUserListEntry error:", error);
     return null;
   }
   return mapSupabaseListEntry(data);
 }
 
 /**
- * Fetches multiple media by IDs from Supabase using the unified 'media' table.
+ * Fetches multiple media by IDs from Supabase.
+ * If type is provided, filters by it. Otherwise, fetches all.
  */
-export async function fetchMediaByIds(ids: number[], type: string): Promise<Record<string, Media>> {
+export async function fetchMediaByIds(ids: number[], type?: string): Promise<Record<string, Media>> {
   if (!ids || ids.length === 0) return {};
 
-  const { data, error } = await supabase
-    .from('media')
-    .select(`
-      *,
-      genres (genre),
-      tags (tag, rank)
-    `)
-    .eq('media_type', type)
-    .in('id', ids);
-
-  if (error) {
-    console.error(`Error fetching media from unified table:`, error);
-    return {};
+  const CHUNK_SIZE = 200;
+  const chunks = [];
+  for (let i = 0; i < ids.length; i += CHUNK_SIZE) {
+    chunks.push(ids.slice(i, i + CHUNK_SIZE));
   }
 
-  return data.reduce((acc: Record<string, Media>, item: any) => {
+  const results = await Promise.all(
+    chunks.map(async (chunk) => {
+      let query = supabase.from('media').select(`
+          *,
+          genres (genre),
+          tags (tag, rank)
+        `).in('id', chunk);
+
+      if (type) {
+        query = query.eq('media_type', type);
+      }
+
+      const { data, error } = await query;
+      if (error) {
+        return [];
+      }
+      return data || [];
+    })
+  );
+
+  return results.flat().reduce((acc: Record<string, Media>, item: any) => {
     const mapped = mapSupabaseMedia(item);
     if (mapped) acc[item.id.toString()] = mapped;
     return acc;
@@ -124,7 +144,6 @@ export async function fetchMediaById(id: number): Promise<Media | null> {
     .single();
 
   if (error) {
-    console.error("DEBUG: fetchMediaById error:", error);
     return null;
   }
   return mapSupabaseMedia(data);

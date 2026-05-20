@@ -38,31 +38,30 @@ export const HakoImage = {
   },
 
   /**
-   * Helper for Anime/Manga covers using dynamic ImageKit transforms.
+   * Helper for covers using dynamic ImageKit transforms.
    */
-  getCover: function (type: string, id: number | string, size: 'small' | 'medium' | 'large' = 'medium'): string {
+  getCover: function (id: number | string, size: 'small' | 'medium' | 'large' = 'medium'): string {
     const widths = {
       small: 120,
       medium: 240,
       large: 480
     };
     const width = widths[size] || widths.medium;
-    return this.get(`${type}/covers/${id}.jpg`, { w: width, f: 'webp' });
+    return this.get(`covers/${id}.jpg`, { w: width, f: 'webp' });
   },
 
   /**
    * Helper for high-res banners using dynamic ImageKit transforms.
-   * Defaults to 1920px width for pages, supports 700px for modals.
    */
-  getBanner: function (type: string, id: number | string, width: number = 1920): string {
-    return this.get(`${type}/banners/${id}.jpg`, { w: width, f: 'webp', q: 80 });
+  getBanner: function (id: number | string, width: number = 1920): string {
+    return this.get(`banners/${id}.jpg`, { w: width, f: 'webp', q: 80 });
   },
 
   /**
    * Prefetch banner for performance optimization.
    */
-  prefetchBanner: function (type: string, id: number | string): void {
-    const url = this.getBanner(type, id);
+  prefetchBanner: function (id: number | string): void {
+    const url = this.getBanner(id);
     const link = document.createElement('link');
     link.rel = 'preload';
     link.as = 'image';

@@ -1,35 +1,53 @@
-<script>
-  import { ui, closeModal } from "../../core/ui.svelte.ts";
-  import { getVibes } from "../../utils/vibeCalc.ts";
-  import { HakoImage } from "../../utils/images.ts";
-  import { supabase } from "../../utils/supabase.js";
+<script lang="ts">
+  import { ui, closeModal } from "../../core/ui.svelte";
+  import { getVibes } from "../../utils/vibeCalc";
+  import { HakoImage } from "../../utils/images";
+  import { supabase } from "../../utils/supabase";
   import { AuthService } from "../../core/auth";
-  import { FeedService } from "../../services/feedService.ts";
-  import { ListService } from "../../services/listService.js";
-  import { FavoritesService } from "../../services/favoritesService.ts";
+  import { FeedService } from "../../services/feedService";
+  import { ListService } from "../../services/listService";
+  import { FavoritesService } from "../../services/favoritesService";
+  import { formatDescription } from "../../utils/mediaData";
 
-  let { entry } = $props();
+  let { entry: initialEntry } = $props<{ entry: any }>();
+  let entry = $state(initialEntry);
 
-  // Use derived for values that depend directly on 'entry' props
-  let mediaType = $derived(entry.type || "anime");
+  $effect(() => {
+    if (ui.modalData?.entry) {
+      entry = ui.modalData.entry;
+    }
+  });
+
+  const mediaType = entry.type || "anime";
+
+  // Reactive vibes based on raw metadata
   let vibes = $derived(getVibes(entry?.rawMetadata));
+
+  // Determine favorite status reactively from the global Set
   let isFavorited = $derived(ui.favoriteIds.has(entry.id));
 
-  // Initialize local state to empty/defaults, to be updated by $effect
+  // Bindable local state for the form
   let status = $state("planning");
   let score = $state(0);
   let progress = $state(0);
   let startDate = $state("");
   let finishDate = $state("");
   let isSaving = $state(false);
+  let isLoaded = $state(false);
 
-  // Sync state whenever the entry prop changes
+  // Sync state whenever the entry or modalData changes
   $effect(() => {
+    // 1. Merge entry if background data is available
+    entry = ui.modalData?.entry || initialEntry;
+
+    // 2. Set loading status
+    isLoaded = ui.modalData ? !ui.modalData.isFetching : true;
+
+    // 3. Update form fields
     status = entry.status || "planning";
     score = entry.score || 0;
     progress = entry.progress || 0;
 
-    // Convert object-based dates to YYYY-MM-DD for the date input
     startDate = entry.startedAt?.year
       ? `${entry.startedAt.year}-${String(entry.startedAt.month).padStart(2, "0")}-${String(entry.startedAt.day).padStart(2, "0")}`
       : "";
@@ -37,18 +55,18 @@
       ? `${entry.completedAt.year}-${String(entry.completedAt.month).padStart(2, "0")}-${String(entry.completedAt.day).padStart(2, "0")}`
       : "";
 
-    // Sync favorite status
-    if (entry?.id) {
+    // 4. Async favorite check (only once per entry load)
+    if (entry?.id && !isFavorited && !ui.favoriteIds.has(entry.id)) {
       supabase
         .from("profile_favorites")
         .select("media_id")
         .eq("media_id", entry.id)
         .then(({ data }) => {
           if (data && data.length > 0) ui.addFavorite(entry.id);
-          else ui.removeFavorite(entry.id);
         });
     }
   });
+
   async function toggleFavorite() {
     const user = await AuthService.getCurrentUser();
     if (!user) return;
@@ -88,8 +106,8 @@
 
       if (!postResult.success) throw new Error(postResult.error);
 
-      ui.closeModal();
-    } catch (err) {
+      closeModal();
+    } catch (err: any) {
       console.error("Save error:", err);
       alert("Failed to save changes: " + (err.message || "Unknown error"));
     } finally {
@@ -98,20 +116,18 @@
   }
 
   function handleDelete() {
-    if (confirm("Delete this entry?")) ui.closeModal();
+    if (confirm("Delete this entry?")) closeModal();
   }
 </script>
 
-<!-- svelte-ignore a11y_click_events_have_key_events -->
-<!-- svelte-ignore a11y_no_static_element_interactions -->
 <div
-  class="bg-[#151f2e] w-full max-w-175 h-200 max-h-[90vh] rounded-md shadow-2xl animate-in fade-in zoom-in-95 duration-200 flex flex-col overflow-hidden"
+  class="bg-[#151f2e] w-[700px] max-w-[90vw] h-200 max-h-[90vh] rounded-md shadow-2xl duration-300 transition-all ease-out animate-unroll flex flex-col"
   onclick={(e) => e.stopPropagation()}
 >
   <!-- Banner Section -->
   <div class="relative w-full h-40 bg-[#0b1622] shrink-0">
     <img
-      src={HakoImage.getBanner(mediaType, entry.id, 700)}
+      src={HakoImage.getBanner(entry.id, 700)}
       class="w-full h-full object-cover opacity-60"
       alt="banner"
       onerror={(e) => (e.target.src = "")}
@@ -130,12 +146,12 @@
       class="absolute -bottom-10 left-8 flex items-end space-x-6 z-10 w-[calc(100%-4rem)]"
     >
       <img
-        src={HakoImage.getCover(mediaType, entry.id, "medium")}
+        src={HakoImage.getCover(entry.id, "medium")}
         class="w-25 h-35 rounded shadow-xl border border-[#151f2e] object-cover bg-[#0b1622]"
         alt="cover"
         onerror={(e) =>
           (e.target.src =
-            "https://ik.imagekit.io/HakoImage/anime/covers/placeholder.jpg?tr=w-240,f=webp")}
+            "https://ik.imagekit.io/HakoImage/covers/placeholder.jpg?tr=w-240,f=webp")}
       />
       <div class="flex-1 min-w-0">
         <h2
@@ -173,88 +189,102 @@
   <div class="flex-1 flex flex-col min-h-0 px-8 pt-16 pb-6 overflow-hidden">
     <div class="grid grid-cols-1 md:grid-cols-3 gap-x-6 gap-y-6 shrink-0">
       <div class="space-y-1.5">
-        <!-- svelte-ignore a11y_label_has_associated_control -->
         <label class="text-xs font-bold text-slate-400 uppercase tracking-wider"
           >Status</label
         >
-        <select
-          bind:value={status}
-          class="w-full bg-[#0b1622] text-slate-200 text-sm rounded border-none p-2.5 focus:ring-2 focus:ring-blue-500/50 outline-none cursor-pointer"
-        >
-          <option value="current"
-            >{mediaType === "anime" ? "Watching" : "Reading"}</option
+        {#if !isLoaded}
+          <div class="w-full h-[40px] bg-slate-700 animate-pulse rounded"></div>
+        {:else}
+          <select
+            bind:value={status}
+            class="w-full bg-[#0b1622] text-slate-200 text-sm rounded border-none p-2.5 focus:ring-2 focus:ring-blue-500/50 outline-none cursor-pointer"
           >
-          <option value="completed">Completed</option>
-          <option value="paused">Paused</option>
-          <option value="dropped">Dropped</option>
-          <option value="planning">Planning</option>
-        </select>
+            <option value="current"
+              >{mediaType === "anime" ? "Watching" : "Reading"}</option
+            >
+            <option value="completed">Completed</option>
+            <option value="paused">Paused</option>
+            <option value="dropped">Dropped</option>
+            <option value="planning">Planning</option>
+          </select>
+        {/if}
       </div>
       <div class="space-y-1.5">
-        <!-- svelte-ignore a11y_label_has_associated_control -->
         <label class="text-xs font-bold text-slate-400 uppercase tracking-wider"
           >Score</label
         >
-        <input
-          type="number"
-          step="0.1"
-          max="10"
-          min="0"
-          bind:value={score}
-          class="w-full bg-[#0b1622] text-slate-200 text-sm rounded border-none p-2.5 focus:ring-2 focus:ring-blue-500/50 outline-none"
-        />
+        {#if !isLoaded}
+          <div class="w-full h-[40px] bg-slate-700 animate-pulse rounded"></div>
+        {:else}
+          <input
+            type="number"
+            step="0.1"
+            max="10"
+            min="0"
+            bind:value={score}
+            class="w-full bg-[#0b1622] text-slate-200 text-sm rounded border-none p-2.5 focus:ring-2 focus:ring-blue-500/50 outline-none"
+          />
+        {/if}
       </div>
       <div class="space-y-1.5">
-        <!-- svelte-ignore a11y_label_has_associated_control -->
         <label class="text-xs font-bold text-slate-400 uppercase tracking-wider"
           >Progress</label
         >
-        <div class="flex items-center space-x-2">
-          <input
-            type="number"
-            bind:value={progress}
-            class="w-full bg-[#0b1622] text-slate-200 text-sm rounded border-none p-2.5 focus:ring-2 focus:ring-blue-500/50 outline-none"
-          />
-          <span class="text-slate-500 text-sm font-medium whitespace-nowrap"
-            >/ {entry.total}</span
-          >
-        </div>
+        {#if !isLoaded}
+          <div class="w-full h-[40px] bg-slate-700 animate-pulse rounded"></div>
+        {:else}
+          <div class="flex items-center space-x-2">
+            <input
+              type="number"
+              bind:value={progress}
+              class="w-full bg-[#0b1622] text-slate-200 text-sm rounded border-none p-2.5 focus:ring-2 focus:ring-blue-500/50 outline-none"
+            />
+            <span class="text-slate-500 text-sm font-medium whitespace-nowrap"
+              >/ {entry.total}</span
+            >
+          </div>
+        {/if}
       </div>
       <div class="space-y-1.5">
-        <!-- svelte-ignore a11y_label_has_associated_control -->
         <label class="text-xs font-bold text-slate-400 uppercase tracking-wider"
           >Start Date</label
         >
-        <input
-          type="date"
-          bind:value={startDate}
-          class="w-full bg-[#0b1622] text-slate-200 text-sm rounded border-none p-2.5 focus:ring-2 focus:ring-blue-500/50 outline-none"
-        />
+        {#if !isLoaded}
+          <div class="w-full h-[40px] bg-slate-700 animate-pulse rounded"></div>
+        {:else}
+          <input
+            type="date"
+            bind:value={startDate}
+            class="w-full bg-[#0b1622] text-slate-200 text-sm rounded border-none p-2.5 focus:ring-2 focus:ring-blue-500/50 outline-none"
+          />
+        {/if}
       </div>
       <div class="space-y-1.5">
-        <!-- svelte-ignore a11y_label_has_associated_control -->
         <label class="text-xs font-bold text-slate-400 uppercase tracking-wider"
           >Finish Date</label
         >
-        <input
-          type="date"
-          bind:value={finishDate}
-          class="w-full bg-[#0b1622] text-slate-200 text-sm rounded border-none p-2.5 focus:ring-2 focus:ring-blue-500/50 outline-none"
-        />
+        {#if !isLoaded}
+          <div class="w-full h-[40px] bg-slate-700 animate-pulse rounded"></div>
+        {:else}
+          <input
+            type="date"
+            bind:value={finishDate}
+            class="w-full bg-[#0b1622] text-slate-200 text-sm rounded border-none p-2.5 focus:ring-2 focus:ring-blue-500/50 outline-none"
+          />
+        {/if}
       </div>
     </div>
 
     <!-- Description -->
-    <div class="mt-8 flex-1 flex flex-col min-h-0">
-      <!-- svelte-ignore a11y_label_has_associated_control -->
+    <div class="mt-8 flex-1 flex flex-col min-h-[200px] w-full">
       <label
         class="text-xs font-bold text-slate-400 uppercase tracking-wider block mb-2 shrink-0"
         >Description</label
       >
       <div
-        class="text-slate-400 text-sm leading-relaxed overflow-y-auto pr-2 scrollbar-thin scrollbar-thumb-slate-800 flex-1"
+        class="text-slate-400 text-sm leading-relaxed overflow-y-auto pr-2 scrollbar-thin scrollbar-thumb-slate-800 flex-1 w-full"
       >
-        {@html entry.description}
+        {@html formatDescription(entry.description)}
       </div>
     </div>
 

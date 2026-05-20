@@ -31,25 +31,23 @@ export const ProfileService = {
     const profile = await fetchProfile('username', username);
     if (!profile) return failure('User not found');
 
-    const { data, error } = await supabase
-      .from('profile_list')
-      .select('media_id, progress, score, status, media_type')
-      .eq('profile_id', profile.id);
+    const mediaTypes = ['anime', 'manga', 'light_novel'];
+    const mediaLists: Record<string, any[]> = {};
 
-    if (error) {
-      console.error("Error fetching media lists:", error);
-      return failure('Failed to fetch media lists');
+    for (const type of mediaTypes) {
+      const { data, error } = await supabase
+        .from('profile_list')
+        .select('*')
+        .eq('profile_id', profile.id)
+        .eq('media_type', type);
+
+      if (error) {
+        continue;
+      }
+      mediaLists[type] = data || [];
     }
 
-    const listEntries = data as { media_id: number; progress: number; score: number; status: string; media_type: string }[];
-
-    profile.mediaLists = listEntries.reduce((acc: Record<string, any[]>, entry) => {
-      const type = entry.media_type || 'anime';
-      if (!acc[type]) acc[type] = [];
-      acc[type].push(entry);
-      return acc;
-    }, {});
-
+    profile.mediaLists = mediaLists;
     return success(profile);
   },
 

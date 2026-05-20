@@ -4,6 +4,7 @@
   import { HakoImage } from "../utils/images";
   import { getVibes } from "../utils/vibeCalc";
   import { openQuickEditor } from "../core/ui.svelte";
+  import { formatDescription } from "../utils/mediaData";
   import type { Media } from "../types/index";
 
   let { mediaId, type = "anime" } = $props<{
@@ -40,7 +41,7 @@
     <!-- Full-width Banner -->
     <div class="w-full h-80 relative overflow-hidden bg-[#0b1622]">
       <img
-        src={HakoImage.getBanner(type, media.media_id)}
+        src={HakoImage.getBanner(media.media_id)}
         class="w-full h-full object-cover opacity-50"
         alt="Banner"
       />
@@ -58,7 +59,7 @@
           class="hover:scale-105 transition-transform duration-200 cursor-pointer focus:outline-none"
         >
           <img
-            src={HakoImage.getCover(type, media.media_id, "large")}
+            src={HakoImage.getCover(media.media_id, "large")}
             class="media-cover w-40 h-56 rounded-xl border-4 border-[#0b1622] shadow-2xl object-cover bg-[#151f2e]"
             data-media-id={media.media_id}
             alt={media.title.romaji}
@@ -86,11 +87,9 @@
         <div class="lg:col-span-2 space-y-6">
           <div class="bg-card p-6 rounded-xl shadow-lg">
             <h3 class="text-white font-bold mb-4">Description</h3>
-            <p
-              class="text-slate-400 text-sm leading-relaxed mb-6 whitespace-pre-wrap"
-            >
-              {media.description}
-            </p>
+            <div class="text-slate-400 text-sm leading-relaxed mb-6">
+              {@html formatDescription(media.description)}
+            </div>
 
             <h3 class="text-white font-bold mb-4">Tags</h3>
             <div class="flex flex-wrap gap-2">

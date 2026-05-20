@@ -1,4 +1,5 @@
 @import "tailwindcss";
+@plugin "tailwindcss-animate";
 
 body {
   font-family: 'Inter', sans-serif;
@@ -55,6 +56,23 @@ body {
   width: 12px;
   height: 12px;
   border-radius: 2px;
+}
+
+@keyframes unroll {
+  from {
+    transform: scaleX(0);
+    transform-origin: center;
+  }
+
+  to {
+    transform: scaleX(1);
+    transform-origin: center;
+  }
+}
+
+
+.animate-unroll {
+  animation: unroll 0.1s ease-out forwards;
 }
 
 .level-0 {

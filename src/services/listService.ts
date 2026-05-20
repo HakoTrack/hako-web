@@ -13,7 +13,7 @@ const listCache = new Map<string, any[]>();
 const TYPE_CONFIG: Record<string, ListConfig> = {
   anime: { table: 'profile_list', idField: 'media_id' },
   manga: { table: 'profile_list', idField: 'media_id' },
-  light_novels: { table: 'profile_list', idField: 'media_id' },
+  light_novel: { table: 'profile_list', idField: 'media_id' },
   visual_novels: { table: 'profile_list', idField: 'media_id' }
 };
 

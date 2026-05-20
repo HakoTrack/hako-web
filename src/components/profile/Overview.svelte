@@ -1,135 +1,100 @@
-<script>
+<script lang="ts">
   import { onMount } from "svelte";
   import FavoritesGrid from "../FavoritesGrid.svelte";
   import FeedWrapper from "../feed/FeedWrapper.svelte";
-  import { fetchMediaByIds } from "../../utils/mediaData";
-  import { ActivityService } from "../../services/activityService.ts";
-  import { getProfileAffinity } from "../../utils/vibeCalc.ts";
+  import { ActivityService } from "../../services/activityService";
+  import { getProfileAffinity } from "../../utils/vibeCalc";
   import Chart from "chart.js/auto";
+  import { calculateAllStats, type StatsResult } from "../../utils/statsCalc";
+  import type { Profile } from "../../services/profileService";
+  import type { Media, ListEntry } from "../../types/index";
 
-  let { profileData } = $props();
-  let metadata = $state({});
+  let { profileData, metadata } = $props<{
+    profileData: Profile;
+    metadata: Record<string, Media>;
+  }>();
   let heatmapData = $state(Array(161).fill({ date: "", count: 0 }));
   let totalActivityCount = $derived(
     heatmapData.reduce((sum, day) => sum + day.count, 0),
   );
-  let radarChart = $state(null);
-  let chartCanvas = $state(null);
+  let radarChart: any = $state(null);
+  let chartCanvas: any = $state(null);
 
-  const statusGroups = [
-    { id: "current", label: "Watching", color: "bg-green-500" },
-    { id: "completed", label: "Completed", color: "bg-sky-500" },
-    { id: "paused", label: "Paused", color: "bg-orange-500" },
-    { id: "dropped", label: "Dropped", color: "bg-red-500" },
-    { id: "planning", label: "Planning", color: "bg-slate-500" },
-  ];
-
-  let statusDistribution = $derived.by(() => {
-    const list = profileData?.mediaLists?.anime || [];
-    const total = list.length;
-    return statusGroups.map((group) => {
-      const count = list.filter(
-        (i) => (i.status || "").toLowerCase() === group.id,
-      ).length;
-      return {
-        ...group,
-        count,
-        percent: total > 0 ? (count / total) * 100 : 0,
-      };
-    });
-  });
-
-  let stats = $derived.by(() => {
-    const list = profileData?.mediaLists?.anime || [];
-    const total = list.length;
-
-    let totalMinutes = 0;
-    let totalScore = 0;
-    let scoredCount = 0;
-
-    list.forEach((entry) => {
-      const meta = metadata[entry.media_id.toString()] || {};
-      const duration = Number(meta.duration || 0);
-      const progress = Number(entry.progress || 0);
-
-      if (duration > 0 && progress > 0) {
-        totalMinutes += progress * duration;
-      }
-      if (entry.score && entry.score > 0) {
-        totalScore += entry.score;
-        scoredCount++;
-      }
-    });
-
-    return {
-      total,
-      daysWatched: (totalMinutes / 1440).toFixed(1),
-      meanScore:
-        scoredCount > 0 ? (totalScore / scoredCount).toFixed(1) : "0.0",
-    };
-  });
+  // Stats calculation
+  let allStats: Record<string, StatsResult> = $derived(
+    calculateAllStats(profileData?.mediaLists || {}, metadata),
+  );
 
   $effect(() => {
-    if (
-      Object.keys(metadata).length > 0 &&
-      profileData?.mediaLists?.anime &&
-      chartCanvas
-    ) {
-      // Filter list: exclude 'planning'
-      const activeEntries = profileData.mediaLists.anime.filter((entry) =>
-        ["completed", "current", "dropped"].includes(
-          entry.status?.toLowerCase(),
-        ),
-      );
-
-      const affinities = getProfileAffinity(activeEntries, metadata);
-      const VIBE_ICONS = {
-        Speculative: "\uf6e2",
-        Visceral: "\uf0e7",
-        Cerebral: "\uf5dc",
-        Emotive: "\uf21e",
-        Interpersonal: "\uf0c0",
-        Lighthearted: "\uf118",
+    if (Object.keys(metadata).length > 0 && chartCanvas) {
+      const COLORS: Record<string, string> = {
+        anime: "#3db4f2",
+        manga: "#ef4444",
+        light_novel: "#10b981",
+        visual_novels: "#8b5cf6",
       };
 
+      const datasets = Object.keys(profileData.mediaLists)
+        .filter((type) => type !== "visual_novels") // Placeholder for VN
+        .map((type) => {
+          const activeEntries = (
+            profileData.mediaLists[type] as ListEntry[]
+          ).filter((entry) =>
+            ["completed", "current", "dropped"].includes(
+              entry.status?.toLowerCase() || "",
+            ),
+          );
+
+          if (activeEntries.length === 0) return null;
+
+          const affinities = getProfileAffinity(activeEntries, metadata);
+          const color = COLORS[type] || "#ffffff";
+
+          return {
+            label: type.replace("_", " "),
+            data: affinities.map((a) => a.value),
+            backgroundColor: color + "33",
+            borderColor: color,
+            pointBackgroundColor: color,
+            pointRadius: 0,
+            borderWidth: 1,
+          };
+        })
+        .filter((d) => d !== null);
+
       if (radarChart) {
-        radarChart.data.datasets[0].data = affinities.map((a) => a.value);
+        radarChart.data.datasets = datasets;
         radarChart.update();
       } else {
+        const VIBE_ICONS: Record<string, string> = {
+          Speculative: "\uf6e2",
+          Visceral: "\uf0e7",
+          Cerebral: "\uf5dc",
+          Emotive: "\uf21e",
+          Interpersonal: "\uf0c0",
+          Lighthearted: "\uf118",
+        };
+
         radarChart = new Chart(chartCanvas, {
           type: "radar",
           data: {
-            labels: affinities.map((a) => VIBE_ICONS[a.name]),
-            datasets: [
-              {
-                label: "Vibe Affinity",
-                data: affinities.map((a) => a.value),
-                backgroundColor: "rgba(61, 180, 242, 0.2)",
-                borderColor: "#3db4f2",
-                pointBackgroundColor: "#3db4f2",
-                borderWidth: 2,
-              },
-            ],
+            labels: Object.keys(VIBE_ICONS).map((name) => VIBE_ICONS[name]),
+            datasets: datasets,
           },
           options: {
             responsive: true,
             maintainAspectRatio: false,
+            interaction: {
+              mode: "nearest",
+              intersect: false,
+            },
             plugins: {
               legend: { display: false },
               tooltip: {
                 callbacks: {
-                  title: () => "",
-                  label: (context) => {
-                    const categories = [
-                      "Speculative",
-                      "Visceral",
-                      "Cerebral",
-                      "Emotive",
-                      "Interpersonal",
-                      "Lighthearted",
-                    ];
-                    const label = categories[context.dataIndex];
-                    return [`${label}`, `Affinity: ${context.raw}`];
+                  label: (context: any) => {
+                    const categories = Object.keys(VIBE_ICONS);
+                    return `${context.dataset.label} - ${categories[context.dataIndex]}: ${context.raw}`;
                   },
                 },
               },
@@ -160,11 +125,6 @@
   });
 
   onMount(async () => {
-    if (profileData?.mediaLists?.anime) {
-      const ids = profileData.mediaLists.anime.map((a) => a.media_id);
-      metadata = await fetchMediaByIds(ids, "anime");
-    }
-
     // Fetch and render functional heatmap
     heatmapData = await ActivityService.getHeatmapData(profileData.id, 160);
   });
@@ -305,60 +265,44 @@
         <i class="fa-solid fa-chart-simple text-accent mr-2"></i> List Stats
       </h3>
       <div class="space-y-6">
-        <!-- Anime Stats -->
-        <div class="border-b border-slate-800 pb-4">
-          <h4
-            class="text-[10px] uppercase text-accent font-bold mb-2 tracking-widest"
-          >
-            Anime
-          </h4>
-
-          <div class="flex justify-between text-xs mb-1">
-            <span>Total</span><span class="text-white">{stats.total}</span>
-          </div>
-          <div class="flex justify-between text-xs mb-1">
-            <span>Days Watched</span><span class="text-white"
-              >{stats.daysWatched}</span
+        {#each Object.entries(allStats) as [type, stat]}
+          <div class="border-b border-slate-800 pb-4">
+            <h4
+              class="text-[10px] uppercase text-accent font-bold mb-2 tracking-widest capitalize"
             >
-          </div>
-          <div class="flex justify-between text-xs mb-4">
-            <span>Mean Score</span><span class="text-white font-bold"
-              >{stats.meanScore}</span
-            >
-          </div>
+              {type.replace("_", " ")}
+            </h4>
 
-          <!-- Bar Graph -->
-          <div
-            class="h-2 w-full bg-slate-800 rounded-full flex overflow-hidden"
-          >
-            {#each statusDistribution as group}
-              {#if group.percent > 0}
-                <div
-                  class={group.color}
-                  style="width: {group.percent}%"
-                  title="{group.label}: {group.count}"
-                ></div>
-              {/if}
-            {/each}
+            <div class="flex justify-between text-xs mb-1">
+              <span>Total</span><span class="text-white">{stat.total}</span>
+            </div>
+            <div class="flex justify-between text-xs mb-1">
+              <span>{stat.metricLabel}</span><span class="text-white"
+                >{stat.metricValue}</span
+              >
+            </div>
+            <div class="flex justify-between text-xs mb-4">
+              <span>Median Score</span><span class="text-white font-bold"
+                >{stat.medianScore}</span
+              >
+            </div>
+
+            <!-- Bar Graph -->
+            <div
+              class="h-2 w-full bg-slate-800 rounded-full flex overflow-hidden"
+            >
+              {#each stat.statusDistribution as group}
+                {#if group.percent > 0}
+                  <div
+                    class={group.color}
+                    style="width: {group.percent}%"
+                    title="{group.label}: {group.count}"
+                  ></div>
+                {/if}
+              {/each}
+            </div>
           </div>
-        </div>
-        <!-- Manga Stats (Placeholder) -->
-        <div class="border-b border-slate-800 pb-4">
-          <h4
-            class="text-[10px] uppercase text-accent font-bold mb-2 tracking-widest"
-          >
-            Manga
-          </h4>
-          <div class="flex justify-between text-xs mb-1">
-            <span>Total</span><span class="text-white">156</span>
-          </div>
-          <div class="flex justify-between text-xs mb-1">
-            <span>Chapters</span><span class="text-white">4,280</span>
-          </div>
-          <div class="flex justify-between text-xs">
-            <span>Mean Score</span><span class="text-white font-bold">7.9</span>
-          </div>
-        </div>
+        {/each}
       </div>
     </div>
 

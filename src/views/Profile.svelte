@@ -5,12 +5,19 @@
   import MediaList from "../components/profile/MediaList.svelte";
   import Stats from "../components/profile/Stats.svelte";
   import Overview from "../components/profile/Overview.svelte";
+  import { fetchMediaByIds } from "../utils/mediaData";
+  import { ActivityService } from "../services/activityService";
 
   let { currentPath, activeTab = "overview" } = $props();
 
   let username = $derived(currentPath.split("/")[2]);
   let profileData: Profile | null = $state(null);
-  let currentActiveTab = $derived(activeTab);
+  let metadata: Record<string, any> = $state({});
+  let currentActiveTab = $state(activeTab);
+
+  $effect(() => {
+    currentActiveTab = activeTab;
+  });
 
   function switchTab(tab: string, path: string) {
     currentActiveTab = tab;
@@ -22,9 +29,9 @@
     { id: "anime", label: "Anime", path: `/user/${username}/anime` },
     { id: "manga", label: "Manga", path: `/user/${username}/manga` },
     {
-      id: "light-novels",
+      id: "light-novel",
       label: "Light Novels",
-      path: `/user/${username}/light_novels`,
+      path: `/user/${username}/light_novel`,
     },
     { id: "stats", label: "Stats", path: `/user/${username}/stats` },
   ]);
@@ -71,12 +78,25 @@
       const result = await ProfileService.getProfileByUsername(username);
       if (result.success) {
         profileData = result.data;
+
+        // Ensure we collect IDs from the data returned by the service
+        if (profileData?.mediaLists) {
+          const allLists = Object.values(profileData.mediaLists).flat();
+          const ids = [...new Set(allLists.map((a) => a.media_id))];
+
+          if (ids.length > 0) {
+            metadata = await fetchMediaByIds(ids);
+          }
+        }
       } else {
         console.error("DEBUG: Profile fetch error:", result.error);
       }
     } catch (e) {
       console.error("DEBUG: Profile fetch exception:", e);
     }
+
+    // Fetch and render functional heatmap
+    // heatmapData = await ActivityService.getHeatmapData(profileData.id, 160);
   });
 </script>
 
@@ -87,10 +107,11 @@
   >
     <img
       src={profileData
-        ? HakoImage.get(
-            profileData.banner_url || `/profile/${username}/banner.jpg`,
-            { w: 1200, f: "webp", q: 80 },
-          )
+        ? HakoImage.get(profileData.banner_url || `/banners/${username}.jpg`, {
+            w: 1200,
+            f: "webp",
+            q: 80,
+          })
         : ""}
       alt="Banner"
       class="object-top w-full h-full object-cover bg-[#151f2e]"
@@ -113,7 +134,7 @@
           <img
             src={profileData
               ? HakoImage.get(
-                  profileData.avatar_url || `/profile/${username}/avatar.jpg`,
+                  profileData.avatar_url || `/covers/${username}.jpg`,
                   { w: 200, f: "webp" },
                 )
               : ""}
@@ -171,7 +192,7 @@
     <div class="py-8 min-h-100">
       {#if profileData}
         <div class:hidden={currentActiveTab !== "overview"}>
-          <Overview {profileData} />
+          <Overview {profileData} {metadata} />
         </div>
         <div class:hidden={currentActiveTab !== "anime"}>
           <MediaList type="anime" profileId={profileData.id} />
@@ -179,8 +200,8 @@
         <div class:hidden={currentActiveTab !== "manga"}>
           <MediaList type="manga" profileId={profileData.id} />
         </div>
-        <div class:hidden={currentActiveTab !== "light-novels"}>
-          <MediaList type="light_novels" profileId={profileData.id} />
+        <div class:hidden={currentActiveTab !== "light-novel"}>
+          <MediaList type="light_novel" profileId={profileData.id} />
         </div>
         <div class:hidden={currentActiveTab !== "stats"}>
           <Stats {profileData} />
