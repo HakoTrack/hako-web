@@ -41,22 +41,38 @@
     { id: "planning", label: "Planning", color: "bg-slate-500" },
   ]);
 
-  onMount(async () => {
-    try {
-      const result = await ListService.getList(profileId, type);
-      if (result.success) {
-        listDataEntries = result.data;
-        const ids = listDataEntries.map((item) => item.media_id);
-        metadata = await MetadataService.getMetadata(ids, type);
-      } else {
-        console.error("Error loading list:", result.error);
-      }
-    } catch (err) {
-      console.error(err);
-    } finally {
-      isLoading = false;
+  function formatType(t: string): string {
+    if (t === "light_novel" || t === "lightnovel") return "Light Novels";
+    return t.charAt(0).toUpperCase() + t.slice(1) + "s";
+  }
+
+  let hasFetched = $state(false);
+
+  // Sync state whenever the profileId or type arrives/changes
+  $effect(() => {
+    if (profileId && type) {
+      // Synchronously clear and show spinner to prevent hang
+      isLoading = true;
+      listDataEntries = [];
+      loadData();
     }
   });
+
+  async function loadData() {
+    const result = await ListService.getList(profileId, type);
+    if (result.success) {
+      // Yield to the main thread so the browser can paint the spinner
+      await new Promise((resolve) => setTimeout(resolve, 0));
+
+      listDataEntries = result.data;
+      const ids = listDataEntries.map((item) => item.media_id);
+      metadata = await MetadataService.getMetadata(ids, type);
+      isLoading = false;
+    } else {
+      console.error("Error loading list:", result.error);
+      isLoading = false;
+    }
+  }
 
   function getScoreColor(score: number | null): string {
     if (!score) return "text-slate-500";
@@ -72,8 +88,15 @@
     if (media) openQuickEditor(media, type);
   }
 
+  // Memoization variables for visibleGroups
+  let lastType: string | null = null;
+
   let visibleGroups = $derived.by(() => {
+    // Short-circuit heavy processing while loading or empty
+    if (isLoading || listDataEntries.length === 0) return [];
+
     if (
+      lastType === type &&
       lastListEntries === listDataEntries &&
       lastMetadata === metadata &&
       lastSortBy === sortBy &&
@@ -125,6 +148,7 @@
       .filter((group) => group.items.length > 0);
 
     lastProcessed = result;
+    lastType = type;
     lastListEntries = listDataEntries;
     lastMetadata = metadata;
     lastSortBy = sortBy;
@@ -192,7 +216,7 @@
             ? 'text-white bg-slate-800/50 border-l-4 border-accent'
             : 'text-slate-400 hover:text-white border-l-4 border-transparent'} transition-all w-full"
         >
-          <span>All {type.charAt(0).toUpperCase() + type.slice(1)}</span>
+          <span>All {formatType(type)}</span>
           <span
             class="count text-xs text-slate-500 bg-[#0b1622] px-2 py-0.5 rounded"
             >{listDataEntries.length}</span
@@ -246,9 +270,9 @@
                 >
                   <th class="p-4 w-16 text-center"></th>
                   <th class="p-4">Title</th>
-                  <th class="p-4 text-center">Score</th>
-                  <th class="p-4 text-center">Progress</th>
-                  <th class="p-4 text-center">Format</th>
+                  <th class="p-4 text-center w-24">Score</th>
+                  <th class="p-4 text-center w-32">Progress</th>
+                  <th class="p-4 text-center w-28">Format</th>
                 </tr>
               </thead>
               <tbody>

@@ -31,24 +31,34 @@ export const ProfileService = {
     const profile = await fetchProfile('username', username);
     if (!profile) return failure('User not found');
 
-    const mediaTypes = ['anime', 'manga', 'light_novel'];
-    const mediaLists: Record<string, any[]> = {};
+    // Fetch media lists in the background
+    this.getMediaLists(profile.id).then(mediaLists => {
+      // We'll handle the reactive update in the view layer
+    });
 
-    for (const type of mediaTypes) {
-      const { data, error } = await supabase
-        .from('profile_list')
-        .select('*')
-        .eq('profile_id', profile.id)
-        .eq('media_type', type);
-
-      if (error) {
-        continue;
-      }
-      mediaLists[type] = data || [];
-    }
-
-    profile.mediaLists = mediaLists;
     return success(profile);
+  },
+
+  async getMediaLists(profileId: string): Promise<Record<string, any[]>> {
+    const mediaTypes = ['anime', 'manga', 'light_novel'];
+    const results = await Promise.all(
+      mediaTypes.map(async (type) => {
+        const { data, error } = await supabase
+          .from('profile_list')
+          .select('*')
+          .eq('profile_id', profileId)
+          .eq('media_type', type);
+
+        return { type, data: error ? [] : data || [] };
+      })
+    );
+
+    const mediaLists: Record<string, any[]> = {};
+    results.forEach(({ type, data }) => {
+      mediaLists[type] = data;
+    });
+
+    return mediaLists;
   },
 
   async getProfileById(id: string): Promise<Result<Profile>> {

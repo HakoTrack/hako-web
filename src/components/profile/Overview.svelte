@@ -10,7 +10,7 @@
   import type { Media, ListEntry } from "../../types/index";
 
   let { profileData, metadata } = $props<{
-    profileData: Profile;
+    profileData: Profile | null;
     metadata: Record<string, Media>;
   }>();
   let heatmapData = $state(Array(161).fill({ date: "", count: 0 }));
@@ -26,7 +26,11 @@
   );
 
   $effect(() => {
-    if (Object.keys(metadata).length > 0 && chartCanvas) {
+    if (
+      Object.keys(metadata).length > 0 &&
+      chartCanvas &&
+      profileData?.mediaLists
+    ) {
       const COLORS: Record<string, string> = {
         anime: "#3db4f2",
         manga: "#ef4444",
@@ -38,7 +42,7 @@
         .filter((type) => type !== "visual_novels") // Placeholder for VN
         .map((type) => {
           const activeEntries = (
-            profileData.mediaLists[type] as ListEntry[]
+            profileData!.mediaLists[type] as ListEntry[]
           ).filter((entry) =>
             ["completed", "current", "dropped"].includes(
               entry.status?.toLowerCase() || "",
@@ -63,7 +67,7 @@
         .filter((d) => d !== null);
 
       if (radarChart) {
-        radarChart.data.datasets = datasets;
+        radarChart.data.datasets = datasets as any[];
         radarChart.update();
       } else {
         const VIBE_ICONS: Record<string, string> = {
@@ -79,7 +83,7 @@
           type: "radar",
           data: {
             labels: Object.keys(VIBE_ICONS).map((name) => VIBE_ICONS[name]),
-            datasets: datasets,
+            datasets: datasets as any[],
           },
           options: {
             responsive: true,
@@ -124,9 +128,12 @@
     }
   });
 
-  onMount(async () => {
-    // Fetch and render functional heatmap
-    heatmapData = await ActivityService.getHeatmapData(profileData.id, 160);
+  $effect(() => {
+    if (profileData?.id) {
+      ActivityService.getHeatmapData(profileData.id, 160).then((data) => {
+        heatmapData = data;
+      });
+    }
   });
 </script>
 
@@ -242,7 +249,9 @@
       </div>
     </div>
 
-    <FavoritesGrid profileId={profileData.id} />
+    {#if profileData?.id}
+      <FavoritesGrid profileId={profileData.id} />
+    {/if}
   </div>
 
   <!-- RIGHT COLUMN: Content (Activity Feed) -->
@@ -254,7 +263,9 @@
           View All
         </div>
       </div>
-      <FeedWrapper profileId={profileData.id} />
+      {#if profileData?.id}
+        <FeedWrapper profileId={profileData.id} />
+      {/if}
     </div>
   </div>
 

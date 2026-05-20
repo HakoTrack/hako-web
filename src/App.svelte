@@ -14,6 +14,7 @@
 
   let user = $state(null);
   let profile = $state(null);
+  let targetProfileData = $state(null);
   let currentPath = $state(window.location.pathname);
   let activeTab = $state("overview");
   let mediaType = $state("anime");
@@ -34,6 +35,11 @@
       ProfileService.getProfileById(user.id).then((result) => {
         if (result.success) {
           profile = result.data;
+          // Eagerly set targetProfileData if on own profile
+          const pathParts = currentPath.split("/").filter((p) => p);
+          if (pathParts[0] === "user" && pathParts[1] === profile.username) {
+            targetProfileData = profile;
+          }
         } else {
           console.error(
             "DEBUG: Failed to load profile for navbar:",
@@ -52,6 +58,17 @@
     const pathParts = currentPath.split("/").filter((p) => p);
 
     if (pathParts[0] === "user") {
+      const targetUsername = pathParts[1];
+
+      // Eager fetch / cached return
+      if (profile && profile.username === targetUsername) {
+        targetProfileData = profile;
+      } else {
+        ProfileService.getProfileByUsername(targetUsername).then((res) => {
+          if (res.success) targetProfileData = res.data;
+        });
+      }
+
       activeTab = pathParts[2] || "overview";
       mediaType = pathParts[2] || "anime";
     }
@@ -86,9 +103,12 @@
   {#if currentPath === "/"}
     <Landing />
   {:else if currentPath.startsWith("/user")}
-    {#key currentPath}
-      <Profile {currentPath} {activeTab} {mediaType} />
-    {/key}
+    <Profile
+      {currentPath}
+      {activeTab}
+      {mediaType}
+      profileData={targetProfileData}
+    />
   {:else if currentPath.startsWith("/anime/")}
     {#key currentPath}
       <MediaDetail mediaId={currentPath.split("/")[2]} type="anime" />
