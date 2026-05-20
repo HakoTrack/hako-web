@@ -3,14 +3,12 @@
   import Navbar from "./components/Navbar.svelte";
   import Footer from "./components/Footer.svelte";
   import Landing from "./views/Landing.svelte";
-  import Feed from "./views/Feed.svelte";
-  import Profile from "./views/Profile.svelte";
-  import MediaDetail from "./views/MediaDetail.svelte";
   import ModalWrapper from "./components/modals/ModalWrapper.svelte";
   import { AuthService } from "./core/auth";
   import { ProfileService } from "./services/profileService.ts";
   import { supabase } from "./utils/supabase.js";
   import { openModal } from "./core/ui.svelte.ts";
+  import { routes } from "./routes";
 
   let user = $state(null);
   let profile = $state(null);
@@ -60,6 +58,9 @@
     if (pathParts[0] === "user") {
       const targetUsername = pathParts[1];
 
+      // Clear data to prevent stale content while fetching
+      targetProfileData = null;
+
       // Eager fetch / cached return
       if (profile && profile.username === targetUsername) {
         targetProfileData = profile;
@@ -86,6 +87,10 @@
     window.addEventListener("popstate", handleRouting);
     handleRouting();
   });
+
+  let activeRoute = $derived(
+    routes.find((r) => currentPath.startsWith(r.path)),
+  );
 </script>
 
 <svelte:window
@@ -102,19 +107,17 @@
 <main id="app-view">
   {#if currentPath === "/"}
     <Landing />
-  {:else if currentPath.startsWith("/user")}
-    <Profile
-      {currentPath}
-      {activeTab}
-      {mediaType}
-      profileData={targetProfileData}
+  {:else if activeRoute}
+    <svelte:component
+      this={activeRoute.component}
+      {...activeRoute.props(
+        currentPath,
+        user,
+        targetProfileData,
+        activeTab,
+        mediaType,
+      )}
     />
-  {:else if currentPath.startsWith("/anime/")}
-    {#key currentPath}
-      <MediaDetail mediaId={currentPath.split("/")[2]} type="anime" />
-    {/key}
-  {:else if currentPath === "/feed"}
-    <Feed {user} />
   {:else}
     <div class="text-white p-10">404 - Not Found</div>
   {/if}

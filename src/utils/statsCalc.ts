@@ -13,8 +13,10 @@ export function calculateAllStats(
   metadata: Record<string, Media>
 ): Record<string, StatsResult> {
   const result: Record<string, StatsResult> = {};
+  const types = ['anime', 'manga', 'light_novel'];
 
-  for (const [type, list] of Object.entries(mediaLists)) {
+  for (const type of types) {
+    const list = mediaLists[type] || [];
     result[type] = calculateStatsForType(list, metadata, type);
   }
 

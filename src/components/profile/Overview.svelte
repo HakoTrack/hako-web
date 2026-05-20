@@ -277,7 +277,9 @@
       </h3>
       <div class="space-y-6">
         {#each Object.entries(allStats) as [type, stat]}
-          <div class="border-b border-slate-800 pb-4">
+          {@const isLoaded =
+            profileData?.mediaLists && profileData.mediaLists[type]?.length > 0}
+          <div class="border-b border-slate-800 pb-4 last:border-0">
             <h4
               class="text-[10px] uppercase text-accent font-bold mb-2 tracking-widest capitalize"
             >
@@ -302,15 +304,19 @@
             <div
               class="h-2 w-full bg-slate-800 rounded-full flex overflow-hidden"
             >
-              {#each stat.statusDistribution as group}
-                {#if group.percent > 0}
-                  <div
-                    class={group.color}
-                    style="width: {group.percent}%"
-                    title="{group.label}: {group.count}"
-                  ></div>
-                {/if}
-              {/each}
+              {#if isLoaded}
+                {#each stat.statusDistribution as group}
+                  {#if group.percent > 0}
+                    <div
+                      class={group.color}
+                      style="width: {group.percent}%"
+                      title="{group.label}: {group.count}"
+                    ></div>
+                  {/if}
+                {/each}
+              {:else}
+                <div class="w-full h-full bg-slate-700/50 animate-pulse"></div>
+              {/if}
             </div>
           </div>
         {/each}

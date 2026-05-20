@@ -7,9 +7,14 @@
 
   let posts = $state([]);
   let isLoading = $state(true);
+  let lastProfileId = $state(null);
 
   async function loadPosts() {
+    // Prevent double-fetch/flash if ID hasn't changed
+    if (profileId && profileId === lastProfileId) return;
+
     isLoading = true;
+    lastProfileId = profileId;
     try {
       let result;
       if (profileId) {
@@ -45,7 +50,9 @@
   {/if}
 
   {#if isLoading}
-    <p class="text-slate-500 text-sm p-4 text-center">Loading feed...</p>
+    <div class="flex items-center justify-center p-20">
+      <i class="fa-solid fa-circle-notch fa-spin text-accent text-2xl"></i>
+    </div>
   {:else if posts.length === 0}
     <p class="text-slate-500 text-sm p-4 text-center">
       This feed is currently stuck in filler episodes... ( ￣_￣)

@@ -118,6 +118,13 @@
   function handleDelete() {
     if (confirm("Delete this entry?")) closeModal();
   }
+
+  function navigateToMedia() {
+    const typeSlug = mediaType === "light_novel" ? "lightnovel" : mediaType;
+    window.history.pushState({}, "", `/${typeSlug}/${entry.id}`);
+    window.dispatchEvent(new Event("popstate"));
+    closeModal();
+  }
 </script>
 
 <div
@@ -155,7 +162,8 @@
       />
       <div class="flex-1 min-w-0">
         <h2
-          class="text-white font-bold text-xl leading-tight truncate drop-shadow-md"
+          class="text-white font-bold text-xl leading-tight truncate drop-shadow-md cursor-pointer hover:text-accent transition-colors"
+          onclick={navigateToMedia}
         >
           {entry.title}
         </h2>

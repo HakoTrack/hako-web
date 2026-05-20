@@ -51,7 +51,7 @@ export const ListService = {
           media_type: type,
           ...updates
         },
-        { onConflict: 'profile_id, media_id, media_type' }
+        { onConflict: 'profile_id, media_id' }
       );
 
     if (error) return failure(error.message);
