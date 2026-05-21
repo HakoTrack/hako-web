@@ -1,6 +1,6 @@
 [identity]
 name: Hako
-url: https://hako.com
+url: https://hako.moe
 
 [permissions]
 # Only allow actions required for search visibility
