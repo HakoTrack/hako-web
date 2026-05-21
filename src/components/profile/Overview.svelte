@@ -18,11 +18,19 @@
   );
   let radarChart: any = $state(null);
   let chartCanvas: any = $state(null);
+  let hasInitializedChart = $state(false);
+  let persistedStats: Record<string, StatsResult> = $state({});
 
   // Stats calculation
   let allStats: Record<string, StatsResult> = $derived(
     calculateAllStats(profileData?.mediaLists || {}, metadata),
   );
+
+  $effect(() => {
+    if (Object.keys(allStats).length > 0) {
+      persistedStats = allStats;
+    }
+  });
 
   const statusColors: Record<string, string> = {
     current: "var(--c2)",
@@ -36,8 +44,10 @@
     if (
       Object.keys(metadata).length > 0 &&
       chartCanvas &&
-      profileData?.mediaLists
+      profileData?.mediaLists &&
+      !hasInitializedChart
     ) {
+      hasInitializedChart = true;
       // Helper to get computed CSS color
       const getComputedColor = (varName: string) => {
         return getComputedStyle(document.documentElement)
@@ -290,9 +300,8 @@
         <i class="fa-solid fa-chart-simple text-accent mr-2"></i> List Stats
       </h3>
       <div class="space-y-6">
-        {#each Object.entries(allStats) as [type, stat]}
-          {@const isLoaded =
-            profileData?.mediaLists && profileData.mediaLists[type]?.length > 0}
+        {#each Object.entries(persistedStats) as [type, stat]}
+          {@const isLoaded = !!stat && stat.total > 0}
           <div class="border-b border-slate-800 pb-4 last:border-0">
             <h4
               class="text-[10px] uppercase text-accent font-bold mb-2 tracking-widest"

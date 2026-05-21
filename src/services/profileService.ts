@@ -24,6 +24,8 @@ async function fetchProfile(column: string, value: string): Promise<Profile | nu
   return { ...data, mediaLists: {} } as Profile;
 }
 
+const mediaListsCache = new Map<string, Record<string, any[]>>();
+
 export const ProfileService = {
   async getProfileByUsername(username: string): Promise<Result<Profile>> {
     if (!username || username === 'user') return failure('Placeholder username');
@@ -35,6 +37,8 @@ export const ProfileService = {
   },
 
   async getMediaLists(profileId: string): Promise<Record<string, any[]>> {
+    if (mediaListsCache.has(profileId)) return mediaListsCache.get(profileId)!;
+
     const mediaTypes = ['anime', 'manga', 'light_novel'];
     const results = await Promise.all(
       mediaTypes.map(async (type) => {
@@ -53,6 +57,7 @@ export const ProfileService = {
       mediaLists[type] = data;
     });
 
+    mediaListsCache.set(profileId, mediaLists);
     return mediaLists;
   },
 

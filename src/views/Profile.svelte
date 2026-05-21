@@ -14,9 +14,35 @@
   } = $props();
 
   let username = $derived(currentPath.split("/")[2]);
-  let profileData = $derived(propProfileData);
+  let profileData: Profile | null = $state(propProfileData);
   let metadata: Record<string, any> = $state({});
   let currentActiveTab = $derived(activeTab);
+  let isFetchingLists = $state(false);
+
+  // Sync state if propProfileData changes, but ignore nulls if we already have data
+  $effect(() => {
+    if (propProfileData) {
+      profileData = propProfileData;
+    }
+  });
+
+  // Fetch full media lists in background when profile changes
+  $effect(() => {
+    if (profileData?.id && !isFetchingLists) {
+      const hasLists =
+        profileData.mediaLists &&
+        Object.keys(profileData.mediaLists).length > 0;
+      if (!hasLists) {
+        isFetchingLists = true;
+        ProfileService.getMediaLists(profileData.id).then((lists) => {
+          if (profileData) {
+            profileData = { ...profileData, mediaLists: lists };
+          }
+          isFetchingLists = false;
+        });
+      }
+    }
+  });
 
   function switchTab(tab: string, path: string) {
     currentActiveTab = tab;
@@ -71,15 +97,9 @@
       : null,
   );
 
-  $effect(() => {
-    if (username && username !== "user") {
-      loadProfileData(username);
-    }
-  });
-
   // Reactively fetch metadata when media lists are populated in the background
   $effect(() => {
-    if (profileData?.mediaLists) {
+    if (profileData?.mediaLists && Object.keys(metadata).length === 0) {
       const allLists = Object.values(
         profileData.mediaLists,
       ).flat() as ListEntry[];
@@ -91,26 +111,6 @@
       }
     }
   });
-
-  async function loadProfileData(uname: string) {
-    try {
-      const result = await ProfileService.getProfileByUsername(uname);
-      if (result.success) {
-        profileData = result.data;
-
-        // Fetch full media lists in background and update reactively
-        ProfileService.getMediaLists(profileData.id).then((lists) => {
-          if (profileData) {
-            profileData = { ...profileData, mediaLists: lists };
-          }
-        });
-      } else {
-        console.error("DEBUG: Profile fetch error:", result.error);
-      }
-    } catch (e) {
-      console.error("DEBUG: Profile fetch exception:", e);
-    }
-  }
 </script>
 
 <div id="profile-container">
@@ -200,7 +200,9 @@
     <!-- Content -->
     <div class="py-8 min-h-100">
       <div class:hidden={currentActiveTab !== "overview"}>
-        <Overview {profileData} {metadata} />
+        {#if profileData}
+          <Overview {profileData} {metadata} />
+        {/if}
       </div>
 
       <div

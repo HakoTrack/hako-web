@@ -1,4 +1,5 @@
 import { supabase } from '../utils/supabase.js';
+import { getLocalDateString } from '../utils/date.js';
 
 interface ActivitySummary {
   activity_date: string;
@@ -10,19 +11,21 @@ interface HeatmapDay {
   count: number;
 }
 
+const heatmapCache = new Map<string, HeatmapDay[]>();
+
 /**
  * Service for tracking user activity for features like heatmaps.
  */
 export const ActivityService = {
   /**
-   * Tracks an activity event for a user on a specific date.
+   * Tracks an activity event for a user.
    * @param {string} profileId
-   * @param {string} [date] - ISO date string (YYYY-MM-DD), defaults to today
+   * @param {string} [timestamp] - ISO timestamp string, defaults to now
    */
-  async trackActivity(profileId: string, date: string = new Date().toISOString().split('T')[0]): Promise<void> {
+  async trackActivity(profileId: string, timestamp: string = new Date().toISOString()): Promise<void> {
     const { error } = await supabase.rpc('increment_activity', {
       target_profile_id: profileId,
-      target_date: date
+      target_timestamp: timestamp
     });
 
     if (error) {
@@ -40,10 +43,10 @@ export const ActivityService = {
   async getActivitySummary(profileId: string, startDate: string, endDate: string): Promise<ActivitySummary[]> {
     const { data, error } = await supabase
       .from('activity_summary')
-      .select('activity_date, activity_count')
+      .select('activity_date::date, activity_count')
       .eq('profile_id', profileId)
-      .gte('activity_date', startDate)
-      .lte('activity_date', endDate)
+      .gte('activity_date::date', startDate)
+      .lte('activity_date::date', endDate)
       .order('activity_date', { ascending: true });
 
     if (error) {
@@ -59,14 +62,16 @@ export const ActivityService = {
    * @param {number} days
    */
   async getHeatmapData(profileId: string, days: number = 160): Promise<HeatmapDay[]> {
+    if (heatmapCache.has(profileId)) return heatmapCache.get(profileId)!;
+
     const endDate = new Date();
     const startDate = new Date();
     startDate.setDate(endDate.getDate() - days);
 
     const activityData = await this.getActivitySummary(
       profileId,
-      startDate.toISOString().split('T')[0],
-      endDate.toISOString().split('T')[0]
+      getLocalDateString(startDate),
+      getLocalDateString(endDate)
     );
 
     const activityMap = new Map<string, number>(activityData.map((a: ActivitySummary) => [a.activity_date, a.activity_count]));
@@ -75,12 +80,14 @@ export const ActivityService = {
     for (let i = days; i >= 0; i--) {
       const date = new Date();
       date.setDate(endDate.getDate() - i);
-      const dateStr = date.toISOString().split('T')[0];
+      const dateStr = getLocalDateString(date);
       result.push({
         date: dateStr,
         count: activityMap.get(dateStr) || 0
       });
     }
+
+    heatmapCache.set(profileId, result);
     return result;
   }
 };
