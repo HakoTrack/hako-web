@@ -3,9 +3,9 @@
   import { openQuickEditor } from "../../core/ui.svelte";
   import { ListService } from "../../services/listService";
   import { MetadataService } from "../../services/metadataService";
-  import { HakoImage } from "../../utils/images";
   import { fetchMediaById } from "../../utils/mediaData";
   import type { Media, ListEntry } from "../../types/index";
+  import MediaCover from "../common/MediaCover.svelte";
 
   let { type = "anime", profileId } = $props<{
     type?: string;
@@ -14,7 +14,6 @@
 
   let listDataEntries: ListEntry[] = $state([]);
   let metadata: Record<string, Media> = $state({});
-  let imageLoaded: Record<number, boolean> = $state({});
   let sortBy = $state("Title");
   let filterStatus = $state("all");
   let searchQuery = $state("");
@@ -308,29 +307,14 @@
                   <tr
                     class="group hover:bg-slate-800/30 border-b border-slate-800/50 last:border-0"
                   >
-                    <td class="p-2 text-center relative">
-                      {#if !imageLoaded[item.media_id]}
-                        <div
-                          class="absolute inset-0 flex items-center justify-center"
-                        >
-                          <div
-                            class="w-12 h-16 bg-slate-700 animate-pulse rounded shadow-md"
-                          ></div>
-                        </div>
-                      {/if}
-                      <!-- svelte-ignore a11y_no_noninteractive_element_interactions -->
-                      <!-- svelte-ignore a11y_click_events_have_key_events -->
-                      <img
-                        src={HakoImage.getCover(item.media_id, "small")}
-                        class="w-12 h-16 object-cover rounded shadow-md cursor-pointer group-hover:scale-105 transition-transform {imageLoaded[
-                          item.media_id
-                        ]
-                          ? 'opacity-100'
-                          : 'opacity-0'}"
-                        onclick={() => handleOpenEditor(item.media_id)}
+                    <td class="p-2">
+                      <MediaCover
+                        mediaId={item.media_id}
+                        {type}
+                        size="small"
                         alt={displayTitle}
-                        loading="lazy"
-                        onload={() => (imageLoaded[item.media_id] = true)}
+                        class="mx-auto group-hover:scale-105 transition-transform"
+                        showTooltip={false}
                       />
                     </td>
                     <td
