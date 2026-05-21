@@ -83,12 +83,12 @@
   }
 
   function getScoreColor(score: number | null): string {
-    if (!score) return "text-slate-500";
-    if (score >= 9) return "text-green-400";
-    if (score >= 8) return "text-blue-400";
-    if (score >= 7) return "text-slate-400";
-    if (score >= 5) return "text-yellow-400";
-    return "text-red-400";
+    if (!score) return "text-(--c8)";
+    if (score >= 9) return "text-(--c2)";
+    if (score >= 8) return "text-(--c4)";
+    if (score >= 7) return "text-(--c15)";
+    if (score >= 5) return "text-(--c3)";
+    return "text-(--c1)";
   }
 
   async function handleOpenEditor(id: number) {
@@ -186,7 +186,7 @@
               type="text"
               placeholder="Filter titles..."
               bind:value={searchQuery}
-              class="w-full bg-[#0b1622] border border-slate-800 rounded-lg px-3 py-2 text-sm text-slate-300 focus:ring-1 focus:ring-accent pl-9"
+              class="w-full bg-card border border-(--surface-elevated) rounded-lg px-3 py-2 text-sm text-(--hako-fg) focus:ring-1 focus:ring-(--hako-accent) pl-9"
             />
             <i
               class="fa-solid fa-search absolute left-3 top-2.5 text-slate-600 text-xs"
@@ -201,7 +201,7 @@
           >
           <select
             bind:value={sortBy}
-            class="w-full bg-[#0b1622] border border-slate-800 rounded-lg px-3 py-2 text-sm text-slate-300 focus:ring-1 focus:ring-accent"
+            class="w-full bg-card border border-(--surface-elevated) rounded-lg px-3 py-2 text-sm text-(--hako-fg) focus:ring-1 focus:ring-(--hako-accent)"
           >
             <option>Title</option>
             <option>Score</option>
@@ -223,8 +223,8 @@
           onclick={() => (filterStatus = "all")}
           class="flex items-center justify-between px-4 py-3 text-sm font-medium w-full transition-all border-l-4 {filterStatus ===
           'all'
-            ? 'text-white bg-(--surface-dim) border-accent'
-            : 'text-slate-400 hover:text-white border-transparent'} transition-all w-full"
+            ? 'text-white bg-(--surface-dim) border-(--hako-accent)'
+            : 'text-slate-400 hover:text-white border-transparent hover:bg-card'} transition-all w-full focus:ring-0"
         >
           <div class="flex items-center">
             <span class="w-2 h-2 rounded-full mr-3 bg-(--c7)"></span>
@@ -240,8 +240,8 @@
             onclick={() => (filterStatus = group.id)}
             class="flex items-center justify-between px-4 py-3 text-sm font-medium {filterStatus ===
             group.id
-              ? 'text-white bg-(--surface-dim) border-l-4 border-accent'
-              : 'text-slate-400 hover:text-white border-l-4 border-transparent'} transition-all w-full"
+              ? 'text-white bg-(--surface-dim) border-l-4 border-(--hako-accent)'
+              : 'text-slate-400 hover:text-white border-l-4 border-transparent hover:bg-card'} transition-all w-full"
           >
             <div class="flex items-center">
               <span
@@ -287,7 +287,7 @@
             <table class="w-full text-left border-collapse">
               <thead>
                 <tr
-                  class="text-[10px] uppercase text-slate-500 border-b border-slate-800"
+                  class="text-[10px] uppercase text-(--c8) border-b border-(--surface-elevated)"
                 >
                   <th class="p-4 w-16 text-center"></th>
                   <th class="p-4">Title</th>
@@ -305,7 +305,7 @@
                       : meta.episodes || item.total || "?"}
                   {@const displayTitle = item.displayTitle}
                   <tr
-                    class="group hover:bg-slate-800/30 border-b border-slate-800/50 last:border-0"
+                    class="group hover:bg-(--surface-elevated)/30 border-b border-(--surface-elevated) last:border-0"
                   >
                     <td class="p-2">
                       <MediaCover
@@ -321,12 +321,10 @@
                       class="p-4 cursor-pointer"
                       onclick={() => handleOpenEditor(item.media_id)}
                     >
-                      <div
-                        class="text-sm font-bold text-slate-200 group-hover:text-accent transition-colors"
-                      >
+                      <div class="text-sm font-bold text-(--hako-fg)">
                         {displayTitle}
                       </div>
-                      <div class="text-[10px] text-slate-500 mt-1 uppercase">
+                      <div class="text-[10px] text-(--c8) mt-1 uppercase">
                         {(meta as any).genres?.slice(0, 3).join(" • ") || ""}
                       </div>
                     </td>
@@ -335,14 +333,16 @@
                         item.score,
                       )}">{item.score?.toFixed(1) || "—"}</td
                     >
-                    <td class="p-4 text-center text-sm font-mono text-white">
-                      <span class="text-white">{item.progress}</span><span
-                        class="text-slate-600 mx-1">/</span
-                      ><span class="text-slate-500 text-xs">{total}</span>
+                    <td
+                      class="p-4 text-center text-sm font-mono text-(--hako-fg)"
+                    >
+                      <span class="text-(--hako-fg)">{item.progress}</span><span
+                        class="text-(--c8) mx-1">/</span
+                      ><span class="text-(--c8) text-xs">{total}</span>
                     </td>
                     <td class="p-4 text-center">
                       <span
-                        class="text-[10px] font-bold bg-[#0b1622] px-2 py-1 rounded text-slate-400 border border-slate-800"
+                        class="text-[10px] font-bold bg-(--surface-dim) px-2 py-1 rounded text-slate-400 border border-(--surface-elevated)"
                         >{meta.format || item.type || "TV"}</span
                       >
                     </td>

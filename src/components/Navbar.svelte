@@ -87,7 +87,14 @@
               navigate(`/user/${username}/anime`);
             }}>Lists</a
           >
-          <a href="#" class="nav-link">Browse</a>
+          <a
+            href="/browse"
+            class="nav-link"
+            onclick={(e) => {
+              e.preventDefault();
+              navigate(`/browse`);
+            }}>Browse</a
+          >
         {:else}
           <button
             id="nav-login"

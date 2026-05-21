@@ -113,10 +113,10 @@
   });
 </script>
 
-<div id="profile-container">
-  <!-- Banner -->
+<div id="profile-container" class="relative">
+  <!-- Layer 1: Fixed Banner -->
   <div
-    class="fixed top-0 left-0 mt-15 w-full h-75 md:h-100 -z-10 overflow-hidden"
+    class="fixed top-0 left-0 w-full h-100 md:h-100 -z-20 mt-15 overflow-hidden"
   >
     <img
       src={HakoImage.get(profileData?.banner_url || `banners/${username}.jpg`, {
@@ -127,14 +127,16 @@
       alt="Banner"
       class="object-top w-full h-full object-cover bg-[#151f2e]"
     />
-    <div
-      class="absolute bottom-0 left-0 w-full h-60 bg-linear-to-t from-(--hako-bg) via(--hako-bg)/50 to-transparent"
-    ></div>
   </div>
 
+  <!-- Layer 2: Scrolling Gradient Background -->
   <div
-    class="relative z-10 bg-transparent max-w-375 mx-auto px-4 sm:px-6 lg:px-8"
-  >
+    class="absolute top-0 -z-10 w-screen left-[50%] -translate-x-[50%] h-full"
+    style="background: linear-gradient(to bottom, transparent 350px, var(--hako-bg) 400px);"
+  ></div>
+
+  <!-- Layer 3: Content Container -->
+  <div class="relative z-10 max-w-375 mx-auto px-4 sm:px-6 lg:px-8">
     <div class="h-50 md:h-75"></div>
 
     <div class="relative pb-8">
@@ -181,20 +183,23 @@
       </div>
     </div>
 
-    <!-- Tabs -->
-    <div
-      class="profile-tabs flex space-x-8 border-b border-(--surface-elevated) mb-8 overflow-x-auto whitespace-nowrap scrollbar-hide"
-    >
-      {#each tabs as tab}
-        <button
-          onclick={() => switchTab(tab.id, tab.path)}
-          class="tab-btn pb-4 font-semibold {currentActiveTab === tab.id
-            ? 'tab-active text-white'
-            : 'text-slate-400'}"
-        >
-          {tab.label}
-        </button>
-      {/each}
+    <!-- Tabs Wrapper -->
+    <div class="relative">
+      <div
+        class="profile-tabs flex space-x-8 border-b border-(--surface-elevated) mb-8 overflow-x-auto whitespace-nowrap scrollbar-hide focus:ring-0"
+      >
+        {#each tabs as tab}
+          <button
+            onclick={() => switchTab(tab.id, tab.path)}
+            class="tab-btn pb-4 font-semibold focus:outline-none {currentActiveTab ===
+            tab.id
+              ? 'tab-active text-(--hako-fg)'
+              : 'text-(--c8)'}"
+          >
+            {tab.label}
+          </button>
+        {/each}
+      </div>
     </div>
 
     <!-- Content -->
