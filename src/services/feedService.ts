@@ -12,13 +12,20 @@ export const FeedService = {
       .from('posts')
       .select(`
         *,
-        author:profiles!posts_author_id_fkey(username, avatar_url)
+        author:profiles!posts_author_id_fkey(username, avatar_url),
+        likes:post_likes(user_id),
+        likes_count,
+        comments_count,
+        shares_count
       `)
       .eq('target_profile_id', profileId)
       .order('created_at', { ascending: false })
       .range(page * pageSize, (page + 1) * pageSize - 1);
 
     if (error) return failure(error.message);
+
+    console.log("DEBUG: Post object keys:", Object.keys(data[0] || {}));
+
     // Validate each post with Zod
     const result = PostSchema.array().safeParse(data?.map(post => ({
       ...post,
@@ -39,12 +46,21 @@ export const FeedService = {
       .from('posts')
       .select(`
         *,
-        author:profiles!posts_author_id_fkey(username, avatar_url)
+        author:profiles!posts_author_id_fkey(username, avatar_url),
+        likes:post_likes(user_id),
+        likes_count,
+        comments_count,
+        shares_count
       `)
       .order('created_at', { ascending: false })
       .range(page * pageSize, (page + 1) * pageSize - 1);
 
-    if (error) return failure(error.message);
+    if (error) {
+      console.error("DEBUG: Supabase feed error:", error);
+      return failure(error.message);
+    }
+
+    console.log("DEBUG: Entire post object (first item):", data[0]);
 
     const result = PostSchema.array().safeParse(data?.map(post => ({
       ...post,
@@ -76,7 +92,11 @@ export const FeedService = {
       .from('posts')
       .select(`
         *,
-        author:profiles!posts_author_id_fkey(username, avatar_url)
+        author:profiles!posts_author_id_fkey(username, avatar_url),
+        likes:post_likes(user_id),
+        likes_count,
+        comments_count,
+        shares_count
       `)
       .in('author_id', followedIds)
       .order('created_at', { ascending: false })

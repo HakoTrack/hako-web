@@ -2,8 +2,25 @@
   import { HakoImage } from "../../utils/images.ts";
   import { openQuickEditor } from "../../core/ui.svelte.ts";
   import { fetchMediaById } from "../../utils/mediaData";
+  import { FeedInteractionService } from "../../services/feedInteractionService";
+  import { AuthService } from "../../core/auth";
 
   let { post } = $props();
+  let isLiked = $state(false);
+
+  // Extract counts (Direct integer columns)
+  let likeCount = $state(post.likes_count || 0);
+  let commentCount = $state(post.comments_count || 0);
+  let shareCount = $state(post.shares_count || 0);
+
+  $effect(() => {
+    AuthService.getCurrentUser().then((user) => {
+      if (user) {
+        // 'likes' property contains the array of user_id objects for checking if *we* liked it
+        isLiked = post.likes.some((l) => l.user_id === user.id);
+      }
+    });
+  });
 
   // Robust progress calculation with null checks
   const percent = $derived(
@@ -32,6 +49,42 @@
   async function handleOpenEditor(id) {
     const media = await fetchMediaById(id);
     if (media) openQuickEditor(media, "anime");
+  }
+
+  async function handleLike() {
+    const user = await AuthService.getCurrentUser();
+    if (!user) return;
+
+    const previousState = isLiked;
+    const previousCount = likeCount;
+
+    // Optimistic UI update
+    isLiked = !isLiked;
+    likeCount = isLiked ? likeCount + 1 : likeCount - 1;
+
+    const result = await FeedInteractionService.toggleLike(
+      user.id,
+      post.id,
+      previousState,
+    );
+
+    console.log("DEBUG: toggleLike RPC result.data:", result.data);
+
+    if (result.success && result.data !== null && result.data !== undefined) {
+      // Sync with the actual server count
+      likeCount = result.data;
+    } else {
+      console.error("DEBUG: toggleLike failure:", result);
+      isLiked = previousState;
+      likeCount = previousCount;
+      alert("Failed to update like.");
+    }
+  }
+  async function handleShare() {
+    const user = await AuthService.getCurrentUser();
+    if (!user) return;
+    const result = await FeedInteractionService.sharePost(user.id, post.id);
+    if (result.success) alert("Post shared!");
   }
 </script>
 
@@ -65,22 +118,28 @@
     {#if post.post_type === "thought"}
       <p class="text-slate-200 leading-relaxed">{post.content}</p>
       <div class="mt-6 flex items-center space-x-6 text-sm text-slate-500">
-        <span class="cursor-pointer hover:text-pink-500 transition-colors"
-          ><i class="fa-solid fa-heart mr-2"></i> {post.stats?.likes || 0}</span
+        <button
+          class="cursor-pointer transition-colors {isLiked
+            ? 'text-pink-500'
+            : 'hover:text-pink-500'}"
+          onclick={handleLike}
         >
-        <span class="cursor-pointer hover:text-accent transition-colors"
+          <i class="fa-solid fa-heart mr-2"></i>
+          {likeCount}
+        </button>
+        <button class="cursor-pointer hover:text-accent transition-colors"
           ><i class="fa-solid fa-comment mr-2"></i>
-          {post.stats?.comments || 0}</span
+          {commentCount}</button
         >
-        <span class="cursor-pointer hover:text-green-500 transition-colors"
+        <button
+          class="cursor-pointer hover:text-green-500 transition-colors"
+          onclick={handleShare}
           ><i class="fa-solid fa-share mr-2"></i>
-          {post.stats?.shares || 0}</span
+          {shareCount}</button
         >
       </div>
     {:else if post.post_type === "list_update" && post.metadata}
       <div class="flex items-center">
-        <!-- svelte-ignore a11y_no_noninteractive_element_interactions -->
-        <!-- svelte-ignore a11y_click_events_have_key_events -->
         <img
           loading="lazy"
           src={HakoImage.getCover(post.metadata.media_id, "small")}
@@ -93,8 +152,6 @@
               "https://ik.imagekit.io/HakoImage/covers/placeholder.jpg?tr=w-240,f=webp")}
         />
         <div class="ml-4 flex-1">
-          <!-- svelte-ignore a11y_no_noninteractive_element_interactions -->
-          <!-- svelte-ignore a11y_click_events_have_key_events -->
           <h4
             class="text-white font-bold leading-tight cursor-pointer hover:text-accent transition-colors"
             onclick={() => handleOpenEditor(post.metadata.media_id)}

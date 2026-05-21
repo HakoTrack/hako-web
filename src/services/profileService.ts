@@ -31,11 +31,6 @@ export const ProfileService = {
     const profile = await fetchProfile('username', username);
     if (!profile) return failure('User not found');
 
-    // Fetch media lists in the background
-    this.getMediaLists(profile.id).then(mediaLists => {
-      // We'll handle the reactive update in the view layer
-    });
-
     return success(profile);
   },
 

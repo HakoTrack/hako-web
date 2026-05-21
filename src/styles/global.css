@@ -1,55 +1,117 @@
 @import "tailwindcss";
 @plugin "tailwindcss-animate";
 
+:root {
+  /* Theme Base */
+  --hako-bg: #141415;
+  --hako-fg: #cdcdcd;
+  --hako-accent: #bb9dbd;
+  /* Color 5/URL Color */
+  --surface: #252530;
+  /* Color 0 */
+  --surface-dim: #141415;
+  --surface-elevated: #353545;
+
+  /* Terminal 16-Color Palette */
+  --c0: #252530;
+  --c1: #d8647e;
+  --c2: #7fa563;
+  --c3: #f3be7c;
+  --c4: #6e94b2;
+  --c5: #bb9dbd;
+  --c6: #aeaed1;
+  --c7: #cdcdcd;
+  --c8: #606079;
+  --c9: #e08398;
+  --c10: #99b782;
+  --c11: #f5cb96;
+  --c12: #8ba9c1;
+  --c13: #c9b1ca;
+  --c14: #bebeda;
+  --c15: #d7d7d7;
+}
+
 body {
   font-family: 'Inter', sans-serif;
-  background-color: #0b1622;
-  color: #9fadbd;
+  background-color: var(--hako-bg);
+  color: var(--hako-fg);
 }
 
 .bg-card {
-  background-color: #151f2e;
+  background-color: var(--surface);
 }
 
 .bg-nav {
-  background-color: #2b2d42;
+  background-color: var(--surface);
 }
 
 .text-accent {
-  color: #3db4f2;
+  color: var(--hako-accent);
 }
 
 .bg-accent {
-  background-color: #3db4f2;
+  background-color: var(--hako-accent);
 }
 
 .border-accent {
-  border-color: #3db4f2;
+  border-color: var(--hako-accent);
 }
 
+/* Firefox Sleek Scrollbar */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: var(--hako-accent) var(--c0);
+}
+
+/* Chromium Minimalist Scrollbar */
 ::-webkit-scrollbar {
-  width: 8px;
+  width: 10px;
+}
+
+::-webkit-scrollbar-button {
+  display: none;
 }
 
 ::-webkit-scrollbar-track {
-  background: #0b1622;
+  background: var(--c0);
 }
+
 
 ::-webkit-scrollbar-thumb {
-  background: #2b2d42;
-  border-radius: 4px;
+  background: var(--hako-accent);
+  border-radius: 5px;
+  border: 2px solid var(--c0);
 }
 
-::-webkit-scrollbar-thumb:hover {
-  background: #3db4f2;
-}
 
 .nav-link:hover {
-  color: #edf1f5;
+  color: var(--c7);
 }
 
-.tab-active {
-  border-bottom: 3px solid #3db4f2;
+.tab-btn {
+  position: relative;
+}
+
+.tab-btn::after {
+  content: '';
+  position: absolute;
+  left: 50%;
+  bottom: 0;
+  width: 0;
+  height: 2px;
+  background-color: var(--c8);
+  transition: all 0.3s ease;
+}
+
+.tab-btn:hover::after {
+  width: 100%;
+  left: 0;
+}
+
+.tab-active::after {
+  width: 100%;
+  left: 0;
+  background-color: var(--hako-accent);
 }
 
 .heatmap-cell {
@@ -61,12 +123,10 @@ body {
 @keyframes unroll {
   from {
     transform: scaleX(0);
-    transform-origin: center;
   }
 
   to {
     transform: scaleX(1);
-    transform-origin: center;
   }
 }
 
@@ -74,24 +134,29 @@ body {
   animation: unroll 0.1s ease-out forwards;
 }
 
+/* Activity Levels mapped to the new pastel palette */
 .level-0 {
-  background-color: #1a2433;
+  background-color: var(--surface-dim);
 }
 
+/* No activity */
 .level-1 {
-  background-color: #1e4d73;
+  background-color: #4a5749;
 }
 
+/* Muted Sage */
 .level-2 {
-  background-color: #2a72a8;
+  background-color: #758a73;
 }
 
+/* Soft Fern */
 .level-3 {
-  background-color: #3db4f2;
+  background-color: #a5c1a1;
 }
 
+/* Muted Mint */
 .level-4 {
-  background-color: #83ccf5;
+  background-color: #d1e8d0;
 }
 
 .media-card:hover .overlay {
@@ -101,4 +166,15 @@ body {
 .media-card .overlay {
   opacity: 0;
   transition: opacity 0.2s ease;
+}
+
+.badge-genre {
+  background-color: var(--c12);
+  color: var(--hako-bg);
+  font-size: 10px;
+  padding: 0.125rem 0.5rem;
+  border-radius: 0.25rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
 }

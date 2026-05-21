@@ -10,7 +10,7 @@
   import { formatDescription } from "../../utils/mediaData";
 
   let { entry: initialEntry } = $props<{ entry: any }>();
-  let entry = $state(initialEntry);
+  let entry = $state(ui.modalData?.entry || {});
 
   $effect(() => {
     if (ui.modalData?.entry) {
@@ -18,7 +18,7 @@
     }
   });
 
-  const mediaType = entry.type || "anime";
+  const mediaType = $derived(entry.type);
 
   // Reactive vibes based on raw metadata
   let vibes = $derived(getVibes(entry?.rawMetadata));
@@ -127,20 +127,25 @@
   }
 </script>
 
+<!-- svelte-ignore a11y_click_events_have_key_events -->
+<!-- svelte-ignore a11y_no_static_element_interactions -->
 <div
-  class="bg-[#151f2e] w-[700px] max-w-[90vw] h-200 max-h-[90vh] rounded-md shadow-2xl duration-300 transition-all ease-out animate-unroll flex flex-col"
+  class="bg-(--surface) w-175 max-w-[90vw] h-200 max-h-[90vh] rounded-md shadow-2xl duration-300 transition-all ease-out animate-unroll flex flex-col"
   onclick={(e) => e.stopPropagation()}
 >
   <!-- Banner Section -->
-  <div class="relative w-full h-40 bg-[#0b1622] shrink-0">
+  <div class="relative w-full h-40 bg(--surface-dim) shrink-0">
     <img
       src={HakoImage.getBanner(entry.id, 700)}
       class="w-full h-full object-cover opacity-60"
       alt="banner"
-      onerror={(e) => (e.target.src = "")}
+      onerror={(e) => {
+        const img = e.target as HTMLImageElement;
+        img.src = "";
+      }}
     />
     <div
-      class="absolute inset-0 bg-linear-to-t from-[#151f2e] to-transparent"
+      class="absolute inset-0 bg-linear-to-t from-(--surface) to-transparent"
     ></div>
     <!-- svelte-ignore a11y_consider_explicit_label -->
     <button
@@ -156,11 +161,14 @@
         src={HakoImage.getCover(entry.id, "medium")}
         class="w-25 h-35 rounded shadow-xl border border-[#151f2e] object-cover bg-[#0b1622]"
         alt="cover"
-        onerror={(e) =>
-          (e.target.src =
-            "https://ik.imagekit.io/HakoImage/covers/placeholder.jpg?tr=w-240,f=webp")}
+        onerror={(e) => {
+          const img = e.target as HTMLImageElement;
+          img.src =
+            "https://ik.imagekit.io/HakoImage/covers/placeholder.jpg?tr=w-240,f=webp";
+        }}
       />
       <div class="flex-1 min-w-0">
+        <!-- svelte-ignore a11y_no_noninteractive_element_interactions -->
         <h2
           class="text-white font-bold text-xl leading-tight truncate drop-shadow-md cursor-pointer hover:text-accent transition-colors"
           onclick={navigateToMedia}
@@ -169,9 +177,7 @@
         </h2>
         <div class="flex flex-wrap gap-1.5 mt-2">
           {#each entry.genres as genre}
-            <span
-              class="bg-blue-500/10 text-blue-400 text-[10px] px-2 py-0.5 rounded font-bold uppercase tracking-wider"
-            >
+            <span class="badge-genre">
               {genre}
             </span>
           {/each}
@@ -197,15 +203,16 @@
   <div class="flex-1 flex flex-col min-h-0 px-8 pt-16 pb-6 overflow-hidden">
     <div class="grid grid-cols-1 md:grid-cols-3 gap-x-6 gap-y-6 shrink-0">
       <div class="space-y-1.5">
+        <!-- svelte-ignore a11y_label_has_associated_control -->
         <label class="text-xs font-bold text-slate-400 uppercase tracking-wider"
           >Status</label
         >
         {#if !isLoaded}
-          <div class="w-full h-[40px] bg-slate-700 animate-pulse rounded"></div>
+          <div class="w-full h-10 bg-slate-700 animate-pulse rounded"></div>
         {:else}
           <select
             bind:value={status}
-            class="w-full bg-[#0b1622] text-slate-200 text-sm rounded border-none p-2.5 focus:ring-2 focus:ring-blue-500/50 outline-none cursor-pointer"
+            class="w-full bg-(--surface-dim) text-slate-200 text-sm rounded border-none p-2.5 focus:ring-2 focus:ring-(--hako-accent) outline-none cursor-pointer"
           >
             <option value="current"
               >{mediaType === "anime" ? "Watching" : "Reading"}</option
@@ -218,11 +225,12 @@
         {/if}
       </div>
       <div class="space-y-1.5">
+        <!-- svelte-ignore a11y_label_has_associated_control -->
         <label class="text-xs font-bold text-slate-400 uppercase tracking-wider"
           >Score</label
         >
         {#if !isLoaded}
-          <div class="w-full h-[40px] bg-slate-700 animate-pulse rounded"></div>
+          <div class="w-full h-10 bg-slate-700 animate-pulse rounded"></div>
         {:else}
           <input
             type="number"
@@ -230,22 +238,23 @@
             max="10"
             min="0"
             bind:value={score}
-            class="w-full bg-[#0b1622] text-slate-200 text-sm rounded border-none p-2.5 focus:ring-2 focus:ring-blue-500/50 outline-none"
+            class="w-full bg-(--surface-dim) text-slate-200 text-sm rounded border-none p-2.5 focus:ring-2 focus:ring-(--hako-accent) outline-none"
           />
         {/if}
       </div>
       <div class="space-y-1.5">
+        <!-- svelte-ignore a11y_label_has_associated_control -->
         <label class="text-xs font-bold text-slate-400 uppercase tracking-wider"
           >Progress</label
         >
         {#if !isLoaded}
-          <div class="w-full h-[40px] bg-slate-700 animate-pulse rounded"></div>
+          <div class="w-full h-10 bg-slate-700 animate-pulse rounded"></div>
         {:else}
           <div class="flex items-center space-x-2">
             <input
               type="number"
               bind:value={progress}
-              class="w-full bg-[#0b1622] text-slate-200 text-sm rounded border-none p-2.5 focus:ring-2 focus:ring-blue-500/50 outline-none"
+              class="w-full bg-(--surface-dim) text-slate-200 text-sm rounded border-none p-2.5 focus:ring-2 focus:ring-(--hako-accent) outline-none"
             />
             <span class="text-slate-500 text-sm font-medium whitespace-nowrap"
               >/ {entry.total}</span
@@ -254,43 +263,46 @@
         {/if}
       </div>
       <div class="space-y-1.5">
+        <!-- svelte-ignore a11y_label_has_associated_control -->
         <label class="text-xs font-bold text-slate-400 uppercase tracking-wider"
           >Start Date</label
         >
         {#if !isLoaded}
-          <div class="w-full h-[40px] bg-slate-700 animate-pulse rounded"></div>
+          <div class="w-full h-10 bg-slate-700 animate-pulse rounded"></div>
         {:else}
           <input
             type="date"
             bind:value={startDate}
-            class="w-full bg-[#0b1622] text-slate-200 text-sm rounded border-none p-2.5 focus:ring-2 focus:ring-blue-500/50 outline-none"
+            class="w-full bg-(--surface-dim) text-slate-200 text-sm rounded border-none p-2.5 focus:ring-2 focus:ring-(--hako-accent) outline-none"
           />
         {/if}
       </div>
       <div class="space-y-1.5">
+        <!-- svelte-ignore a11y_label_has_associated_control -->
         <label class="text-xs font-bold text-slate-400 uppercase tracking-wider"
           >Finish Date</label
         >
         {#if !isLoaded}
-          <div class="w-full h-[40px] bg-slate-700 animate-pulse rounded"></div>
+          <div class="w-full h-10 bg-slate-700 animate-pulse rounded"></div>
         {:else}
           <input
             type="date"
             bind:value={finishDate}
-            class="w-full bg-[#0b1622] text-slate-200 text-sm rounded border-none p-2.5 focus:ring-2 focus:ring-blue-500/50 outline-none"
+            class="w-full bg-(--surface-dim) text-slate-200 text-sm rounded border-none p-2.5 focus:ring-2 focus:ring-(--hako-accent) outline-none"
           />
         {/if}
       </div>
     </div>
 
     <!-- Description -->
-    <div class="mt-8 flex-1 flex flex-col min-h-[200px] w-full">
+    <div class="mt-8 flex-1 flex flex-col min-h-50 w-full">
+      <!-- svelte-ignore a11y_label_has_associated_control -->
       <label
         class="text-xs font-bold text-slate-400 uppercase tracking-wider block mb-2 shrink-0"
         >Description</label
       >
       <div
-        class="text-slate-400 text-sm leading-relaxed overflow-y-auto pr-2 scrollbar-thin scrollbar-thumb-slate-800 flex-1 w-full"
+        class="text-slate-400 text-sm leading-relaxed overflow-y-auto pr-2 scrollbar-thin flex-1 w-full"
       >
         {@html formatDescription(entry.description)}
       </div>
@@ -298,11 +310,11 @@
 
     <!-- Footer -->
     <div
-      class="mt-8 pt-6 border-t border-slate-800 flex items-center justify-between shrink-0"
+      class="mt-8 pt-6 border-t border-(--surface-elevated) flex items-center justify-between shrink-0"
     >
       <button
         onclick={handleDelete}
-        class="text-red-500/60 hover:text-red-500 text-sm font-bold transition-colors cursor-pointer"
+        class="text-(--c1)/60 hover:text-(--c1) text-sm font-bold transition-colors cursor-pointer"
         >Delete</button
       >
       <div class="flex items-center space-x-6">
@@ -310,7 +322,7 @@
         <button
           onclick={toggleFavorite}
           class="{isFavorited
-            ? 'text-red-500'
+            ? 'text-(--c1)'
             : 'text-slate-400'} hover:scale-110 transition-all"
         >
           <i class="fa-solid fa-heart text-xl cursor-pointer"></i>
@@ -318,7 +330,7 @@
         <button
           onclick={save}
           disabled={isSaving}
-          class="bg-blue-500 hover:bg-blue-400 text-white px-8 py-2 rounded text-sm font-bold transition-all shadow-lg shadow-blue-500/20 active:scale-95 cursor-pointer disabled:opacity-50"
+          class="bg-(--hako-accent) hover:opacity-90 text-(--hako-bg) px-8 py-2 rounded text-sm font-bold transition-all shadow-lg shadow-(--hako-accent)/20 active:scale-95 cursor-pointer disabled:opacity-50"
         >
           {isSaving ? "Saving..." : "Save"}
         </button>

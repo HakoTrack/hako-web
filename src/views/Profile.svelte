@@ -1,12 +1,11 @@
 <script lang="ts">
-  import { onMount } from "svelte";
   import { ProfileService, type Profile } from "../services/profileService";
+  import type { ListEntry } from "../types";
   import { HakoImage } from "../utils/images";
   import MediaList from "../components/profile/MediaList.svelte";
   import Stats from "../components/profile/Stats.svelte";
   import Overview from "../components/profile/Overview.svelte";
   import { fetchMediaByIds } from "../utils/mediaData";
-  import { ActivityService } from "../services/activityService";
 
   let {
     currentPath,
@@ -15,17 +14,9 @@
   } = $props();
 
   let username = $derived(currentPath.split("/")[2]);
-  let profileData: Profile | null = $state(propProfileData);
+  let profileData = $derived(propProfileData);
   let metadata: Record<string, any> = $state({});
-  let currentActiveTab = $state(activeTab);
-
-  $effect(() => {
-    if (propProfileData) profileData = propProfileData;
-  });
-
-  $effect(() => {
-    currentActiveTab = activeTab;
-  });
+  let currentActiveTab = $derived(activeTab);
 
   function switchTab(tab: string, path: string) {
     currentActiveTab = tab;
@@ -89,7 +80,9 @@
   // Reactively fetch metadata when media lists are populated in the background
   $effect(() => {
     if (profileData?.mediaLists) {
-      const allLists = Object.values(profileData.mediaLists).flat();
+      const allLists = Object.values(
+        profileData.mediaLists,
+      ).flat() as ListEntry[];
       if (allLists.length > 0) {
         const ids = [...new Set(allLists.map((a) => a.media_id))];
         fetchMediaByIds(ids).then((data) => {
@@ -135,7 +128,7 @@
       class="object-top w-full h-full object-cover bg-[#151f2e]"
     />
     <div
-      class="absolute bottom-0 left-0 w-full h-60 bg-linear-to-t from-[#0b1622] via-[#0b1622]/50 to-transparent"
+      class="absolute bottom-0 left-0 w-full h-60 bg-linear-to-t from-(--hako-bg) via(--hako-bg)/50 to-transparent"
     ></div>
   </div>
 
@@ -190,7 +183,7 @@
 
     <!-- Tabs -->
     <div
-      class="profile-tabs flex space-x-8 border-b border-slate-800 mb-8 overflow-x-auto whitespace-nowrap scrollbar-hide"
+      class="profile-tabs flex space-x-8 border-b border-(--surface-elevated) mb-8 overflow-x-auto whitespace-nowrap scrollbar-hide"
     >
       {#each tabs as tab}
         <button

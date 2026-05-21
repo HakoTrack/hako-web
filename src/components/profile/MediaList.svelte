@@ -1,5 +1,4 @@
 <script lang="ts">
-  import { onMount } from "svelte";
   import Fuse from "fuse.js";
   import { openQuickEditor } from "../../core/ui.svelte";
   import { ListService } from "../../services/listService";
@@ -43,8 +42,18 @@
 
   function formatType(t: string): string {
     if (t === "light_novel" || t === "lightnovel") return "Light Novels";
+    if (t === "anime") return "Anime";
+    if (t === "manga") return "Manga";
     return t.charAt(0).toUpperCase() + t.slice(1) + "s";
   }
+
+  const statusColors: Record<string, string> = {
+    current: "var(--c2)",
+    completed: "var(--c12)",
+    paused: "var(--c3)",
+    dropped: "var(--c1)",
+    planning: "var(--c8)",
+  };
 
   let hasFetched = $state(false);
 
@@ -168,6 +177,7 @@
     <div class="sticky top-24 space-y-6">
       <div class="bg-card rounded-xl p-5 space-y-4">
         <div>
+          <!-- svelte-ignore a11y_label_has_associated_control -->
           <label
             class="text-[10px] font-bold uppercase tracking-widest text-slate-500 block mb-2"
             >Search List</label
@@ -185,6 +195,7 @@
           </div>
         </div>
         <div>
+          <!-- svelte-ignore a11y_label_has_associated_control -->
           <label
             class="text-[10px] font-bold uppercase tracking-widest text-slate-500 block mb-2"
             >Sort By</label
@@ -201,7 +212,7 @@
         </div>
       </div>
 
-      <div class="bg-card rounded-xl border border-slate-800 overflow-hidden">
+      <div class="bg-card rounded-xl overflow-hidden">
         <div class="p-4">
           <h3
             class="text-xs font-bold uppercase tracking-widest text-white flex items-center"
@@ -211,26 +222,35 @@
         </div>
         <button
           onclick={() => (filterStatus = "all")}
-          class="flex items-center justify-between px-4 py-3 text-sm font-medium {filterStatus ===
+          class="flex items-center justify-between px-4 py-3 text-sm font-medium w-full transition-all border-l-4 {filterStatus ===
           'all'
-            ? 'text-white bg-slate-800/50 border-l-4 border-accent'
-            : 'text-slate-400 hover:text-white border-l-4 border-transparent'} transition-all w-full"
+            ? 'text-white bg-(--surface-dim) border-accent'
+            : 'text-slate-400 hover:text-white border-transparent'} transition-all w-full"
         >
-          <span>All {formatType(type)}</span>
-          <span
-            class="count text-xs text-slate-500 bg-[#0b1622] px-2 py-0.5 rounded"
+          <div class="flex items-center">
+            <span class="w-2 h-2 rounded-full mr-3 bg-(--c7)"></span>
+            <span>All {formatType(type)}</span>
+          </div>
+          <span class="count text-xs text-slate-500"
             >{listDataEntries.length}</span
           >
         </button>
+
         {#each statusGroups as group}
           <button
             onclick={() => (filterStatus = group.id)}
             class="flex items-center justify-between px-4 py-3 text-sm font-medium {filterStatus ===
             group.id
-              ? 'text-white bg-slate-800/50 border-l-4 border-accent'
+              ? 'text-white bg-(--surface-dim) border-l-4 border-accent'
               : 'text-slate-400 hover:text-white border-l-4 border-transparent'} transition-all w-full"
           >
-            <span>{group.label}</span>
+            <div class="flex items-center">
+              <span
+                class="w-2 h-2 rounded-full mr-3"
+                style="background-color: {statusColors[group.id]}"
+              ></span>
+              <span>{group.label}</span>
+            </div>
             <span class="count text-xs text-slate-500"
               >{listDataEntries.filter(
                 (i: any) => (i.status || "").toLowerCase() === group.id,
@@ -241,7 +261,6 @@
       </div>
     </div>
   </aside>
-
   <main class="lg:w-[80%] order-1 lg:order-2 space-y-10 min-h-100">
     {#if isLoading}
       <div class="flex items-center justify-center p-20">
@@ -257,7 +276,10 @@
           class="space-y-4 animate-in fade-in slide-in-from-bottom-2 duration-300"
         >
           <div class="flex items-center space-x-3 mb-6">
-            <div class="w-1.5 h-6 {group.color} rounded-full"></div>
+            <div
+              class="w-1.5 h-6 rounded-full"
+              style="background-color: {statusColors[group.id]}"
+            ></div>
             <h2 class="text-lg font-bold text-white uppercase tracking-wider">
               {group.label}
             </h2>
@@ -296,6 +318,8 @@
                           ></div>
                         </div>
                       {/if}
+                      <!-- svelte-ignore a11y_no_noninteractive_element_interactions -->
+                      <!-- svelte-ignore a11y_click_events_have_key_events -->
                       <img
                         src={HakoImage.getCover(item.media_id, "small")}
                         class="w-12 h-16 object-cover rounded shadow-md cursor-pointer group-hover:scale-105 transition-transform {imageLoaded[

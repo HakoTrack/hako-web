@@ -5,11 +5,17 @@ export const FavoritesService = {
   /**
    * Fetches and syncs favorites to UI store for the given user.
    */
-  async syncFavorites(userId: string): Promise<number[]> {
-    const { data, error } = await supabase
+  async syncFavorites(userId: string, type?: string): Promise<number[]> {
+    let query = supabase
       .from('profile_favorites')
-      .select('media_id')
+      .select('media_id, media_type')
       .eq('profile_id', userId);
+
+    if (type) {
+      query = query.eq('media_type', type);
+    }
+
+    const { data, error } = await query;
 
     if (error || !data) {
       console.error("Error syncing favorites:", error);

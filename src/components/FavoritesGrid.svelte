@@ -1,20 +1,30 @@
-<script>
-  import { openQuickEditor } from "../core/ui.svelte.ts";
+<script lang="ts">
   import { onMount } from "svelte";
-  import { HakoImage } from "../utils/images";
-  import { fetchMediaById } from "../utils/mediaData";
-  import { FavoritesService } from "../services/favoritesService.ts";
+  import { FavoritesService } from "../services/favoritesService";
+  import MediaCover from "./common/MediaCover.svelte";
 
   let { profileId } = $props();
 
-  let animeIds = $state([]);
+  let mediaData: Record<string, number[]> = $state({
+    anime: [],
+    manga: [],
+    light_novel: [],
+  });
   let isLoading = $state(true);
 
   onMount(async () => {
     try {
-      // Centralized fetch via FavoritesService
-      const ids = await FavoritesService.syncFavorites(profileId);
-      animeIds = ids;
+      const types = ["anime", "manga", "light_novel"];
+      const results = await Promise.all(
+        types.map(async (type) => ({
+          type,
+          ids: await FavoritesService.syncFavorites(profileId, type),
+        })),
+      );
+
+      results.forEach((r) => {
+        mediaData[r.type] = r.ids;
+      });
     } catch (e) {
       console.error("Error loading favorites:", e);
     } finally {
@@ -22,9 +32,11 @@
     }
   });
 
-  async function handleOpenEditor(id) {
-    const media = await fetchMediaById(id);
-    if (media) openQuickEditor(media, "anime");
+  function formatType(t: string): string {
+    if (t === "light_novel" || t === "lightnovel") return "Light Novels";
+    if (t === "anime") return "Anime";
+    if (t === "manga") return "Manga";
+    return t.charAt(0).toUpperCase() + t.slice(1) + "s";
   }
 </script>
 
@@ -33,31 +45,22 @@
     <i class="fa-solid fa-heart text-accent mr-2"></i> Favorites
   </h3>
 
-  {#if !isLoading && animeIds.length > 0}
-    <div id="fav-anime-section">
-      <h4
-        class="text-[10px] uppercase text-slate-500 font-bold mb-3 tracking-widest"
-      >
-        Anime
-      </h4>
-      <div id="fav-anime-grid" class="grid grid-cols-5 gap-2">
-        {#each animeIds as id}
-          <!-- svelte-ignore a11y_mouse_events_have_key_events -->
-          <!-- svelte-ignore a11y_no_noninteractive_element_interactions -->
-          <!-- svelte-ignore a11y_click_events_have_key_events -->
-          <img
-            src={HakoImage.getCover(id, "medium")}
-            class="media-cover rounded w-full aspect-85/115 object-cover cursor-pointer hover:scale-105 transition-transform bg-[#151f2e]"
-            data-media-id={id}
-            onmouseover={() => HakoImage.prefetchBanner(id)}
-            onclick={() => handleOpenEditor(id)}
-            alt="Anime {id}"
-            onerror={(e) =>
-              (e.target.src =
-                "https://ik.imagekit.io/HakoImage/covers/placeholder.jpg?tr=w-240,f=webp")}
-          />
-        {/each}
-      </div>
-    </div>
+  {#if !isLoading}
+    {#each Object.entries(mediaData) as [type, ids]}
+      {#if ids.length > 0}
+        <div id="fav-{type}-section" class="mb-6 last:mb-0">
+          <h4
+            class="text-[10px] uppercase text-slate-500 font-bold mb-3 tracking-widest"
+          >
+            {formatType(type)}
+          </h4>
+          <div id="fav-{type}-grid" class="grid grid-cols-5 gap-2">
+            {#each ids as id}
+              <MediaCover mediaId={id} {type} size="medium" alt="{type} {id}" />
+            {/each}
+          </div>
+        </div>
+      {/if}
+    {/each}
   {/if}
 </div>

@@ -15,7 +15,7 @@
 
 {#if ui.activeModal && Component}
   <div
-    class="fixed inset-0 z-100 flex items-center justify-center bg-[#0b1622]/80 backdrop-blur-sm p-4"
+    class="fixed inset-0 z-100 flex items-center justify-center bg-[color-mix(in srgb,var(--hako-bg),transparent_20%)] backdrop-blur-sm p-4"
     onclick={() => closeModal()}
   >
     <div onclick={(e) => e.stopPropagation()}>

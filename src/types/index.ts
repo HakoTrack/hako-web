@@ -55,7 +55,7 @@ export const PostSchema = z.object({
   id: z.string(),
   author_id: z.string(),
   target_profile_id: z.string(),
-  post_type: z.enum(['thought', 'list_update']),
+  post_type: z.enum(['thought', 'list_update', 'share']),
   metadata: PostMetadataSchema.nullable(),
   content: z.string().nullable(),
   created_at: z.string(),
@@ -65,5 +65,10 @@ export const PostSchema = z.object({
     comments: z.number(),
     shares: z.number(),
   }).optional(),
+  // Interaction state (populated by query)
+  likes: z.array(z.object({ user_id: z.string() })).default([]),
+  likes_count: z.number().default(0),
+  comments_count: z.number().default(0),
+  shares_count: z.number().default(0),
 });
 export type Post = z.infer<typeof PostSchema>;

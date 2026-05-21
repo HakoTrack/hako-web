@@ -1,5 +1,4 @@
 <script lang="ts">
-  import { onMount } from "svelte";
   import FavoritesGrid from "../FavoritesGrid.svelte";
   import FeedWrapper from "../feed/FeedWrapper.svelte";
   import { ActivityService } from "../../services/activityService";
@@ -25,17 +24,32 @@
     calculateAllStats(profileData?.mediaLists || {}, metadata),
   );
 
+  const statusColors: Record<string, string> = {
+    current: "var(--c2)",
+    completed: "var(--c12)",
+    paused: "var(--c3)",
+    dropped: "var(--c1)",
+    planning: "var(--c8)",
+  };
+
   $effect(() => {
     if (
       Object.keys(metadata).length > 0 &&
       chartCanvas &&
       profileData?.mediaLists
     ) {
+      // Helper to get computed CSS color
+      const getComputedColor = (varName: string) => {
+        return getComputedStyle(document.documentElement)
+          .getPropertyValue(varName)
+          .trim();
+      };
+
       const COLORS: Record<string, string> = {
-        anime: "#3db4f2",
-        manga: "#ef4444",
-        light_novel: "#10b981",
-        visual_novels: "#8b5cf6",
+        anime: getComputedColor("--c4"),
+        manga: getComputedColor("--c1"),
+        light_novel: getComputedColor("--c10"),
+        visual_novels: getComputedColor("--c5"),
       };
 
       const datasets = Object.keys(profileData.mediaLists)
@@ -114,7 +128,7 @@
                   font: {
                     family: "'Font Awesome 6 Free'",
                     size: 16,
-                    weight: "900",
+                    weight: 900,
                   },
                   color: "#9fadbd",
                   padding: 10,
@@ -281,7 +295,7 @@
             profileData?.mediaLists && profileData.mediaLists[type]?.length > 0}
           <div class="border-b border-slate-800 pb-4 last:border-0">
             <h4
-              class="text-[10px] uppercase text-accent font-bold mb-2 tracking-widest capitalize"
+              class="text-[10px] uppercase text-accent font-bold mb-2 tracking-widest"
             >
               {type.replace("_", " ")}
             </h4>
@@ -308,8 +322,9 @@
                 {#each stat.statusDistribution as group}
                   {#if group.percent > 0}
                     <div
-                      class={group.color}
-                      style="width: {group.percent}%"
+                      style="width: {group.percent}%; background-color: {statusColors[
+                        group.id
+                      ] || 'var(--c7)'}"
                       title="{group.label}: {group.count}"
                     ></div>
                   {/if}

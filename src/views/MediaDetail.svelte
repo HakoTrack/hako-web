@@ -13,6 +13,7 @@
   }>();
   let media: Media | null = $state(null);
   let isLoading = $state(true);
+  let currentActiveTab = $state("overview"); // Tab tracking state
 
   // Reactive vibe calculation
   let vibes = $derived(media ? getVibes(media) : null);
@@ -27,9 +28,12 @@
     }
   });
 
-  async function handleOpenEditor(media: Media) {
-    openQuickEditor(media, type);
-  }
+  const tabs = [
+    { id: "overview", label: "Overview", icon: "fa-info-circle" },
+    { id: "characters", label: "Characters", icon: "fa-users" },
+    { id: "reviews", label: "Reviews", icon: "fa-comments" },
+    { id: "stats", label: "Stats", icon: "fa-chart-simple" },
+  ];
 </script>
 
 {#if isLoading}
@@ -38,7 +42,7 @@
   <div class="text-white p-10 text-center">Media not found.</div>
 {:else}
   <div class="relative">
-    <!-- Full-width Banner -->
+    <!-- Banner -->
     <div class="w-full h-80 relative overflow-hidden bg-[#0b1622]">
       <img
         src={HakoImage.getBanner(media.media_id)}
@@ -54,17 +58,11 @@
     <div class="max-w-375 mx-auto px-4 sm:px-6 lg:px-8">
       <div class="relative -mt-20 flex items-end space-x-6 pb-8">
         <!-- Cover -->
-        <button
-          onclick={() => handleOpenEditor(media!)}
-          class="hover:scale-105 transition-transform duration-200 cursor-pointer focus:outline-none"
-        >
-          <img
-            src={HakoImage.getCover(media.media_id, "large")}
-            class="media-cover w-40 h-56 rounded-xl border-4 border-[#0b1622] shadow-2xl object-cover bg-[#151f2e]"
-            data-media-id={media.media_id}
-            alt={media.title.romaji}
-          />
-        </button>
+        <img
+          src={HakoImage.getCover(media.media_id, "large")}
+          class="media-cover w-40 h-56 rounded-xl border-4 border-[#0b1622] shadow-2xl object-cover bg-[#151f2e]"
+          alt={media.title.romaji}
+        />
 
         <!-- Header Info -->
         <div class="mb-2">
@@ -82,86 +80,113 @@
         </div>
       </div>
 
-      <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
-        <!-- Main Description -->
-        <div class="lg:col-span-2 space-y-6">
-          <div class="bg-card p-6 rounded-xl shadow-lg">
-            <h3 class="text-white font-bold mb-4">Description</h3>
-            <div class="text-slate-400 text-sm leading-relaxed mb-6">
-              {@html formatDescription(media.description)}
-            </div>
-
-            <h3 class="text-white font-bold mb-4">Tags</h3>
-            <div class="flex flex-wrap gap-2">
-              {#each media.tags as tag}
-                <span
-                  class="bg-slate-800 text-slate-400 text-xs px-2 py-1 rounded font-medium"
-                  >{tag.name}</span
+      <!-- Main Layout -->
+      <div class="flex flex-col lg:flex-row gap-8">
+        <!-- Sidebar Navigation -->
+        <aside class="lg:w-50 shrink-0">
+          <div class="sticky top-24">
+            <div
+              class="bg-card rounded-xl border border-slate-800 overflow-hidden"
+            >
+              {#each tabs as tab}
+                <button
+                  onclick={() => (currentActiveTab = tab.id)}
+                  class="flex items-center px-4 py-3 text-sm font-medium w-full transition-all border-l-4 {currentActiveTab ===
+                  tab.id
+                    ? 'text-white bg-slate-800/50 border-accent'
+                    : 'text-slate-400 hover:text-white border-transparent'} "
                 >
+                  <i class="fa-solid {tab.icon} mr-3"></i>
+                  {tab.label}
+                </button>
               {/each}
             </div>
           </div>
-        </div>
+        </aside>
 
-        <!-- Sidebar Metadata -->
-        <div class="space-y-6">
-          <!-- Vibes -->
-          <div class="bg-card p-6 rounded-xl shadow-lg">
-            <h3 class="text-white font-bold mb-4">Vibes</h3>
-            <div class="flex flex-wrap gap-2">
-              {#if vibes && vibes.sorted}
-                {#each vibes.sorted.slice(0, 3) as pillar}
-                  <span
-                    class="bg-slate-800 text-slate-300 text-[10px] px-2 py-1 rounded font-bold uppercase tracking-wider"
-                    >{pillar.name}</span
+        <!-- Main Content Area -->
+        <main class="lg:w-[65%] min-h-100 pb-12">
+          <div class:hidden={currentActiveTab !== "overview"}>
+            <div
+              class="bg-card p-6 rounded-xl shadow-lg border border-slate-800"
+            >
+              <h3 class="text-white font-bold mb-4">Description</h3>
+              <div class="text-slate-400 text-sm leading-relaxed">
+                {@html formatDescription(media.description)}
+              </div>
+            </div>
+          </div>
+          <div class:hidden={currentActiveTab !== "characters"}>
+            <div class="p-10 text-slate-500">Character view coming soon...</div>
+          </div>
+        </main>
+
+        <!-- Metadata Column -->
+        {#if currentActiveTab === "overview"}
+          <div class="lg:w-[20%] space-y-6">
+            <!-- Vibes -->
+            <div
+              class="bg-card p-6 rounded-xl shadow-lg border border-slate-800"
+            >
+              <h3 class="text-white font-bold mb-4">Vibes</h3>
+              <div class="flex flex-wrap gap-2">
+                {#if vibes && vibes.sorted}
+                  {#each vibes.sorted.slice(0, 3) as pillar}
+                    <span
+                      class="bg-slate-800 text-slate-300 text-[10px] px-2 py-1 rounded font-bold uppercase tracking-wider"
+                      >{pillar.name}</span
+                    >
+                  {/each}
+                {/if}
+              </div>
+            </div>
+
+            <!-- Info -->
+            <div
+              class="bg-card p-6 rounded-xl shadow-lg border border-slate-800"
+            >
+              <h3 class="text-white font-bold mb-4">Info</h3>
+              <div class="space-y-3 text-sm text-slate-300">
+                <div class="flex justify-between">
+                  <span>Format</span><span class="text-white"
+                    >{media.format}</span
                   >
-                {/each}
-              {/if}
-            </div>
-          </div>
-
-          <div class="bg-card p-6 rounded-xl shadow-lg">
-            <h3 class="text-white font-bold mb-4">Info</h3>
-            <div class="space-y-3 text-sm text-slate-300">
-              <div class="flex justify-between">
-                <span>Format</span><span class="text-white">{media.format}</span
-                >
-              </div>
-              <div class="flex justify-between">
-                <span>{type === "anime" ? "Episodes" : "Chapters"}</span><span
-                  class="text-white"
-                  >{(type === "anime" ? media.episodes : media.chapters) ||
-                    "N/A"}</span
-                >
-              </div>
-              <div class="flex justify-between">
-                <span>Duration</span><span class="text-white"
-                  >{media.duration || "N/A"}
-                  {type === "anime" ? "mins" : ""}</span
-                >
-              </div>
-              <div class="flex justify-between">
-                <span>Season</span><span class="text-white"
-                  >{media.season || ""} {media.seasonYear || ""}</span
-                >
-              </div>
-              <div class="flex justify-between">
-                <span>Started</span><span class="text-white"
-                  >{media.startDate?.year
-                    ? `${String(media.startDate.month).padStart(2, "0")}/${String(media.startDate.day).padStart(2, "0")}/${media.startDate.year}`
-                    : "N/A"}</span
-                >
-              </div>
-              <div class="flex justify-between">
-                <span>Ended</span><span class="text-white"
-                  >{media.endDate?.year
-                    ? `${String(media.endDate.month).padStart(2, "0")}/${String(media.endDate.day).padStart(2, "0")}/${media.endDate.year}`
-                    : "N/A"}</span
-                >
+                </div>
+                <div class="flex justify-between">
+                  <span>{type === "anime" ? "Episodes" : "Chapters"}</span><span
+                    class="text-white"
+                    >{(type === "anime" ? media.episodes : media.chapters) ||
+                      "N/A"}</span
+                  >
+                </div>
+                <div class="flex justify-between">
+                  <span>Duration</span><span class="text-white"
+                    >{media.duration || "N/A"}
+                    {type === "anime" ? "mins" : ""}</span
+                  >
+                </div>
+                <div class="space-y-1">
+                  <div class="flex justify-between">
+                    <span>Season</span><span class="text-white"
+                      >{media.season || ""} {media.seasonYear || ""}</span
+                    >
+                  </div>
+                  {#if media.startDate?.year || media.endDate?.year}
+                    <div class="text-[10px] text-slate-500 text-right">
+                      {media.startDate?.year
+                        ? `${String(media.startDate.month).padStart(2, "0")}/${String(media.startDate.day).padStart(2, "0")}/${media.startDate.year}`
+                        : "???"}
+                      -
+                      {media.endDate?.year
+                        ? `${String(media.endDate.month).padStart(2, "0")}/${String(media.endDate.day).padStart(2, "0")}/${media.endDate.year}`
+                        : "Present"}
+                    </div>
+                  {/if}
+                </div>
               </div>
             </div>
           </div>
-        </div>
+        {/if}
       </div>
     </div>
   </div>

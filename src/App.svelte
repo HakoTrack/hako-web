@@ -79,7 +79,7 @@
     user = await AuthService.getCurrentUser();
     authInitialized = true;
 
-    supabase.auth.onAuthStateChange((event, session) => {
+    supabase.auth.onAuthStateChange((_event, session) => {
       user = session?.user ?? null;
       handleRouting();
     });
@@ -108,8 +108,8 @@
   {#if currentPath === "/"}
     <Landing />
   {:else if activeRoute}
-    <svelte:component
-      this={activeRoute.component}
+    {@const Component = activeRoute.component}
+    <Component
       {...activeRoute.props(
         currentPath,
         user,

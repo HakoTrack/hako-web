@@ -7,7 +7,7 @@ export default {
   theme: {
     extend: {
       colors: {
-        'hako-bg': '#1a1b26',
+        'hako-bg': '#141415',
         'hako-accent': '#7aa2f7',
         'hako-secondary': '#24283b',
       },
