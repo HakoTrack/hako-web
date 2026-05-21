@@ -4,6 +4,7 @@
   import { ListService } from "../../services/listService";
   import { MetadataService } from "../../services/metadataService";
   import { fetchMediaById } from "../../utils/mediaData";
+  import { parseQuery } from "../../utils/search";
   import type { Media, ListEntry } from "../../types/index";
   import MediaCover from "../common/MediaCover.svelte";
 
@@ -128,13 +129,28 @@
     });
 
     // Fuzzy search with Fuse.js
-    let itemsToProcess = processedItems;
-    if (searchQuery.length > 0) {
-      const fuse = new Fuse(processedItems, {
+    const { operators, freeQuery } = parseQuery(searchQuery);
+
+    let itemsToProcess = processedItems.filter((item) => {
+      let matches = true;
+      if (operators.genre) {
+        const genres = (item.meta as any).genres || [];
+        matches =
+          matches &&
+          genres.some((g: string) => g.toLowerCase().includes(operators.genre));
+      }
+      if (operators.score) {
+        matches = matches && (item.score || 0) >= parseFloat(operators.score);
+      }
+      return matches;
+    });
+
+    if (freeQuery.length > 0) {
+      const fuse = new Fuse(itemsToProcess, {
         keys: ["displayTitle"],
         threshold: 0.3,
       });
-      itemsToProcess = fuse.search(searchQuery).map((r: any) => r.item);
+      itemsToProcess = fuse.search(freeQuery).map((r: any) => r.item);
     }
 
     const result = groups
@@ -325,7 +341,7 @@
                         {displayTitle}
                       </div>
                       <div class="text-[10px] text-(--c8) mt-1 uppercase">
-                        {(meta as any).genres?.slice(0, 3).join(" • ") || ""}
+                        {(meta as any).genres?.slice(0, 5).join(" • ") || ""}
                       </div>
                     </td>
                     <td

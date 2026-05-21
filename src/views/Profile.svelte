@@ -47,6 +47,22 @@
   function switchTab(tab: string, path: string) {
     currentActiveTab = tab;
     window.history.pushState({}, "", path);
+
+    // Defer scroll to ensure layout has settled
+    requestAnimationFrame(() => {
+      const tabsWrapper = document.getElementById("tabs-wrapper");
+      if (tabsWrapper) {
+        const navbarHeight = 60; // Adjust as needed
+        const elementPosition = tabsWrapper.getBoundingClientRect().top;
+        const offsetPosition =
+          elementPosition + window.scrollY - navbarHeight - 20;
+
+        window.scrollTo({
+          top: offsetPosition,
+          behavior: "smooth",
+        });
+      }
+    });
   }
 
   const tabs = $derived([
@@ -184,7 +200,7 @@
     </div>
 
     <!-- Tabs Wrapper -->
-    <div class="relative">
+    <div class="relative" id="tabs-wrapper">
       <div
         class="profile-tabs flex space-x-8 border-b border-(--surface-elevated) mb-8 overflow-x-auto whitespace-nowrap scrollbar-hide focus:ring-0"
       >
@@ -203,7 +219,7 @@
     </div>
 
     <!-- Content -->
-    <div class="py-8 min-h-100">
+    <div class="py-8 min-h-screen">
       <div class:hidden={currentActiveTab !== "overview"}>
         {#if profileData}
           <Overview {profileData} {metadata} />
