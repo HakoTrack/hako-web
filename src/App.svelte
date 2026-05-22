@@ -100,35 +100,37 @@
   on:show-signup={() => openModal("signup")}
 />
 
-<ModalWrapper />
-{#if !isLanding}
-  <Navbar {user} {profile} />
-  <GlobalQuickUpdateDrawer
-    isOpen={isDrawerOpen}
-    onToggle={(state) => (isDrawerOpen = state)}
-    profileId={user?.id}
-  />
-{/if}
-
-<main id="app-view">
-  {#if currentPath === "/"}
-    <Landing />
-  {:else if activeRoute}
-    {@const Component = activeRoute.component}
-    <Component
-      {...activeRoute.props(
-        currentPath,
-        user,
-        targetProfileData,
-        activeTab,
-        mediaType,
-      )}
+<div class="min-h-screen flex flex-col">
+  <ModalWrapper />
+  {#if !isLanding}
+    <Navbar {user} {profile} />
+    <GlobalQuickUpdateDrawer
+      isOpen={isDrawerOpen}
+      onToggle={(state) => (isDrawerOpen = state)}
+      profileId={user?.id}
     />
-  {:else}
-    <div class="text-white p-10">404 - Not Found</div>
   {/if}
-</main>
 
-{#if !isLanding}
-  <Footer />
-{/if}
+  <main id="app-view" class="flex-grow">
+    {#if currentPath === "/"}
+      <Landing />
+    {:else if activeRoute}
+      {@const Component = activeRoute.component}
+      <Component
+        {...activeRoute.props(
+          currentPath,
+          user,
+          targetProfileData,
+          activeTab,
+          mediaType,
+        )}
+      />
+    {:else}
+      <div class="text-white p-10">404 - Not Found</div>
+    {/if}
+  </main>
+
+  {#if !isLanding}
+    <Footer />
+  {/if}
+</div>

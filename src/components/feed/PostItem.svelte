@@ -4,6 +4,7 @@
   import { fetchMediaById } from "../../utils/mediaData";
   import { FeedInteractionService } from "../../services/feedInteractionService";
   import { AuthService } from "../../core/auth";
+  import PostRenderer from "../common/PostRenderer.svelte";
 
   let { post } = $props();
   let isLiked = $state(false);
@@ -113,7 +114,7 @@
 
   <div class="p-6">
     {#if post.post_type === "thought"}
-      <p class="text-slate-200 leading-relaxed">{post.content}</p>
+      <PostRenderer content={post.content || ""} />
       <div class="mt-6 flex items-center space-x-6 text-sm text-slate-500">
         <button
           class="cursor-pointer transition-colors {isLiked

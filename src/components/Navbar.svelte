@@ -1,7 +1,7 @@
 <script lang="ts">
   import { AuthService } from "../core/auth";
-  import { HakoImage } from "../utils/images.ts";
-  import { ui } from "../core/ui.svelte.ts";
+  import { HakoImage } from "../utils/images";
+  import { ui } from "../core/ui.svelte";
   import Dropdown from "./common/Dropdown.svelte";
 
   let { user = null, profile = null } = $props();

@@ -3,6 +3,9 @@ import { type Result, success, failure } from '../utils/result';
 import { ActivityService } from './activityService';
 import { PostSchema, type Post, type PostMetadata } from '../types/index';
 
+// Simple regex to block common URL shorteners (library not recommended for this as maintenance is high)
+const SHORTENER_REGEX = /(bit\.ly|t\.co|tinyurl\.com|is\.gd|goo\.gl|ow\.ly|j\.mp|buff\.ly|adf\.ly|tny\.im)\//i;
+
 export const FeedService = {
   /**
    * Fetches posts for a specific profile.
@@ -23,8 +26,6 @@ export const FeedService = {
       .range(page * pageSize, (page + 1) * pageSize - 1);
 
     if (error) return failure(error.message);
-
-    console.log("DEBUG: Post object keys:", Object.keys(data[0] || {}));
 
     // Validate each post with Zod
     const result = PostSchema.array().safeParse(data?.map(post => ({
@@ -56,18 +57,14 @@ export const FeedService = {
       .range(page * pageSize, (page + 1) * pageSize - 1);
 
     if (error) {
-      console.error("DEBUG: Supabase feed error:", error);
       return failure(error.message);
     }
-
-    console.log("DEBUG: Entire post object (first item):", data[0]);
 
     const result = PostSchema.array().safeParse(data?.map(post => ({
       ...post,
       metadata: post.metadata || {}
     })));
     if (!result.success) {
-      console.error("DEBUG: Global feed validation failed:", result.error);
       return failure("Global feed validation failed");
     }
 
@@ -117,6 +114,10 @@ export const FeedService = {
    * Creates a new post in the feed.
    */
   async createPost(userId: string, targetProfileId: string, type: 'thought' | 'list_update', metadata: PostMetadata = {}, content: string | null = null): Promise<Result<void>> {
+    if (content && SHORTENER_REGEX.test(content)) {
+      return failure("URL shorteners are not allowed in posts.");
+    }
+
     const { error } = await supabase.from('posts').insert({
       author_id: userId,
       target_profile_id: targetProfileId,
@@ -145,7 +146,7 @@ export const FeedService = {
     });
   },
 
-  async createThoughtPost(userId: string, targetProfileId: string, content: string): Promise<void> {
-    await this.createPost(userId, targetProfileId, 'thought', {}, content);
+  async createThoughtPost(userId: string, targetProfileId: string, content: string): Promise<Result<void>> {
+    return await this.createPost(userId, targetProfileId, 'thought', {}, content);
   }
 };
