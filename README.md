@@ -4,7 +4,7 @@
 <img src="https://img.shields.io/badge/vercel-%23000000.svg?style=for-the-badge&logo=vercel&logoColor=white" alt="Vercel"> <img src="https://img.shields.io/badge/Supabase-3ECF8E?style=for-the-badge&logo=supabase&logoColor=white" alt="Supabase">
 </p>
 
-Hako (箱) is a passion project built to be a simple, no-nonsense home for tracking your anime, manga, light novels, and (in the future) visual novels. It is an independent project not backed or affiliated with any streaming service. It has no corporate affiliation, and is thus not influenced by any commercial entities.
+Hako (箱, meaning "box") is a passion project built to be a simple, no-nonsense home for tracking your anime, manga, light novels, and (in the future) visual novels. It is an independent project not backed or affiliated with any streaming service. It has no corporate affiliation, and is thus not influenced by any commercial entities.
 
 We are currently in a closed alpha development phase, and are not accepting new users at this time. Mailing list coming soon for anyone that stumbles upon this place and wishes to be notified of when beta access will begin.
 
@@ -17,8 +17,8 @@ We are currently in a closed alpha development phase, and are not accepting new 
   - Your profile shows what you've been up to with activity heatmaps and comprehensive breakdowns per format.
   - Visualize your interests with our taste profiles, a unique system that defines the themes and vibe of a story based on multiple factors, providing a deeper understanding of your preferences. This system will drive an automated recommendation engine in the future, on top of the usual user submitted recommendations.
 - A sense of community
-  - Follow friends, share posts, and connect with other users on an independent social platform built for fans.
-  - No algorithm, no bots, no AI moderation, and no ads.
+  - Follow friends, share posts, and connect with other users on an independent social platform built by fans for fans.
+  - No social media algorithm, no bots, no AI moderation, no ads, and no harvesting of your data. The internet as it was meant to be.
 
 More features to come.
 
