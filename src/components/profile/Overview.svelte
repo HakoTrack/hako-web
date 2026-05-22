@@ -172,7 +172,7 @@
         {profileData?.about_me || "No description provided."}
       </p>
       <div
-        class="space-y-3 pt-4 border-t border-slate-800 text-xs uppercase tracking-wider font-semibold text-slate-500"
+        class="space-y-3 pt-4 border-t border-(--surface-elevated) text-xs uppercase tracking-wider font-semibold text-slate-500"
       >
         <div class="flex justify-between">
           <span>Joined</span><span class="text-white">May 13th, 2026</span>
@@ -187,7 +187,7 @@
         </div>
       </div>
       <div
-        class="mt-6 pt-6 border-t border-slate-800 flex justify-between items-center px-2"
+        class="mt-6 pt-6 border-t border-(--surface-elevated) flex justify-between items-center px-2"
       >
         <div class="text-center">
           <div class="text-lg font-bold text-white">142</div>
@@ -197,7 +197,7 @@
             Followers
           </div>
         </div>
-        <div class="h-8 w-px bg-slate-800"></div>
+        <div class="h-8 w-px bg-(--surface-elevated)"></div>
         <div class="text-center">
           <div class="text-lg font-bold text-white">89</div>
           <div
@@ -206,7 +206,7 @@
             Following
           </div>
         </div>
-        <div class="h-8 w-px bg-slate-800"></div>
+        <div class="h-8 w-px bg-(--surface-elevated)"></div>
         <div class="text-center">
           <div class="text-lg font-bold text-white">12</div>
           <div
@@ -215,7 +215,7 @@
             Reviews
           </div>
         </div>
-        <div class="h-8 w-px bg-slate-800"></div>
+        <div class="h-8 w-px bg-(--surface-elevated)"></div>
         <div class="text-center">
           <div class="text-lg font-bold text-white">21</div>
           <div
@@ -302,7 +302,7 @@
       <div class="space-y-6">
         {#each Object.entries(persistedStats) as [type, stat]}
           {@const isLoaded = !!stat && stat.total > 0}
-          <div class="border-b border-slate-800 pb-4 last:border-0">
+          <div class="border-b border-(--surface-elevated) pb-4 last:border-0">
             <h4
               class="text-[10px] uppercase text-accent font-bold mb-2 tracking-widest"
             >

@@ -267,10 +267,10 @@
         </div>
         <button
           onclick={() => setFilter("all")}
-          class="flex items-center justify-between px-4 py-3 text-sm font-medium w-full transition-all border-l-4 {filterStatus ===
+          class="flex items-center justify-between px-4 py-3 text-sm font-medium w-full transition-all border-l-4 ring-0 outline-none {filterStatus ===
           'all'
             ? 'text-white bg-(--surface-dim) border-(--hako-accent)'
-            : 'text-slate-400 hover:text-white border-transparent hover:bg-card'} transition-all w-full focus:ring-0"
+            : 'text-slate-400 hover:text-white border-transparent hover:bg-card'} transition-all w-full ring-0 outline-none"
         >
           <div class="flex items-center">
             <span class="w-2 h-2 rounded-full mr-3 bg-(--c7)"></span>
@@ -282,10 +282,10 @@
         {#each statusGroups as group}
           <button
             onclick={() => setFilter(group.id)}
-            class="flex items-center justify-between px-4 py-3 text-sm font-medium {filterStatus ===
+            class="flex items-center justify-between px-4 py-3 text-sm font-medium ring-0 outline-none {filterStatus ===
             group.id
               ? 'text-white bg-(--surface-dim) border-l-4 border-(--hako-accent)'
-              : 'text-slate-400 hover:text-white border-l-4 border-transparent hover:bg-card'} transition-all w-full"
+              : 'text-slate-400 hover:text-white border-l-4 border-transparent hover:bg-card'} transition-all w-full ring-0 outline-none"
           >
             <div class="flex items-center">
               <span

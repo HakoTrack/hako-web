@@ -1,4 +1,4 @@
-<script>
+<script lang="ts">
   import { AuthService } from "../core/auth";
   import { HakoImage } from "../utils/images.ts";
   import { ui } from "../core/ui.svelte.ts";
@@ -11,13 +11,8 @@
   let dropdownItems = $derived([
     {
       label: "Profile",
-      action: () => navigate(`/user/${username}`),
+      action: () => navigate(`/user/${username}`, true),
       icon: "fa-user",
-    },
-    {
-      label: "Lists",
-      action: () => navigate(`/user/${username}/anime`),
-      icon: "fa-list",
     },
     {
       label: "Theme",
@@ -36,13 +31,48 @@
     },
   ]);
 
+  let listDropdownItems = $derived([
+    {
+      label: "Anime List",
+      action: () => navigate(`/user/${username}/anime`, true),
+      icon: "fa-tv",
+    },
+    {
+      label: "Manga List",
+      action: () => navigate(`/user/${username}/manga`, true),
+      icon: "fa-book fa-flip-horizontal",
+    },
+    {
+      label: "Light Novel List",
+      action: () => navigate(`/user/${username}/lightnovel`, true),
+      icon: "fa-book-open",
+    },
+  ]);
+
   async function handleLogout() {
     await AuthService.logout();
   }
 
-  function navigate(path) {
+  function navigate(path: string, shouldSnap = false) {
     window.history.pushState({}, "", path);
     window.dispatchEvent(new PopStateEvent("popstate"));
+
+    if (shouldSnap) {
+      requestAnimationFrame(() => {
+        const tabsWrapper = document.getElementById("tabs-wrapper");
+        if (tabsWrapper) {
+          const navbarHeight = 60;
+          const elementPosition = tabsWrapper.getBoundingClientRect().top;
+          const offsetPosition =
+            elementPosition + window.scrollY - navbarHeight - 20;
+
+          window.scrollTo({
+            top: offsetPosition,
+            behavior: "smooth",
+          });
+        }
+      });
+    }
   }
 </script>
 
@@ -65,7 +95,7 @@
         {#if user}
           <a
             href="/feed"
-            class="nav-link"
+            class="nav-link ring-0 outline-none"
             onclick={(e) => {
               e.preventDefault();
               navigate("/feed");
@@ -73,23 +103,18 @@
           >
           <a
             href="/user/{username}"
-            class="nav-link"
+            class="nav-link ring-0 outline-none"
             onclick={(e) => {
               e.preventDefault();
-              navigate(`/user/${username}`);
+              navigate(`/user/${username}`, true);
             }}>Profile</a
           >
-          <a
-            href="/user/{username}/anime"
-            class="nav-link"
-            onclick={(e) => {
-              e.preventDefault();
-              navigate(`/user/${username}/anime`);
-            }}>Lists</a
-          >
+          <Dropdown items={listDropdownItems}>
+            <span class="nav-link cursor-pointer">Lists</span>
+          </Dropdown>
           <a
             href="/browse"
-            class="nav-link"
+            class="nav-link ring-0 outline-none"
             onclick={(e) => {
               e.preventDefault();
               navigate(`/browse`);
@@ -98,13 +123,13 @@
         {:else}
           <button
             id="nav-login"
-            class="nav-link"
+            class="nav-link ring-0 outline-none"
             onclick={() => window.dispatchEvent(new CustomEvent("show-login"))}
             >Login</button
           >
           <button
             id="nav-signup"
-            class="nav-link"
+            class="nav-link ring-0 outline-none"
             onclick={() => window.dispatchEvent(new CustomEvent("show-signup"))}
             >Sign Up</button
           >
