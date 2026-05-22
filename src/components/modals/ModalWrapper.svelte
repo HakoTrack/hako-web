@@ -6,6 +6,7 @@
 
   function handleKeydown(e) {
     if (ui.activeModal && e.key === "Escape") {
+      e.stopPropagation();
       closeModal();
     }
   }

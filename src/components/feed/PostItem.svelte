@@ -92,10 +92,7 @@
   <div class="p-4 border-b border-slate-800 flex items-center justify-between">
     <div class="flex items-center space-x-3">
       <img
-        src={HakoImage.get(
-          post.author?.avatar_url || "/assets/default-avatar.jpg",
-          { w: 32, f: "webp" },
-        )}
+        src={HakoImage.get(post.author?.avatar_url, { w: 32, f: "webp" })}
         class="object-cover w-8 h-8 rounded-lg bg-slate-700"
         alt="avatar"
         onerror={(e) => (e.target.src = "")}

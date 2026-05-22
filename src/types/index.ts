@@ -41,7 +41,7 @@ export const PostMetadataSchema = z.object({
   title: z.string().optional(),
   action: z.string().optional(),
   progress: z.number().optional(),
-  total: z.union([z.number(), z.string()]).optional(),
+  total: z.union([z.number(), z.string()]).nullable().optional(),
 });
 export type PostMetadata = z.infer<typeof PostMetadataSchema>;
 

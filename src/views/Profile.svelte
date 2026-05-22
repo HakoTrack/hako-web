@@ -161,10 +161,7 @@
       >
         <div class="relative group">
           <img
-            src={HakoImage.get(
-              profileData?.avatar_url || `covers/${username}.jpg`,
-              { w: 200, f: "webp" },
-            )}
+            src={HakoImage.get(profileData?.avatar_url, { w: 200, f: "webp" })}
             alt="Avatar"
             class="w-32 h-32 md:w-40 md:h-40 rounded-xl border-4 border-[#0b1622] shadow-2xl object-cover bg-[#151f2e]"
           />
