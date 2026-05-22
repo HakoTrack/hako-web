@@ -8,6 +8,7 @@
   import type { Media, ListEntry } from "../../types/index";
   import MediaCover from "../common/MediaCover.svelte";
   import Select from "../common/Select.svelte";
+  import SearchInput from "../common/SearchInput.svelte";
 
   let { type = "anime", profileId } = $props<{
     type?: string;
@@ -53,10 +54,14 @@
 
   // Sync state whenever the profileId or type arrives/changes
   $effect(() => {
-    if (profileId && type) {
+    const supportedTypes = ["anime", "manga", "light_novel", "visual_novels"];
+    if (profileId && type && supportedTypes.includes(type)) {
       isLoading = true;
       displayLimit = 50; // Reset limit on type change
       loadData();
+    } else {
+      isLoading = false;
+      listDataEntries = [];
     }
   });
 
@@ -79,7 +84,7 @@
   $effect(() => {
     if (!isLoading && displayLimit < listDataEntries.length) {
       const timer = setTimeout(() => {
-        displayLimit += 100;
+        displayLimit += 50;
       }, 50);
       return () => clearTimeout(timer);
     }
@@ -231,30 +236,17 @@
   <aside class="lg:w-[20%] order-2 lg:order-1">
     <div class="sticky top-24 space-y-6">
       <div class="bg-card rounded-xl p-5 space-y-4">
-        <div>
-          <!-- svelte-ignore a11y_label_has_associated_control -->
-          <label
-            class="text-[10px] font-bold uppercase tracking-widest text-slate-500 block mb-2"
-            >Search List</label
-          >
-          <div class="relative">
-            <input
-              type="text"
-              placeholder="Filter titles..."
-              value={searchQuery}
-              oninput={handleSearchInput}
-              class="w-full bg-card border border-(--surface-elevated) rounded-lg px-3 py-2 text-sm text-(--hako-fg) focus:ring-1 focus:ring-(--hako-accent) pl-9"
-            />
-            <i
-              class="fa-solid fa-search absolute left-3 top-2.5 text-slate-600 text-xs"
-            ></i>
-          </div>
-        </div>
+        <SearchInput
+          label="Search List"
+          placeholder="Search"
+          bind:value={searchQuery}
+          oninput={handleSearchInput}
+        />
         <div>
           <Select
             label="Sort By"
             value={sortBy}
-            onchange={(val) => setSort(val)}
+            onchange={(val: any) => setSort(val)}
             items={[
               { value: "Title", label: "Title" },
               { value: "Score", label: "Score" },

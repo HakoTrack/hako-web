@@ -189,3 +189,7 @@ input:-webkit-autofill:active {
   transition: background-color 9999s ease-in-out 0s !important;
   caret-color: var(--hako-fg) !important;
 }
+
+input[type="number"] {
+  -moz-appearance: textfield;
+}

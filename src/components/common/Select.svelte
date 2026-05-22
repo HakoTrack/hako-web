@@ -14,7 +14,7 @@
     if (onchange) onchange(val);
   }
 
-  function handleClickOutside(event) {
+  function handleClickOutside(event: any) {
     if (isOpen && containerRef && !containerRef.contains(event.target)) {
       isOpen = false;
     }
