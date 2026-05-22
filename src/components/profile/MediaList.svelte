@@ -8,7 +8,6 @@
   import type { Media, ListEntry } from "../../types/index";
   import MediaCover from "../common/MediaCover.svelte";
   import Select from "../common/Select.svelte";
-  import { fade } from "svelte/transition";
 
   let { type = "anime", profileId } = $props<{
     type?: string;
