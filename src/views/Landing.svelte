@@ -1,6 +1,7 @@
 <script>
   import { onMount } from "svelte";
   import { HakoImage } from "../utils/images.ts";
+  import Button from "../components/common/Button.svelte";
 
   let loaded = false;
   let heroUrl = "";
@@ -35,31 +36,19 @@
       <h1
         class="text-6xl md:text-8xl font-extrabold mb-6 tracking-tighter flex items-center justify-center gap-4 md:gap-6"
       >
-        <span class="font-['Zen_Antique'] text-indigo-400">箱</span>
-        <span class="font-['Zen_Antique'] text-white">Hako</span>
+        <span class="font-['Zen_Antique'] text-(--hako-accent)">箱</span>
+        <span class="font-['Zen_Antique'] text-(--hako-fg)">Hako</span>
       </h1>
       <p
-        class="text-lg md:text-xl text-slate-300 mb-10 max-w-lg mx-auto leading-relaxed"
+        class="text-lg md:text-xl text-(--c7) mb-10 max-w-lg mx-auto leading-relaxed"
       >
         A box of everything Japanese media.
       </p>
       <div
         class="flex flex-col sm:flex-row items-center justify-center gap-4 md:gap-6"
       >
-        <button
-          id="landing-login"
-          on:click={showLogin}
-          class="w-full sm:w-48 bg-white/5 backdrop-blur-xl text-white py-4 rounded-xl text-center font-bold text-lg border border-white/10 hover:bg-white/10 transition-all"
-        >
-          Login
-        </button>
-        <button
-          id="landing-signup"
-          on:click={showSignup}
-          class="w-full sm:w-48 bg-white/5 backdrop-blur-xl text-white py-4 rounded-xl text-center font-bold text-lg border border-white/10 hover:bg-white/10 transition-all"
-        >
-          Sign Up
-        </button>
+        <Button variant="secondary" onclick={showLogin}>Login</Button>
+        <Button variant="primary" onclick={showSignup}>Sign Up</Button>
       </div>
     </main>
   </div>
@@ -67,7 +56,7 @@
   <!-- Footer fixed at bottom with consistent padding -->
   <footer class="mt-auto pt-12 text-center pb-8">
     <p
-      class="text-[10px] uppercase text-slate-500 opacity-60 leading-loose mx-auto tracking-widest px-4"
+      class="text-[10px] uppercase text-(--c7) opacity-60 leading-loose mx-auto tracking-widest px-4"
     >
       An in-development database, tracking platform, and indie social media for
       anime, manga, light novels, and visual novels.
@@ -78,7 +67,7 @@
 <style>
   .bg-hero {
     background: linear-gradient(rgba(26, 27, 38, 0.6), rgba(11, 16, 22, 1)),
-      var(--hero-bg, #0b0c10);
+      var(--hero-bg, --hako-bg);
     background-size: cover;
     background-position: center;
     background-attachment: fixed;

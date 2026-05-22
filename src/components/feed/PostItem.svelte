@@ -26,7 +26,7 @@
   const percent = $derived(
     post.post_type === "list_update" && post.metadata?.total > 0
       ? Math.round((post.metadata.progress / post.metadata.total) * 100)
-      : 0,
+      : 50,
   );
 
   function getRelativeTime(timestamp) {

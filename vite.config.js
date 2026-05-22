@@ -6,14 +6,24 @@ export default defineConfig({
   plugins: [
     svelte({
       onwarn: (warning, handler) => {
+        // List of warning codes to ignore
         const ignoredCodes = [
           'a11y_no_static_element_interactions',
           'a11y_click_events_have_key_equivalents',
-          'a11y_no_noninteractive_elements'
-        ]
-        if (!ignoredCodes.includes(warning.code)) {
+          'a11y_no_noninteractive_elements',
+          'a11y_label_has_associated_control',
+          'a11y_consider_explicit_label',
+        ];
+
+        // Debugging: Log all intercepted warning codes
+        console.log(`Svelte warning intercepted: ${warning.code}`);
+
+        // If the warning code is in our ignored list, do nothing (effectively ignore it)
+        if (ignoredCodes.includes(warning.code)) {
           return;
         }
+
+        // For all other warnings, call the default handler
         handler(warning);
       },
     }),

@@ -8,6 +8,9 @@
   import { ListService } from "../../services/listService";
   import { FavoritesService } from "../../services/favoritesService";
   import { formatDescription } from "../../utils/mediaData";
+  import Select from "../common/Select.svelte";
+  import NumberStepper from "../common/NumberStepper.svelte";
+  import DateInput from "../common/DateInput.svelte";
 
   let { entry: initialEntry } = $props<{ entry: any }>();
   let entry = $state(ui.modalData?.entry || {});
@@ -36,6 +39,11 @@
   let isLoaded = $state(false);
 
   // Sync state whenever the entry or modalData changes
+  $effect(() => {
+    // Round score to 1 decimal place whenever it changes
+    score = Math.round(score * 10) / 10;
+  });
+
   $effect(() => {
     // 1. Merge entry if background data is available
     entry = ui.modalData?.entry || initialEntry;
@@ -204,92 +212,98 @@
     <div class="grid grid-cols-1 md:grid-cols-3 gap-x-6 gap-y-6 shrink-0">
       <div class="space-y-1.5">
         <!-- svelte-ignore a11y_label_has_associated_control -->
-        <label class="text-xs font-bold text-slate-400 uppercase tracking-wider"
+        <label
+          class="text-xs font-bold text-slate-400 uppercase tracking-wider mb-1.5 block"
           >Status</label
         >
         {#if !isLoaded}
-          <div class="w-full h-10 bg-slate-700 animate-pulse rounded"></div>
+          <div
+            class="w-full h-10 bg-slate-700/50 animate-pulse rounded-xl"
+          ></div>
         {:else}
-          <select
+          <Select
+            label=""
             bind:value={status}
-            class="w-full bg-(--surface-dim) text-slate-200 text-sm rounded border-none p-2.5 focus:ring-2 focus:ring-(--hako-accent) outline-none cursor-pointer"
-          >
-            <option value="current"
-              >{mediaType === "anime" ? "Watching" : "Reading"}</option
-            >
-            <option value="completed">Completed</option>
-            <option value="paused">Paused</option>
-            <option value="dropped">Dropped</option>
-            <option value="planning">Planning</option>
-          </select>
+            items={[
+              {
+                value: "current",
+                label: mediaType === "anime" ? "Watching" : "Reading",
+              },
+              { value: "completed", label: "Completed" },
+              { value: "paused", label: "Paused" },
+              { value: "dropped", label: "Dropped" },
+              { value: "planning", label: "Planning" },
+            ]}
+          />
         {/if}
       </div>
       <div class="space-y-1.5">
         <!-- svelte-ignore a11y_label_has_associated_control -->
-        <label class="text-xs font-bold text-slate-400 uppercase tracking-wider"
+        <label
+          class="text-xs font-bold text-slate-400 uppercase tracking-wider mb-1.5 block"
           >Score</label
         >
         {#if !isLoaded}
-          <div class="w-full h-10 bg-slate-700 animate-pulse rounded"></div>
+          <div
+            class="w-full h-10 bg-slate-700/50 animate-pulse rounded-xl"
+          ></div>
         {:else}
-          <input
-            type="number"
-            step="0.1"
-            max="10"
-            min="0"
+          <NumberStepper
+            label=""
             bind:value={score}
-            class="w-full bg-(--surface-dim) text-slate-200 text-sm rounded border-none p-2.5 focus:ring-2 focus:ring-(--hako-accent) outline-none"
+            min={0}
+            max={10}
+            step={0.1}
+            suffix="/ 10"
           />
         {/if}
       </div>
       <div class="space-y-1.5">
         <!-- svelte-ignore a11y_label_has_associated_control -->
-        <label class="text-xs font-bold text-slate-400 uppercase tracking-wider"
+        <label
+          class="text-xs font-bold text-slate-400 uppercase tracking-wider mb-1.5 block"
           >Progress</label
         >
         {#if !isLoaded}
-          <div class="w-full h-10 bg-slate-700 animate-pulse rounded"></div>
+          <div
+            class="w-full h-10 bg-slate-700/50 animate-pulse rounded-xl"
+          ></div>
         {:else}
-          <div class="flex items-center space-x-2">
-            <input
-              type="number"
-              bind:value={progress}
-              class="w-full bg-(--surface-dim) text-slate-200 text-sm rounded border-none p-2.5 focus:ring-2 focus:ring-(--hako-accent) outline-none"
-            />
-            <span class="text-slate-500 text-sm font-medium whitespace-nowrap"
-              >/ {entry.total}</span
-            >
-          </div>
+          <NumberStepper
+            label=""
+            bind:value={progress}
+            min={0}
+            max={entry.total || Infinity}
+            suffix="/ {entry.total}"
+          />
         {/if}
       </div>
       <div class="space-y-1.5">
         <!-- svelte-ignore a11y_label_has_associated_control -->
-        <label class="text-xs font-bold text-slate-400 uppercase tracking-wider"
+        <label
+          class="text-xs font-bold text-slate-400 uppercase tracking-wider mb-1.5 block"
           >Start Date</label
         >
         {#if !isLoaded}
-          <div class="w-full h-10 bg-slate-700 animate-pulse rounded"></div>
+          <div
+            class="w-full h-10 bg-slate-700/50 animate-pulse rounded-xl"
+          ></div>
         {:else}
-          <input
-            type="date"
-            bind:value={startDate}
-            class="w-full bg-(--surface-dim) text-slate-200 text-sm rounded border-none p-2.5 focus:ring-2 focus:ring-(--hako-accent) outline-none"
-          />
+          <DateInput label="" bind:value={startDate} />
         {/if}
       </div>
       <div class="space-y-1.5">
         <!-- svelte-ignore a11y_label_has_associated_control -->
-        <label class="text-xs font-bold text-slate-400 uppercase tracking-wider"
+        <label
+          class="text-xs font-bold text-slate-400 uppercase tracking-wider mb-1.5 block"
           >Finish Date</label
         >
         {#if !isLoaded}
-          <div class="w-full h-10 bg-slate-700 animate-pulse rounded"></div>
+          <div
+            class="w-full h-10 bg-slate-700/50 animate-pulse rounded-xl"
+          ></div>
         {:else}
-          <input
-            type="date"
-            bind:value={finishDate}
-            class="w-full bg-(--surface-dim) text-slate-200 text-sm rounded border-none p-2.5 focus:ring-2 focus:ring-(--hako-accent) outline-none"
-          />
+          <DateInput label="" bind:value={finishDate} />
         {/if}
       </div>
     </div>

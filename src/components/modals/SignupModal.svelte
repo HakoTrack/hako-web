@@ -1,9 +1,10 @@
 <script>
   import { ui, closeModal } from "../../core/ui.svelte.ts";
+  import Button from "../common/Button.svelte";
 </script>
 
 <div
-  class="bg-card p-6 rounded-lg shadow-xl w-full max-w-md text-center relative"
+  class="bg-(--surface) p-8 rounded-2xl shadow-xl w-full max-w-md text-center relative"
 >
   <!-- svelte-ignore a11y_consider_explicit_label -->
   <button
@@ -19,8 +20,10 @@
   </p>
   <p class="text-sm text-slate-400">
     Already have an account? <button
+      type="button"
       onclick={() => ui.openModal("login")}
-      class="text-accent cursor-pointer">Sign In</button
+      class="text-(--hako-accent) cursor-pointer font-bold hover:underline"
+      >Sign In</button
     >
   </p>
 </div>

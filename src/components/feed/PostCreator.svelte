@@ -31,7 +31,7 @@
   <textarea
     bind:value={content}
     placeholder="What memory are you storing in the box? (o˘◡˘o)"
-    class="w-full bg-[#0b1622] border border-slate-700 rounded-lg p-3 text-sm text-white focus:ring-1 focus:ring-accent outline-none min-h-20"
+    class="w-full bg-(--hako-bg) border border-(--c0) rounded-lg p-3 text-sm text-(--hako-fg) focus:ring-1 focus:ring-(--surface-elevated) outline-none min-h-20"
   ></textarea>
   <div class="flex justify-end mt-3">
     <button

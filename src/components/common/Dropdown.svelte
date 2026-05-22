@@ -10,7 +10,7 @@
   function updatePosition() {
     if (isOpen && triggerRef && dropdownRef) {
       computePosition(triggerRef, dropdownRef, {
-        middleware: [offset(10), flip(), shift()],
+        middleware: [offset(12), flip(), shift()],
         strategy: "absolute",
       }).then(({ x, y }) => {
         Object.assign(dropdownRef.style, {
@@ -21,15 +21,14 @@
     }
   }
 
-  function toggle() {
+  function toggle(e) {
+    e.stopPropagation();
     isOpen = !isOpen;
     if (isOpen) {
-      // Use requestAnimationFrame to ensure the element is rendered before positioning
       requestAnimationFrame(updatePosition);
     }
   }
 
-  // Handle click outside to close
   function handleClickOutside(event) {
     if (
       isOpen &&
@@ -51,28 +50,26 @@
   });
 </script>
 
-<div bind:this={triggerRef} class="relative inline-block">
-  <!-- svelte-ignore a11y_click_events_have_key_events -->
-  <!-- svelte-ignore a11y_no_static_element_interactions -->
-  <div onclick={toggle}>
-    {@render children?.()}
-  </div>
+<!-- svelte-ignore a11y_click_events_have_key_events -->
+<!-- svelte-ignore a11y_no_static_element_interactions -->
+<div bind:this={triggerRef} class="relative inline-block" onclick={toggle}>
+  {@render children?.()}
 
   {#if isOpen}
-    <!-- svelte-ignore a11y_no_static_element_interactions -->
-    <!-- svelte-ignore a11y_click_events_have_key_events -->
     <div
       bind:this={dropdownRef}
-      class="absolute w-48 pt-2 bg-nav rounded-br-lg rounded-bl-lg animate-in fade-in zoom-in-95 z-30"
-      onclick={() => (isOpen = false)}
+      class="absolute w-48 py-2 p-2 bg-(--surface) border border-(--c8) rounded-xl shadow-2xl z-100 animate-in fade-in zoom-in-95 duration-100"
+      onclick={(e) => e.stopPropagation()}
     >
       {#each items as item}
         <button
-          onclick={item.action}
-          class="w-full flex items-center px-4 py-2 text-sm text-slate-300 hover:bg-slate-700/50 hover:text-white transition-colors"
+          onclick={() => {
+            item.action();
+            isOpen = false;
+          }}
+          class="w-full flex items-center px-4 rounded-xl py-2.5 text-sm text-(--hako-fg) hover:bg-(--surface-elevated) hover:text-(--hako-fg) transition-colors"
         >
-          <i class="fa-solid {item.icon} mr-3 w-4 text-center text-slate-500"
-          ></i>
+          <i class="fa-solid {item.icon} mr-3 w-4 text-center text-(--c8)"></i>
           {item.label}
         </button>
       {/each}

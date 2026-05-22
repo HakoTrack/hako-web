@@ -7,6 +7,7 @@
   import { parseQuery } from "../../utils/search";
   import type { Media, ListEntry } from "../../types/index";
   import MediaCover from "../common/MediaCover.svelte";
+  import Select from "../common/Select.svelte";
 
   let { type = "anime", profileId } = $props<{
     type?: string;
@@ -210,20 +211,16 @@
           </div>
         </div>
         <div>
-          <!-- svelte-ignore a11y_label_has_associated_control -->
-          <label
-            class="text-[10px] font-bold uppercase tracking-widest text-slate-500 block mb-2"
-            >Sort By</label
-          >
-          <select
+          <Select
+            label="Sort By"
             bind:value={sortBy}
-            class="w-full bg-card border border-(--surface-elevated) rounded-lg px-3 py-2 text-sm text-(--hako-fg) focus:ring-1 focus:ring-(--hako-accent)"
-          >
-            <option>Title</option>
-            <option>Score</option>
-            <option>Progress</option>
-            <option>Last Updated</option>
-          </select>
+            items={[
+              { value: "Title", label: "Title" },
+              { value: "Score", label: "Score" },
+              { value: "Progress", label: "Progress" },
+              { value: "Last Updated", label: "Last Updated" },
+            ]}
+          />
         </div>
       </div>
 

@@ -37,31 +37,31 @@
 <svelte:window onkeydown={handleKeydown} />
 
 <!-- Portal-style fixed container, detached from document flow -->
-<div class="fixed inset-y-0 right-0 z-[90] flex justify-end">
+<div class="fixed inset-y-0 right-0 z-90 flex justify-end pointer-events-none">
   <!-- Sliding Assembly: Button + Content in one unit -->
   <div
-    class="relative h-full bg-[var(--surface)] border-l border-[var(--c8)] shadow-2xl transition-transform duration-300 ease-in-out flex"
+    class="relative h-full bg-(--surface) border-l border-(--c8) shadow-2xl transition-transform duration-300 ease-in-out flex pointer-events-auto"
     style="transform: translateX({isOpen ? '0' : '100%'}); width: 56rem;"
   >
     <!-- Attached Pull Tab -->
     <button
       onclick={() => onToggle(!isOpen)}
-      class="absolute -left-12 bottom-20 w-12 h-20 bg-[var(--hako-accent)] text-[var(--hako-bg)] flex items-center justify-center font-bold shadow-lg rounded-l-lg hover:brightness-110 transition-colors z-[91] focus:outline-0"
+      class="absolute -left-12 bottom-20 w-12 h-20 bg-(--hako-accent) text-(--hako-bg) flex items-center justify-center font-bold shadow-lg rounded-l-lg hover:brightness-110 transition-colors z-91 focus:outline-0"
       aria-label="Toggle list drawer"
     >
       <i class="fa-solid {isOpen ? 'fa-times' : 'fa-pen'}"></i>
     </button>
     <!-- Drawer Content -->
-    <div class="flex-grow h-full overflow-y-auto p-8 text-[var(--hako-fg)]">
-      <div class="mb-8 border-b border-[var(--c8)] pb-4">
-        <h2 class="text-white text-2xl font-bold">Quick Update</h2>
+    <div class="grow h-full overflow-y-auto p-8 text-(--hako-fg)">
+      <div class="mb-8 border-b border-(--c8) pb-4">
+        <h2 class="text-(--hako-fg) text-2xl font-bold">Quick Update</h2>
       </div>
 
       {#each Object.entries(sections) as [type, items]}
         {#if items.length > 0}
           <div class="mb-8">
             <h3
-              class="text-[var(--hako-accent)] uppercase tracking-wider text-sm font-semibold mb-4"
+              class="text-(--hako-accent) uppercase tracking-wider text-sm font-semibold mb-4"
             >
               {type}
             </h3>
@@ -75,7 +75,7 @@
           </div>
         {/if}
       {:else}
-        <p class="text-[var(--c8)] text-center py-8">No current items found.</p>
+        <p class="text-(--c8) text-center py-8">No current items found.</p>
       {/each}
     </div>
   </div>

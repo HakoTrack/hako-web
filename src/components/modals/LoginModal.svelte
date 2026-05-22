@@ -1,6 +1,7 @@
 <script>
   import { supabase } from "../../utils/supabase.js";
   import { ui, closeModal } from "../../core/ui.svelte.ts";
+  import Button from "../common/Button.svelte";
 
   let email = "";
   let password = "";
@@ -23,7 +24,7 @@
   }
 </script>
 
-<div class="bg-card p-8 rounded-lg shadow-xl w-full max-w-md relative">
+<div class="bg-(--surface) p-8 rounded-2xl shadow-xl w-full max-w-md relative">
   <!-- svelte-ignore a11y_consider_explicit_label -->
   <button
     onclick={() => closeModal()}
@@ -31,34 +32,34 @@
   >
     <i class="fa-solid fa-xmark"></i>
   </button>
-  <h2 class="text-2xl font-bold mb-6 text-accent">おかえり</h2>
+  <h2 class="text-2xl font-bold mb-6 text-(--hako-accent)">おかえり</h2>
   {#if errorMsg}
     <p class="text-red-500 text-sm mb-4">{errorMsg}</p>
   {/if}
-  <form onsubmit={handleLogin}>
+  <form onsubmit={handleLogin} class="space-y-4">
+    <!-- svelte-ignore a11y_label_has_associated_control -->
     <input
       type="email"
       bind:value={email}
       placeholder="Email"
-      class="w-full p-3 mb-4 bg-[#0b1622] border border-slate-700 rounded focus:border-accent outline-none text-white"
+      class="w-full p-3 bg-(--hako-bg) rounded-xl outline-none text-(--hako-fg) transition-colors"
     />
+    <!-- svelte-ignore a11y_label_has_associated_control -->
     <input
       type="password"
       bind:value={password}
       placeholder="Password"
-      class="w-full p-3 mb-6 bg-[#0b1622] border border-slate-700 rounded focus:border-accent outline-none text-white"
+      class="w-full p-3 bg-(--hako-bg) rounded-xl outline-none text-(--hako-fg) transition-colors"
     />
-    <button
-      type="submit"
-      class="w-full bg-indigo-400/50 text-white py-3 rounded font-bold hover:bg-indigo-400 transition-all cursor-pointer"
+    <Button type="submit" variant="primary" align="center" class="w-full"
+      >Sign In</Button
     >
-      Sign In
-    </button>
-    <p class="mt-4 text-sm text-slate-400">
+    <p class="mt-4 text-sm text-(--c8)">
       Don't have an account? <button
         type="button"
         onclick={() => ui.openModal("signup")}
-        class="text-accent cursor-pointer">Join Hako</button
+        class="text-(--hako-accent) cursor-pointer font-bold hover:underline"
+        >Join Hako</button
       >
     </p>
   </form>
