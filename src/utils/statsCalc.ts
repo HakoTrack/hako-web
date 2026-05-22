@@ -38,7 +38,11 @@ function calculateStatsForType(list: ListEntry[], metadata: Record<string, Media
     { id: "planning", label: "Planning", color: "bg-slate-500" },
   ];
 
+  const counts: Record<string, number> = {};
   list.forEach((entry) => {
+    const status = (entry.status || "").toLowerCase();
+    counts[status] = (counts[status] || 0) + 1;
+
     const meta = metadata[entry.media_id.toString()];
 
     const duration = Number(meta?.duration || 0);
@@ -76,7 +80,7 @@ function calculateStatsForType(list: ListEntry[], metadata: Record<string, Media
   };
 
   const statusDistribution = statusGroups.map((group) => {
-    const count = list.filter((i) => (i.status || "").toLowerCase() === group.id).length;
+    const count = counts[group.id] || 0;
     return {
       ...group,
       count,

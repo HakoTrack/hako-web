@@ -1,16 +1,17 @@
-<script>
+<script lang="ts">
   import { onMount, onDestroy } from "svelte";
-  let { items = [], value = $bindable(), label = "" } = $props();
+  let { items = [], value = $bindable(), label = "", onchange } = $props();
   let isOpen = $state(false);
-  let containerRef = $state(null);
+  let containerRef = $state<HTMLElement | null>(null);
 
   function toggle() {
     isOpen = !isOpen;
   }
 
-  function selectItem(val) {
+  function selectItem(val: any) {
     value = val;
     isOpen = false;
+    if (onchange) onchange(val);
   }
 
   function handleClickOutside(event) {

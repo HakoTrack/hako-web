@@ -8,6 +8,7 @@
   import type { Media, ListEntry } from "../../types/index";
   import MediaCover from "../common/MediaCover.svelte";
   import Select from "../common/Select.svelte";
+  import { fade } from "svelte/transition";
 
   let { type = "anime", profileId } = $props<{
     type?: string;
@@ -21,13 +22,8 @@
   let searchQuery = $state("");
   let isLoading = $state(true);
 
-  // Memoization variables
-  let lastProcessed: any = null;
-  let lastListEntries: ListEntry[] | null = null;
-  let lastMetadata: Record<string, Media> | null = null;
-  let lastSortBy: string | null = null;
-  let lastFilterStatus: string | null = null;
-  let lastSearchQuery: string | null = null;
+  // Progressive rendering limit to avoid blocking the main thread
+  let displayLimit = $state(50);
 
   const statusGroups = $derived([
     {
@@ -56,24 +52,43 @@
     planning: "var(--c8)",
   };
 
-  let hasFetched = $state(false);
-
   // Sync state whenever the profileId or type arrives/changes
   $effect(() => {
     if (profileId && type) {
-      // Synchronously clear and show spinner to prevent hang
       isLoading = true;
-      listDataEntries = [];
+      displayLimit = 50; // Reset limit on type change
       loadData();
+    }
+  });
+
+  function setFilter(status: string) {
+    displayLimit = 50;
+    filterStatus = status;
+  }
+
+  function setSort(sort: string) {
+    displayLimit = 50;
+    sortBy = sort;
+  }
+
+  function handleSearchInput(e: Event) {
+    displayLimit = 50;
+    searchQuery = (e.target as HTMLInputElement).value;
+  }
+
+  // Gradually increase display limit to render more items without hanging
+  $effect(() => {
+    if (!isLoading && displayLimit < listDataEntries.length) {
+      const timer = setTimeout(() => {
+        displayLimit += 100;
+      }, 50);
+      return () => clearTimeout(timer);
     }
   });
 
   async function loadData() {
     const result = await ListService.getList(profileId, type);
     if (result.success) {
-      // Yield to the main thread so the browser can paint the spinner
-      await new Promise((resolve) => setTimeout(resolve, 0));
-
       listDataEntries = result.data;
       const ids = listDataEntries.map((item) => item.media_id);
       metadata = await MetadataService.getMetadata(ids, type);
@@ -98,41 +113,23 @@
     if (media) openQuickEditor(media, type);
   }
 
-  // Memoization variables for visibleGroups
-  let lastType: string | null = null;
-
-  let visibleGroups = $derived.by(() => {
-    // Short-circuit heavy processing while loading or empty
-    if (isLoading || listDataEntries.length === 0) return [];
-
-    if (
-      lastType === type &&
-      lastListEntries === listDataEntries &&
-      lastMetadata === metadata &&
-      lastSortBy === sortBy &&
-      lastFilterStatus === filterStatus &&
-      lastSearchQuery === searchQuery
-    ) {
-      return lastProcessed;
-    }
-
-    const groups = statusGroups.filter(
-      (g) => filterStatus === "all" || g.id === filterStatus,
-    );
-
-    const processedItems = listDataEntries.map((item) => {
+  // Optimized derived data processing
+  const processedItems = $derived(
+    listDataEntries.map((item) => {
       const meta = metadata[item.media_id?.toString()] || {};
       return {
         ...item,
         meta,
         displayTitle: (meta as any).title?.romaji || (item as any).title || "",
       };
-    });
+    }),
+  );
 
-    // Fuzzy search with Fuse.js
+  // 1. First, search and filter by genre/score
+  const filteredItems = $derived.by(() => {
     const { operators, freeQuery } = parseQuery(searchQuery);
 
-    let itemsToProcess = processedItems.filter((item) => {
+    let items = processedItems.filter((item) => {
       let matches = true;
       if (operators.genre) {
         const genres = (item.meta as any).genres || [];
@@ -147,40 +144,83 @@
     });
 
     if (freeQuery.length > 0) {
-      const fuse = new Fuse(itemsToProcess, {
+      const fuse = new Fuse(items, {
         keys: ["displayTitle"],
         threshold: 0.3,
       });
-      itemsToProcess = fuse.search(freeQuery).map((r: any) => r.item);
+      items = fuse.search(freeQuery).map((r: any) => r.item);
     }
+    return items;
+  });
 
-    const result = groups
+  // 2. Sort the filtered result (only happens when search or sort criteria change)
+  const sortedItems = $derived.by(() => {
+    return [...filteredItems].sort((a, b) => {
+      if (sortBy === "Title")
+        return a.displayTitle.localeCompare(b.displayTitle);
+      if (sortBy === "Score") return (b.score || 0) - (a.score || 0);
+      if (sortBy === "Progress") return (b.progress || 0) - (a.progress || 0);
+      return new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime();
+    });
+  });
+
+  // 3. Group the sorted items (O(N) instead of O(N*G))
+  const groupedItems = $derived.by(() => {
+    const groups: Record<string, any[]> = {};
+    for (const item of sortedItems) {
+      const s = (item.status || "").toLowerCase();
+      if (!groups[s]) groups[s] = [];
+      groups[s].push(item);
+    }
+    return groups;
+  });
+
+  const visibleGroups = $derived.by(() => {
+    if (isLoading || listDataEntries.length === 0) return [];
+
+    const groups = statusGroups.filter(
+      (g) => filterStatus === "all" || g.id === filterStatus,
+    );
+
+    let remainingLimit = displayLimit;
+
+    return groups
       .map((group) => {
-        let items = itemsToProcess
-          .filter((item) => (item.status || "").toLowerCase() === group.id)
-          .sort((a, b) => {
-            if (sortBy === "Title")
-              return a.displayTitle.localeCompare(b.displayTitle);
-            if (sortBy === "Score") return (b.score || 0) - (a.score || 0);
-            if (sortBy === "Progress")
-              return (b.progress || 0) - (a.progress || 0);
-            return (
-              new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime()
-            );
-          });
-        return { ...group, items };
+        const itemsInGroup = groupedItems[group.id] || [];
+        const slicedItems = itemsInGroup.slice(0, remainingLimit);
+        remainingLimit = Math.max(0, remainingLimit - slicedItems.length);
+
+        return {
+          ...group,
+          items: slicedItems,
+          totalInGroup: itemsInGroup.length,
+        };
       })
       .filter((group) => group.items.length > 0);
+  });
 
-    lastProcessed = result;
-    lastType = type;
-    lastListEntries = listDataEntries;
-    lastMetadata = metadata;
-    lastSortBy = sortBy;
-    lastFilterStatus = filterStatus;
-    lastSearchQuery = searchQuery;
+  const statusCounts = $derived.by(() => {
+    const counts: Record<string, number> = { all: listDataEntries.length };
+    listDataEntries.forEach((item) => {
+      const status = (item.status || "").toLowerCase();
+      counts[status] = (counts[status] || 0) + 1;
+    });
+    return counts;
+  });
 
-    return result;
+  // Reset limit whenever filters change to keep interaction snappy
+  $effect(() => {
+    // We access these to establish dependencies
+    searchQuery;
+    sortBy;
+    filterStatus;
+
+    // Use a microtask or slight delay to ensure the click handler returns quickly
+    // before the heavy rendering work starts
+    const timer = setTimeout(() => {
+      displayLimit = 50;
+    }, 0);
+    return () => clearTimeout(timer);
   });
 </script>
 
@@ -202,7 +242,8 @@
             <input
               type="text"
               placeholder="Filter titles..."
-              bind:value={searchQuery}
+              value={searchQuery}
+              oninput={handleSearchInput}
               class="w-full bg-card border border-(--surface-elevated) rounded-lg px-3 py-2 text-sm text-(--hako-fg) focus:ring-1 focus:ring-(--hako-accent) pl-9"
             />
             <i
@@ -213,7 +254,8 @@
         <div>
           <Select
             label="Sort By"
-            bind:value={sortBy}
+            value={sortBy}
+            onchange={(val) => setSort(val)}
             items={[
               { value: "Title", label: "Title" },
               { value: "Score", label: "Score" },
@@ -233,7 +275,7 @@
           </h3>
         </div>
         <button
-          onclick={() => (filterStatus = "all")}
+          onclick={() => setFilter("all")}
           class="flex items-center justify-between px-4 py-3 text-sm font-medium w-full transition-all border-l-4 {filterStatus ===
           'all'
             ? 'text-white bg-(--surface-dim) border-(--hako-accent)'
@@ -243,14 +285,12 @@
             <span class="w-2 h-2 rounded-full mr-3 bg-(--c7)"></span>
             <span>All {formatType(type)}</span>
           </div>
-          <span class="count text-xs text-slate-500"
-            >{listDataEntries.length}</span
-          >
+          <span class="count text-xs text-slate-500">{statusCounts.all}</span>
         </button>
 
         {#each statusGroups as group}
           <button
-            onclick={() => (filterStatus = group.id)}
+            onclick={() => setFilter(group.id)}
             class="flex items-center justify-between px-4 py-3 text-sm font-medium {filterStatus ===
             group.id
               ? 'text-white bg-(--surface-dim) border-l-4 border-(--hako-accent)'
@@ -264,9 +304,7 @@
               <span>{group.label}</span>
             </div>
             <span class="count text-xs text-slate-500"
-              >{listDataEntries.filter(
-                (i: any) => (i.status || "").toLowerCase() === group.id,
-              ).length}</span
+              >{statusCounts[group.id] || 0}</span
             >
           </button>
         {/each}
@@ -284,9 +322,7 @@
       </div>
     {:else}
       {#each visibleGroups as group}
-        <section
-          class="space-y-4 animate-in fade-in slide-in-from-bottom-2 duration-300"
-        >
+        <section class="space-y-4">
           <div class="flex items-center space-x-3 mb-6">
             <div
               class="w-1.5 h-6 rounded-full"
@@ -297,16 +333,28 @@
             </h2>
           </div>
           <div class="bg-card rounded-xl overflow-hidden shadow-sm">
-            <table class="w-full text-left border-collapse">
+            <table class="w-full text-left border-separate border-spacing-0">
               <thead>
                 <tr
                   class="text-[10px] uppercase text-(--c8) border-b border-(--surface-elevated)"
                 >
-                  <th class="p-4 w-16 text-center"></th>
-                  <th class="p-4">Title</th>
-                  <th class="p-4 text-center w-24">Score</th>
-                  <th class="p-4 text-center w-32">Progress</th>
-                  <th class="p-4 text-center w-28">Format</th>
+                  <th
+                    class="p-4 w-16 text-center border-b border-(--surface-elevated)"
+                  ></th>
+                  <th class="p-4 border-b border-(--surface-elevated)">Title</th
+                  >
+                  <th
+                    class="p-4 text-center w-24 border-b border-(--surface-elevated)"
+                    >Score</th
+                  >
+                  <th
+                    class="p-4 text-center w-32 border-b border-(--surface-elevated)"
+                    >Progress</th
+                  >
+                  <th
+                    class="p-4 text-center w-28 border-b border-(--surface-elevated)"
+                    >Format</th
+                  >
                 </tr>
               </thead>
               <tbody>
@@ -318,9 +366,11 @@
                       : meta.episodes || item.total || "?"}
                   {@const displayTitle = item.displayTitle}
                   <tr
-                    class="group hover:bg-(--surface-elevated)/30 border-b border-(--surface-elevated) last:border-0"
+                    class="group hover:bg-(--surface-elevated)/30 last:border-0"
                   >
-                    <td class="p-2">
+                    <td
+                      class="p-2 border-b border-(--surface-elevated) group-last:border-0"
+                    >
                       <MediaCover
                         mediaId={item.media_id}
                         {type}
@@ -331,7 +381,7 @@
                       />
                     </td>
                     <td
-                      class="p-4 cursor-pointer"
+                      class="p-4 cursor-pointer border-b border-(--surface-elevated) group-last:border-0"
                       onclick={() => handleOpenEditor(item.media_id)}
                     >
                       <div class="text-sm font-bold text-(--hako-fg)">
@@ -344,16 +394,19 @@
                     <td
                       class="p-4 text-center text-sm font-mono {getScoreColor(
                         item.score,
-                      )}">{item.score?.toFixed(1) || "—"}</td
+                      )} border-b border-(--surface-elevated) group-last:border-0"
+                      >{item.score?.toFixed(1) || "—"}</td
                     >
                     <td
-                      class="p-4 text-center text-sm font-mono text-(--hako-fg)"
+                      class="p-4 text-center text-sm font-mono text-(--hako-fg) border-b border-(--surface-elevated) group-last:border-0"
                     >
                       <span class="text-(--hako-fg)">{item.progress}</span><span
                         class="text-(--c8) mx-1">/</span
                       ><span class="text-(--c8) text-xs">{total}</span>
                     </td>
-                    <td class="p-4 text-center">
+                    <td
+                      class="p-4 text-center border-b border-(--surface-elevated) group-last:border-0"
+                    >
                       <span
                         class="text-[10px] font-bold bg-(--surface-dim) px-2 py-1 rounded text-slate-400 border border-(--surface-elevated)"
                         >{meta.format || item.type || "TV"}</span
