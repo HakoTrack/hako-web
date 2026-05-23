@@ -1,7 +1,5 @@
 <p align="center">
 <img src="https://img.shields.io/badge/sveltekit-%23f1413d.svg?style=for-the-badge&logo=svelte&logoColor=white" alt="Svelte"> <img src="https://img.shields.io/badge/tailwindcss-%2338B2AC.svg?style=for-the-badge&logo=tailwind-css&logoColor=white" alt="TailwindCSS"> <img src="https://img.shields.io/badge/typescript-%23007ACC.svg?style=for-the-badge&logo=typescript&logoColor=white" alt="TypeScript"> <img src="https://img.shields.io/badge/zod-%233068b7.svg?style=for-the-badge&logo=zod&logoColor=white" alt="Zod">
-<br>
-<img src="https://img.shields.io/badge/vercel-%23000000.svg?style=for-the-badge&logo=vercel&logoColor=white" alt="Vercel"> <img src="https://img.shields.io/badge/Supabase-3ECF8E?style=for-the-badge&logo=supabase&logoColor=white" alt="Supabase">
 </p>
 
 Hako (箱, meaning "box") is a passion project built to be a simple, no-nonsense home for tracking your anime, manga, light novels, and (in the future) visual novels. It is an independent project not backed or affiliated with any streaming service. It has no corporate affiliation, and is thus not influenced by any commercial entities.
