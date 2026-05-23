@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { ui, closeModal as close } from "../../core/ui.svelte.ts";
+  import { ui, closeModal as close } from "../../core/ui.svelte";
   import { HakoImage } from "../../utils/images";
   import Button from "../common/Button.svelte";
   import DateInput from "../common/DateInput.svelte";
@@ -113,11 +113,12 @@
           </p>
 
           <div class="space-y-3">
+            <!-- svelte-ignore a11y_label_has_associated_control -->
             <label class="block text-xs font-bold text-slate-400 uppercase"
               >About Me</label
             >
             <textarea
-              class="w-full bg-(--surface-dim) border border-(--c8) rounded-xl p-3 text-sm text-(--hako-fg) outline-none min-h-[80px]"
+              class="w-full bg-(--surface-dim) border border-(--c8) rounded-xl p-3 text-sm text-(--hako-fg) outline-none min-h-20"
               placeholder="Tell us about yourself..."
             ></textarea>
           </div>

@@ -177,7 +177,7 @@
       <PostRenderer content={post.content || ""} />
       <div class="mt-4 flex items-center space-x-6 text-sm text-slate-500">
         <button
-          class="min-w-[3rem] cursor-pointer transition-colors outline-none focus:ring-0 {isLiked
+          class="min-w-12 cursor-pointer transition-colors outline-none focus:ring-0 {isLiked
             ? 'text-pink-500'
             : 'hover:text-pink-500'}"
           onclick={handleLike}
@@ -186,7 +186,7 @@
           {likeCount}
         </button>
         <button
-          class="min-w-[3rem] cursor-pointer hover:text-accent transition-colors outline-none focus:ring-0 {showComments
+          class="min-w-12 cursor-pointer hover:text-accent transition-colors outline-none focus:ring-0 {showComments
             ? 'text-accent'
             : ''}"
           onclick={() => (showComments = !showComments)}
@@ -195,7 +195,7 @@
           {commentCount}
         </button>
         <button
-          class="min-w-[3rem] cursor-pointer hover:text-green-500 transition-colors outline-none focus:ring-0"
+          class="min-w-12 cursor-pointer hover:text-green-500 transition-colors outline-none focus:ring-0"
           onclick={handleShare}
           ><i class="fa-solid fa-share mr-2"></i>
           {shareCount}</button

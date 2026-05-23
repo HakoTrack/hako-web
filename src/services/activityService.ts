@@ -1,9 +1,8 @@
 import { supabase } from '../utils/supabase.js';
-import { getLocalDateString } from '../utils/date.js';
+import { getUTCDateString } from '../utils/date.js';
 
-interface ActivitySummary {
-  activity_date: string;
-  activity_count: number;
+interface ActivityLog {
+  created_at: string;
 }
 
 interface HeatmapDay {
@@ -35,52 +34,76 @@ export const ActivityService = {
   },
 
   /**
-   * Fetches activity summary for a profile within a date range.
+   * Fetches raw activity logs for a profile within a date range.
    * @param {string} profileId
    * @param {string} startDate
    * @param {string} endDate
    */
-  async getActivitySummary(profileId: string, startDate: string, endDate: string): Promise<ActivitySummary[]> {
+  async getActivityLogs(profileId: string, startDate: string, endDate: string): Promise<{ data: ActivityLog[], timezone: string }> {
+    const { data: profile } = await supabase.from('profiles').select('timezone').eq('id', profileId).single();
+    const timezone = profile?.timezone || 'UTC';
+
     const { data, error } = await supabase
-      .from('activity_summary')
-      .select('activity_date::date, activity_count')
+      .from('activity_logs')
+      .select('created_at')
       .eq('profile_id', profileId)
-      .gte('activity_date::date', startDate)
-      .lte('activity_date::date', endDate)
-      .order('activity_date', { ascending: true });
+      .gte('created_at', startDate)
+      .lte('created_at', endDate);
 
     if (error) {
-      console.error("Error fetching activity summary:", error);
-      return [];
+      console.error("Error fetching activity logs:", error);
+      return { data: [], timezone };
     }
-    return data || [];
+    return { data: data || [], timezone };
   },
 
   /**
-   * Fetches activity summary and fills missing dates for the heatmap.
+   * Fetches activity summary and fills missing dates for the heatmap using local time.
    * @param {string} profileId
    * @param {number} days
    */
   async getHeatmapData(profileId: string, days: number = 167): Promise<HeatmapDay[]> {
-    if (heatmapCache.has(profileId)) return heatmapCache.get(profileId)!;
+    // heatmapCache.clear(); // For testing
+    // if (heatmapCache.has(profileId)) return heatmapCache.get(profileId)!;
 
     const endDate = new Date();
     const startDate = new Date();
-    startDate.setDate(endDate.getDate() - days);
+    startDate.setUTCDate(endDate.getUTCDate() - (days + 2));
 
-    const activityData = await this.getActivitySummary(
+    const { data: activityData, timezone } = await this.getActivityLogs(
       profileId,
-      getLocalDateString(startDate),
-      getLocalDateString(endDate)
+      startDate.toISOString(),
+      endDate.toISOString()
     );
 
-    const activityMap = new Map<string, number>(activityData.map((a: ActivitySummary) => [a.activity_date, a.activity_count]));
-    const result: HeatmapDay[] = [];
+    // Grouping activity using the user's local timezone
+    const activityMap = new Map<string, number>();
+    activityData.forEach((a: ActivityLog) => {
+      // Parse the ISO timestamp and convert to user's timezone date string
+      const date = new Date(a.created_at);
 
+      const dateStr = new Intl.DateTimeFormat('en-CA', {
+        timeZone: timezone,
+        year: 'numeric',
+        month: '2-digit',
+        day: '2-digit'
+      }).format(date);
+
+      activityMap.set(dateStr, (activityMap.get(dateStr) || 0) + 1);
+    });
+
+    const result: HeatmapDay[] = [];
     for (let i = days; i >= 0; i--) {
       const date = new Date();
-      date.setDate(endDate.getDate() - i);
-      const dateStr = getLocalDateString(date);
+      date.setUTCDate(date.getUTCDate() - i);
+
+      const dateStr = new Intl.DateTimeFormat('en-CA', {
+        timeZone: timezone,
+        year: 'numeric',
+        month: '2-digit',
+        day: '2-digit'
+      }).format(date);
+
       result.push({
         date: dateStr,
         count: activityMap.get(dateStr) || 0

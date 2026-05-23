@@ -59,7 +59,7 @@
     <textarea
       bind:value={newComment}
       placeholder="Write a comment..."
-      class="flex-1 bg-(--hako-bg) border border-(--surface-elevated) rounded-lg p-3 text-sm text-(--hako-fg) focus:ring-1 focus:ring-(--hako-accent) outline-none min-h-[60px]"
+      class="flex-1 bg-(--hako-bg) border border-(--surface-elevated) rounded-lg p-3 text-sm text-(--hako-fg) focus:ring-1 focus:ring-(--hako-accent) outline-none min-h-15"
     ></textarea>
     <div class="flex flex-col gap-2">
       <span

@@ -111,7 +111,7 @@
     />
   {/if}
 
-  <main id="app-view" class="flex-grow">
+  <main id="app-view" class="grow">
     {#if currentPath === "/"}
       <Landing />
     {:else if activeRoute}
