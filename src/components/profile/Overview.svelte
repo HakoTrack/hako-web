@@ -12,7 +12,7 @@
     profileData: Profile | null;
     metadata: Record<string, Media>;
   }>();
-  let heatmapData = $state(Array(161).fill({ date: "", count: 0 }));
+  let heatmapData = $state(Array(168).fill({ date: "", count: 0 }));
   let totalActivityCount = $derived(
     heatmapData.reduce((sum, day) => sum + day.count, 0),
   );
@@ -154,7 +154,7 @@
 
   $effect(() => {
     if (profileData?.id) {
-      ActivityService.getHeatmapData(profileData.id, 160).then((data) => {
+      ActivityService.getHeatmapData(profileData.id, 167).then((data) => {
         heatmapData = data;
       });
     }
@@ -234,13 +234,13 @@
           <i class="fa-solid fa-fire text-accent mr-2"></i> Activity Heatmap
         </h3>
         <span class="text-xs text-slate-500"
-          >{totalActivityCount} updates in the last 23 weeks</span
+          >{totalActivityCount} updates in the last 24 weeks</span
         >
       </div>
       <div class="overflow-x-auto scrollbar-hide">
         <div
           id="heatmap"
-          class="grid grid-rows-7 grid-flow-col gap-1.5 min-w-max min-h-27.5"
+          class="grid grid-rows-7 grid-flow-col gap-1 min-w-max min-h-27.5"
         >
           {#each heatmapData as day}
             {@const level =

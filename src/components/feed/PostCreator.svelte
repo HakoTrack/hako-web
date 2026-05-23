@@ -1,12 +1,17 @@
 <script lang="ts">
   import { supabase } from "../../utils/supabase.js";
   import { AuthService } from "../../core/auth.js";
-  import { FeedService } from "../../services/feedService.ts";
+  import { FeedService } from "../../services/feedService";
+  import { getVisibleCharacterCount } from "../../utils/markdown";
 
-  let { targetProfileId, onPostCreated } = $props();
+  let {
+    targetProfileId,
+    onPostCreated,
+  }: { targetProfileId: string; onPostCreated?: () => void } = $props();
   let content = $state("");
+  let charCount = $derived(getVisibleCharacterCount(content));
   let isPosting = $state(false);
-  let textareaRef = $state(null);
+  let textareaRef = $state<HTMLTextAreaElement | null>(null);
 
   function isImageUrl(url: string): boolean {
     return /\.(jpg|jpeg|png|gif|webp)(\?.*)?$/i.test(url.trim());
@@ -33,7 +38,7 @@
     }
   }
 
-  function insertMarkdown(prefix, suffix = "") {
+  function insertMarkdown(prefix: string, suffix: string = "") {
     if (!textareaRef) return;
     const start = textareaRef.selectionStart;
     const end = textareaRef.selectionEnd;
@@ -55,7 +60,11 @@
       const user = await AuthService.getCurrentUser();
       if (!user) throw new Error("Must be logged in to post.");
 
-      await FeedService.createThoughtPost(user.id, targetProfileId, content);
+      await FeedService.createThoughtPost(
+        user.id,
+        targetProfileId,
+        content.trim(),
+      );
 
       content = "";
       if (onPostCreated) onPostCreated();
@@ -110,12 +119,19 @@
         <i class="fa-solid fa-image text-xs"></i>
       </button>
     </div>
-    <button
-      onclick={handlePost}
-      disabled={isPosting || !content.trim()}
-      class="bg-accent hover:bg-opacity-90 disabled:opacity-50 text-white px-6 py-2 rounded-lg text-sm font-bold transition-all cursor-pointer"
-    >
-      {isPosting ? "Posting..." : "Post Thought"}
-    </button>
+    <div class="flex items-center gap-3">
+      <span
+        class="text-xs {charCount > 450 ? 'text-red-500' : 'text-slate-500'}"
+      >
+        {charCount}/450
+      </span>
+      <button
+        onclick={handlePost}
+        disabled={isPosting || !content.trim() || charCount > 450}
+        class="bg-accent hover:bg-opacity-90 disabled:opacity-50 text-white px-6 py-2 rounded-lg text-sm font-bold transition-all cursor-pointer"
+      >
+        {isPosting ? "Posting..." : "Post Thought"}
+      </button>
+    </div>
   </div>
 </div>

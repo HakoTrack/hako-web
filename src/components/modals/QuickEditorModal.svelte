@@ -109,9 +109,9 @@
         entry.title,
         progress,
         entry.total,
-        status === "completed" ? "completed" : "updated",
+        mediaType,
+        status,
       );
-
       if (!postResult.success) throw new Error(postResult.error);
 
       closeModal();

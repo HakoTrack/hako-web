@@ -1,12 +1,70 @@
 <script lang="ts">
+  import { onMount, onDestroy } from "svelte";
   import { AuthService } from "../core/auth";
   import { HakoImage } from "../utils/images";
-  import { ui } from "../core/ui.svelte";
+  import { openModal } from "../core/ui.svelte";
   import Dropdown from "./common/Dropdown.svelte";
+  import SearchInput from "./common/SearchInput.svelte";
+  import { MediaService } from "../services/mediaService";
+  import type { Media } from "../types/index";
 
   let { user = null, profile = null } = $props();
 
   let username = $derived(profile?.username || "user");
+  let searchInputRef = $state<HTMLInputElement | null>(null);
+  let containerRef = $state<HTMLElement | null>(null);
+  let searchQuery = $state("");
+  let searchResults = $state<Media[]>([]);
+  let isSearching = $state(false);
+
+  function handleClickOutside(event: MouseEvent) {
+    if (containerRef && !containerRef.contains(event.target as Node)) {
+      searchResults = [];
+    }
+  }
+
+  onMount(() => {
+    window.addEventListener("click", handleClickOutside);
+  });
+
+  onDestroy(() => {
+    window.removeEventListener("click", handleClickOutside);
+  });
+
+  let searchTimeout: ReturnType<typeof setTimeout>;
+
+  $effect(() => {
+    clearTimeout(searchTimeout);
+    if (searchQuery.length < 2) {
+      searchResults = [];
+      return;
+    }
+    searchTimeout = setTimeout(async () => {
+      isSearching = true;
+      const result = await MediaService.searchMedia(searchQuery);
+      if (result.success) {
+        searchResults = result.data;
+      }
+      isSearching = false;
+    }, 300);
+  });
+
+  function handleKeydown(e: KeyboardEvent) {
+    if (
+      e.key === "/" &&
+      document.activeElement?.tagName !== "INPUT" &&
+      document.activeElement?.tagName !== "TEXTAREA"
+    ) {
+      e.preventDefault();
+      searchInputRef?.focus();
+    }
+  }
+
+  function handleResultClick(mediaId: number, mediaType: string) {
+    searchQuery = "";
+    searchResults = [];
+    navigate(`/${mediaType}/${mediaId}`);
+  }
 
   let dropdownItems = $derived([
     {
@@ -16,12 +74,12 @@
     },
     {
       label: "Theme",
-      action: () => ui.openModal("theme"),
+      action: () => openModal("theme"),
       icon: "fa-palette",
     },
     {
       label: "Settings",
-      action: () => ui.openModal("settings"),
+      action: () => openModal("settings", { profile }),
       icon: "fa-cog",
     },
     {
@@ -75,6 +133,8 @@
     }
   }
 </script>
+
+<svelte:window onkeydown={handleKeydown} />
 
 <nav class="navbar bg-nav text-white px-4 py-3 sticky top-0 z-50 shadow-lg">
   <div class="max-w-375 mx-auto lg:px-8 flex items-center justify-between">
@@ -137,14 +197,37 @@
       </div>
     </div>
     <div class="flex items-center space-x-4">
-      <div class="relative hidden sm:block">
-        <input
-          type="text"
-          placeholder="Search..."
-          class="bg-card text-sm rounded-full py-2 px-4 w-64 focus:outline-none focus:ring-1 focus:ring-accent"
+      <div bind:this={containerRef} class="relative hidden sm:block w-64">
+        <SearchInput
+          placeholder="Search media..."
+          bind:inputRef={searchInputRef}
+          bind:value={searchQuery}
         />
-        <i class="fa-solid fa-search absolute right-4 top-2.5 text-slate-500"
-        ></i>
+
+        {#if searchResults.length > 0}
+          <div
+            class="absolute z-10 w-full mt-2 py-2 p-2 bg-(--surface) border border-(--c8) rounded-xl shadow-2xl animate-in fade-in zoom-in-95 duration-100"
+          >
+            {#each searchResults as media}
+              <button
+                type="button"
+                onclick={() =>
+                  handleResultClick(
+                    media.media_id,
+                    media.format?.toLowerCase() === "manga" ? "manga" : "anime",
+                  )}
+                class="w-full text-left px-4 py-2.5 rounded-xl text-sm text-(--hako-fg) hover:bg-(--surface-elevated) transition-colors flex items-center gap-3"
+              >
+                <img
+                  src={HakoImage.getCover(media.media_id, "small")}
+                  alt={media.title.romaji}
+                  class="w-6 h-9 object-cover rounded shadow-sm"
+                />
+                <span class="truncate">{media.title.romaji}</span>
+              </button>
+            {/each}
+          </div>
+        {/if}
       </div>
       <div class="flex items-center space-x-3">
         <i class="fa-solid fa-bell cursor-pointer hover:text-accent"></i>

@@ -61,7 +61,7 @@ export const ActivityService = {
    * @param {string} profileId
    * @param {number} days
    */
-  async getHeatmapData(profileId: string, days: number = 160): Promise<HeatmapDay[]> {
+  async getHeatmapData(profileId: string, days: number = 167): Promise<HeatmapDay[]> {
     if (heatmapCache.has(profileId)) return heatmapCache.get(profileId)!;
 
     const endDate = new Date();

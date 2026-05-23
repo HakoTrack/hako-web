@@ -38,8 +38,9 @@ export interface ListEntry {
 // --- Zod Schemas & Inferred Types ---
 export const PostMetadataSchema = z.object({
   media_id: z.number().optional(),
+  media_type: z.string().optional(),
   title: z.string().optional(),
-  action: z.string().optional(),
+  status: z.string().optional(),
   progress: z.number().optional(),
   total: z.union([z.number(), z.string()]).nullable().optional(),
 });
@@ -72,3 +73,13 @@ export const PostSchema = z.object({
   shares_count: z.number().default(0),
 });
 export type Post = z.infer<typeof PostSchema>;
+
+export const CommentSchema = z.object({
+  id: z.string(),
+  post_id: z.string(),
+  author_id: z.string(),
+  content: z.string(),
+  created_at: z.string(),
+  author: AuthorSchema.optional(),
+});
+export type Comment = z.infer<typeof CommentSchema>;

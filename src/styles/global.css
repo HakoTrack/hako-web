@@ -192,4 +192,5 @@ input:-webkit-autofill:active {
 
 input[type="number"] {
   -moz-appearance: textfield;
+  appearance: textfield;
 }

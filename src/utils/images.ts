@@ -47,14 +47,14 @@ export const HakoImage = {
       large: 480
     };
     const width = widths[size] || widths.medium;
-    return this.get(`covers/${id}.jpg`, { w: width, f: 'webp' });
+    return this.get(`covers/${id}.webp`, { w: width, f: 'webp' });
   },
 
   /**
    * Helper for high-res banners using dynamic ImageKit transforms.
    */
   getBanner: function (id: number | string, width: number = 1920): string {
-    return this.get(`banners/${id}.jpg`, { w: width, f: 'webp', q: 80 });
+    return this.get(`banners/${id}.webp`, { w: width, f: 'webp', q: 80 });
   },
 
   /**

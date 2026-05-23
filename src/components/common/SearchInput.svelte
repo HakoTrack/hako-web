@@ -4,11 +4,13 @@
     placeholder = "Search...",
     label = "",
     oninput,
+    inputRef = $bindable(null),
   } = $props<{
     value?: string;
     placeholder?: string;
     label?: string;
     oninput?: (e: Event) => void;
+    inputRef?: HTMLInputElement | null;
   }>();
 
   function handleInput(e: Event) {
@@ -40,6 +42,7 @@
       <i class="fa-solid fa-search text-xs"></i>
     </div>
     <input
+      bind:this={inputRef}
       type="text"
       {placeholder}
       {value}

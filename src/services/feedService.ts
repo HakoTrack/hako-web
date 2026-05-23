@@ -11,6 +11,8 @@ export const FeedService = {
    * Fetches posts for a specific profile.
    */
   async getPostsByProfile(profileId: string, page: number = 0, pageSize: number = 20): Promise<Result<Post[]>> {
+    const from = page * pageSize;
+    const to = (page + 1) * pageSize - 1;
     const { data, error } = await supabase
       .from('posts')
       .select(`
@@ -23,7 +25,7 @@ export const FeedService = {
       `)
       .eq('target_profile_id', profileId)
       .order('created_at', { ascending: false })
-      .range(page * pageSize, (page + 1) * pageSize - 1);
+      .range(from, to);
 
     if (error) return failure(error.message);
 
@@ -43,6 +45,8 @@ export const FeedService = {
    * Fetches the global feed (all posts).
    */
   async getGlobalFeed(page: number = 0, pageSize: number = 20): Promise<Result<Post[]>> {
+    const from = page * pageSize;
+    const to = (page + 1) * pageSize - 1;
     const { data, error } = await supabase
       .from('posts')
       .select(`
@@ -54,7 +58,7 @@ export const FeedService = {
         shares_count
       `)
       .order('created_at', { ascending: false })
-      .range(page * pageSize, (page + 1) * pageSize - 1);
+      .range(from, to);
 
     if (error) {
       return failure(error.message);
@@ -75,6 +79,8 @@ export const FeedService = {
    * Fetches the circle feed (posts from followed users).
    */
   async getCircleFeed(followerId: string, page: number = 0, pageSize: number = 20): Promise<Result<Post[]>> {
+    const from = page * pageSize;
+    const to = (page + 1) * pageSize - 1;
     const { data: followed, error: followError } = await supabase
       .from('follows')
       .select('followed_id')
@@ -97,7 +103,7 @@ export const FeedService = {
       `)
       .in('author_id', followedIds)
       .order('created_at', { ascending: false })
-      .range(page * pageSize, (page + 1) * pageSize - 1);
+      .range(from, to);
 
     if (error) return failure(error.message);
 
@@ -136,11 +142,12 @@ export const FeedService = {
     }
   },
 
-  async createListUpdatePost(userId: string, targetProfileId: string, entryId: number, title: string, progress: number, total: number | string, action: string = 'updated'): Promise<Result<void>> {
+  async createListUpdatePost(userId: string, targetProfileId: string, entryId: number, title: string, progress: number, total: number | string, mediaType: string, status: string = 'updated'): Promise<Result<void>> {
     return this.createPost(userId, targetProfileId, 'list_update', {
       media_id: entryId,
+      media_type: mediaType,
       title: title,
-      action: action,
+      status: status,
       progress: progress,
       total: total
     });

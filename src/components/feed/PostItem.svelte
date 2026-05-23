@@ -1,13 +1,18 @@
-<script>
-  import { HakoImage } from "../../utils/images.ts";
-  import { openQuickEditor } from "../../core/ui.svelte.ts";
+<script lang="ts">
+  import { HakoImage } from "../../utils/images";
+  import { openQuickEditor } from "../../core/ui.svelte";
   import { fetchMediaById } from "../../utils/mediaData";
   import { FeedInteractionService } from "../../services/feedInteractionService";
   import { AuthService } from "../../core/auth";
   import PostRenderer from "../common/PostRenderer.svelte";
+  import CommentSection from "./CommentSection.svelte";
+  import MediaCover from "../common/MediaCover.svelte";
+  import type { Post, PostMetadata } from "../../types/index";
+  import { STATUS_COLORS } from "../../utils/constants";
 
-  let { post } = $props();
+  let { post }: { post: Post } = $props();
   let isLiked = $state(false);
+  let showComments = $state(false);
 
   // Extract counts (Direct integer columns)
   let likeCount = $state(post.likes_count || 0);
@@ -25,15 +30,19 @@
 
   // Robust progress calculation with null checks
   const percent = $derived(
-    post.post_type === "list_update" && post.metadata?.total > 0
-      ? Math.round((post.metadata.progress / post.metadata.total) * 100)
+    post.post_type === "list_update" &&
+      post.metadata &&
+      Number(post.metadata.total) > 0
+      ? Math.round(
+          ((post.metadata.progress || 0) / Number(post.metadata.total)) * 100,
+        )
       : 50,
   );
 
-  function getRelativeTime(timestamp) {
+  function getRelativeTime(timestamp: string): string {
     if (!timestamp) return "Recently";
     const rtf = new Intl.RelativeTimeFormat("en", { numeric: "auto" });
-    const diff = new Date(timestamp) - new Date();
+    const diff = new Date(timestamp).getTime() - new Date().getTime();
     const seconds = Math.round(diff / 1000);
     const minutes = Math.round(seconds / 60);
     const hours = Math.round(minutes / 60);
@@ -47,9 +56,55 @@
 
   const timeAgo = $derived(getRelativeTime(post.created_at));
 
-  async function handleOpenEditor(id) {
+  function navigateToProfile(username?: string) {
+    if (!username) return;
+    window.history.pushState({}, "", `/user/${username}`);
+    window.dispatchEvent(new PopStateEvent("popstate"));
+  }
+
+  function getVerb(metadata: PostMetadata): string {
+    const status = (metadata.status || "updated").toLowerCase();
+    const progress = metadata.progress || 0;
+    const total = Number(metadata.total) || "?";
+
+    if (status === "completed") return "Completed";
+    if (status === "paused") return `Paused at ${progress}/${total}`;
+    if (status === "dropped") return `Dropped at ${progress}/${total}`;
+    if (status === "planning") return `Planning`;
+
+    // Handle "current" status specifically
+    if (status === "current") {
+      switch (metadata.media_type) {
+        case "anime":
+          return `Watching ${progress}/${total}`;
+        case "manga":
+        case "light_novel":
+          return `Reading ${progress}/${total}`;
+        default:
+          return `Updating ${progress}/${total}`;
+      }
+    }
+
+    // Default for other status/action types
+    switch (metadata.media_type) {
+      case "anime":
+        return `Watched ${progress}/${total}`;
+      case "manga":
+      case "light_novel":
+        return `Read ${progress}/${total}`;
+      default:
+        return `${status.charAt(0).toUpperCase() + status.slice(1)} ${progress}/${total}`;
+    }
+  }
+
+  const statusColor = $derived(
+    STATUS_COLORS[(post.metadata?.status || "updated").toLowerCase()] ||
+      "var(--hako-accent)",
+  );
+
+  async function handleOpenEditor(id: number, type: string) {
     const media = await fetchMediaById(id);
-    if (media) openQuickEditor(media, "anime");
+    if (media) openQuickEditor(media, type);
   }
 
   async function handleLike() {
@@ -69,8 +124,6 @@
       previousState,
     );
 
-    console.log("DEBUG: toggleLike RPC result.data:", result.data);
-
     if (result.success && result.data !== null && result.data !== undefined) {
       // Sync with the actual server count
       likeCount = result.data;
@@ -89,35 +142,42 @@
   }
 </script>
 
-<div class="bg-card rounded-xl overflow-hidden shadow-md">
-  <div class="p-4 border-b border-slate-800 flex items-center justify-between">
-    <div class="flex items-center space-x-3">
+<div
+  class="relative mt-6 bg-card rounded-xl shadow-md border border-(--surface-elevated)/50"
+>
+  <!-- Author Pill -->
+  <div
+    class="absolute -top-4 left-4 bg-(--surface-elevated) rounded-full px-3 py-1.5 flex items-center gap-2 border border-(--c8) shadow-lg z-10"
+  >
+    <button
+      type="button"
+      class="flex items-center gap-2 hover:opacity-80 transition-opacity"
+      onclick={() => navigateToProfile(post.author?.username)}
+    >
       <img
-        src={HakoImage.get(post.author?.avatar_url, { w: 32, f: "webp" })}
-        class="object-cover w-8 h-8 rounded-lg bg-slate-700"
+        src={HakoImage.get(post.author?.avatar_url, { w: 24, f: "webp" })}
+        class="object-cover w-6 h-6 rounded-full bg-slate-700"
         alt="avatar"
-        onerror={(e) => (e.target.src = "")}
+        onerror={(e: Event) => ((e.target as HTMLImageElement).src = "")}
       />
-      <div>
-        <p class="text-sm font-semibold text-white">
-          {post.author?.username || "User"}
-          <span class="text-slate-500 font-normal">
-            {post.post_type === "list_update"
-              ? post.metadata?.action || "updated their list"
-              : "posted a thought"}
-          </span>
-        </p>
-        <p class="text-[10px] text-slate-500 uppercase">{timeAgo}</p>
-      </div>
-    </div>
+      <span class="text-xs font-bold text-white">
+        {post.author?.username || "User"}
+      </span>
+    </button>
+    <span class="text-[10px] text-slate-400">
+      {post.post_type === "list_update"
+        ? post.metadata?.action || "updated their list"
+        : "posted"}
+      • {timeAgo}
+    </span>
   </div>
 
-  <div class="p-6">
+  <div class="p-6 pt-8">
     {#if post.post_type === "thought"}
       <PostRenderer content={post.content || ""} />
-      <div class="mt-6 flex items-center space-x-6 text-sm text-slate-500">
+      <div class="mt-4 flex items-center space-x-6 text-sm text-slate-500">
         <button
-          class="cursor-pointer transition-colors {isLiked
+          class="min-w-[3rem] cursor-pointer transition-colors outline-none focus:ring-0 {isLiked
             ? 'text-pink-500'
             : 'hover:text-pink-500'}"
           onclick={handleLike}
@@ -125,53 +185,67 @@
           <i class="fa-solid fa-heart mr-2"></i>
           {likeCount}
         </button>
-        <button class="cursor-pointer hover:text-accent transition-colors"
-          ><i class="fa-solid fa-comment mr-2"></i>
-          {commentCount}</button
-        >
         <button
-          class="cursor-pointer hover:text-green-500 transition-colors"
+          class="min-w-[3rem] cursor-pointer hover:text-accent transition-colors outline-none focus:ring-0 {showComments
+            ? 'text-accent'
+            : ''}"
+          onclick={() => (showComments = !showComments)}
+        >
+          <i class="fa-solid fa-comment mr-2"></i>
+          {commentCount}
+        </button>
+        <button
+          class="min-w-[3rem] cursor-pointer hover:text-green-500 transition-colors outline-none focus:ring-0"
           onclick={handleShare}
           ><i class="fa-solid fa-share mr-2"></i>
           {shareCount}</button
         >
       </div>
+      {#if showComments}
+        <CommentSection
+          postId={post.id}
+          onCommentCountChange={(newCount: number) => (commentCount = newCount)}
+        />
+      {/if}
     {:else if post.post_type === "list_update" && post.metadata}
-      <div class="flex items-center">
+      {@const metadata = post.metadata}
+      <div
+        class="flex items-start gap-4 p-4 rounded-xl bg-(--surface-dim)/50 border border-(--surface-elevated)/50"
+      >
         <!-- svelte-ignore a11y_no_noninteractive_element_interactions -->
         <!-- svelte-ignore a11y_click_events_have_key_events -->
-        <img
-          loading="lazy"
-          src={HakoImage.getCover(post.metadata.media_id, "small")}
-          onclick={() => handleOpenEditor(post.metadata.media_id)}
-          class="media-cover w-16 h-24 rounded shadow-lg object-cover cursor-pointer hover:scale-105 transition-transform bg-[#151f2e]"
-          data-media-id={post.metadata.media_id}
-          alt={post.metadata.title}
-          onerror={(e) =>
-            (e.target.src =
-              "https://ik.imagekit.io/HakoImage/covers/placeholder.jpg?tr=w-240,f=webp")}
-        />
-        <div class="ml-4 flex-1">
+        <div class="shrink-0">
+          <MediaCover
+            mediaId={metadata.media_id ?? 0}
+            type={metadata.media_type ?? "anime"}
+            size="medium"
+            class="w-20"
+            alt={metadata.title ?? "Media"}
+            showTooltip={true}
+          />
+        </div>
+        <div class="flex flex-col justify-center gap-1.5 flex-1">
           <!-- svelte-ignore a11y_no_noninteractive_element_interactions -->
           <!-- svelte-ignore a11y_click_events_have_key_events -->
           <h4
-            class="text-white font-bold leading-tight cursor-pointer hover:text-accent transition-colors"
-            onclick={() => handleOpenEditor(post.metadata.media_id)}
+            class="text-white font-bold text-sm cursor-pointer hover:text-accent transition-colors line-clamp-1"
+            onclick={() =>
+              handleOpenEditor(
+                metadata.media_id ?? 0,
+                metadata.media_type ?? "anime",
+              )}
           >
-            {post.metadata.title}
+            {metadata.title ?? "Untitled"}
           </h4>
-          <p class="text-sm text-slate-400 mt-1">
-            {post.metadata.action || "Watched"} episode
-            <span class="text-accent font-bold"
-              >{post.metadata.progress || 0}/{post.metadata.total || "?"}</span
-            >
+          <p class="text-xs text-slate-400">
+            {getVerb(metadata)}
           </p>
           <div
-            class="w-full bg-slate-800 h-1 rounded-full mt-3 overflow-hidden"
+            class="w-full max-w-48 bg-slate-800 h-1.5 rounded-full overflow-hidden"
           >
             <div
-              class="bg-accent h-full transition-all duration-500"
-              style="width: {percent}%"
+              class="h-full transition-all duration-500"
+              style="width: {percent}%; background-color: {statusColor};"
             ></div>
           </div>
         </div>
