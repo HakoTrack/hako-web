@@ -3,7 +3,8 @@
   import { fetchMediaById } from "../utils/mediaData";
   import { HakoImage } from "../utils/images";
   import { getVibes } from "../utils/vibeCalc";
-  import { openQuickEditor } from "../core/ui.svelte";
+  import { openQuickEditor, ui } from "../core/ui.svelte";
+  import { getDisplayTitle, settings } from "../core/settings.svelte";
   import { formatDescription } from "../utils/mediaData";
   import type { Media } from "../types/index";
 
@@ -14,6 +15,15 @@
   let media: Media | null = $state(null);
   let isLoading = $state(true);
   let currentActiveTab = $state("overview"); // Tab tracking state
+
+  // Derived title based on user preference
+  const displayTitle = $derived.by(() => {
+    const m = media;
+    if (m && m.title) {
+      return getDisplayTitle(m.title, settings.titlePreference) || "";
+    }
+    return "";
+  });
 
   // Reactive vibe calculation
   let vibes = $derived(media ? getVibes(media) : null);
@@ -61,13 +71,13 @@
         <img
           src={HakoImage.getCover(media.media_id, "large")}
           class="media-cover w-40 h-56 rounded-xl border-4 border-[#0b1622] shadow-2xl object-cover bg-[#151f2e]"
-          alt={media.title.romaji}
+          alt={displayTitle}
         />
 
         <!-- Header Info -->
         <div class="mb-2">
           <h1 class="text-4xl font-bold text-white mb-2">
-            {media.title.romaji}
+            {displayTitle}
           </h1>
           <div class="flex flex-wrap gap-2">
             {#each media.genres as genre}

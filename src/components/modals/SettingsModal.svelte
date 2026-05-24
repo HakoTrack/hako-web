@@ -1,10 +1,12 @@
 <script lang="ts">
-  import { ui, closeModal as close } from "../../core/ui.svelte";
+  import { closeModal as close } from "../../core/ui.svelte";
   import { HakoImage } from "../../utils/images";
   import Button from "../common/Button.svelte";
   import DateInput from "../common/DateInput.svelte";
   import TextInput from "../common/TextInput.svelte";
   import Select from "../common/Select.svelte";
+  import { SETTINGS_CONFIG, settings } from "../../core/settings.svelte";
+  import { ui } from "../../core/ui.svelte";
 
   let activeTab = $state("profile");
   let profile = $derived(ui.modalData?.profile);
@@ -44,12 +46,12 @@
 >
   <!-- Header -->
   <div class="flex items-center justify-between mb-6 shrink-0">
-    <h2 class="text-xl font-bold text-white flex items-center gap-2">
+    <h2 class="text-xl font-bold text-(--hako-fg) flex items-center gap-2">
       <i class="fa-solid fa-cog text-accent"></i> Settings
     </h2>
     <button
       onclick={closeModal}
-      class="text-slate-500 hover:text-white transition-colors"
+      class="text-slate-500 hover:text-(--hako-fg) transition-colors"
       aria-label="Close"
     >
       <i class="fa-solid fa-xmark text-lg"></i>
@@ -67,8 +69,8 @@
           onclick={() => (activeTab = tab.id)}
           class="flex items-center gap-3 px-3 py-2 text-sm font-bold rounded-lg transition-colors outline-none focus:ring-0 {activeTab ===
           tab.id
-            ? 'text-white bg-(--surface-dim)'
-            : 'text-slate-500 hover:text-white hover:bg-(--surface-elevated)'}"
+            ? 'text-(--hako-fg) bg-(--surface-dim)'
+            : 'text-slate-500 hover:text-(--hako-fg) hover:bg-(--surface-elevated)'}"
         >
           <i class="fa-solid {tab.icon} text-xs"></i>
           {tab.label}
@@ -80,7 +82,7 @@
     <div class="flex-1">
       {#if activeTab === "profile"}
         <div class="space-y-6">
-          <h3 class="text-lg font-bold text-white">Profile Settings</h3>
+          <h3 class="text-lg font-bold text-(--hako-fg)">Profile Settings</h3>
 
           <div class="flex gap-4 items-center">
             <div class="relative w-20 h-20 group cursor-pointer">
@@ -118,7 +120,7 @@
               >About Me</label
             >
             <textarea
-              class="w-full bg-(--surface-dim) border border-(--c8) rounded-xl p-3 text-sm text-(--hako-fg) outline-none min-h-20"
+              class="w-full bg-(--surface-dim) border border-(--c8) rounded-xl p-3 text-sm text-(--hako-fg) outline-none min-h-[80px]"
               placeholder="Tell us about yourself..."
             ></textarea>
           </div>
@@ -146,23 +148,23 @@
         </div>
       {:else if activeTab === "account"}
         <div class="space-y-6">
-          <h3 class="text-lg font-bold text-white">Account Settings</h3>
+          <h3 class="text-lg font-bold text-(--hako-fg)">Account Settings</h3>
 
           <div class="space-y-3">
             <TextInput
               label="Username"
-              placeholder="e.g. ShaeTsu"
+              placeholder="Username"
               bind:value={username}
             />
             <TextInput
               label="Email Address"
-              placeholder="shae@hako.moe"
+              placeholder="user@email.com"
               bind:value={email}
             />
           </div>
 
           <div class="space-y-3 pt-4 border-t border-(--surface-elevated)">
-            <h4 class="text-sm font-bold text-white">Change Password</h4>
+            <h4 class="text-sm font-bold text-(--hako-fg)">Change Password</h4>
             <TextInput label="Current Password" type="password" />
             <div class="grid grid-cols-1 gap-4">
               <TextInput label="New Password" type="password" />
@@ -172,22 +174,20 @@
         </div>
       {:else if activeTab === "media"}
         <div class="space-y-6">
-          <h3 class="text-lg font-bold text-white">Media Settings</h3>
+          <h3 class="text-lg font-bold text-(--hako-fg)">Media Settings</h3>
 
           <div class="space-y-3">
             <Select
-              label="Media Title Preference"
-              value="romaji"
-              items={[
-                { value: "romaji", label: "Romaji" },
-                { value: "native", label: "Native" },
-                { value: "english", label: "English" },
-              ]}
+              label={SETTINGS_CONFIG.titlePreference.label}
+              bind:value={settings.titlePreference}
+              items={SETTINGS_CONFIG.titlePreference.options}
             />
           </div>
 
           <div class="space-y-3 pt-4 border-t border-(--surface-elevated)">
-            <h4 class="text-sm font-bold text-white">Clear List Scores</h4>
+            <h4 class="text-sm font-bold text-(--hako-fg)">
+              Clear List Scores
+            </h4>
             <div class="flex gap-4 items-end">
               <div class="flex-1">
                 <Select
@@ -213,7 +213,7 @@
           </div>
 
           <div class="space-y-3 pt-4 border-t border-(--surface-elevated)">
-            <h4 class="text-sm font-bold text-white">Delete List</h4>
+            <h4 class="text-sm font-bold text-(--hako-fg)">Delete List</h4>
             <div class="flex gap-4 items-end">
               <div class="flex-1">
                 <Select
@@ -240,7 +240,7 @@
         </div>
       {:else if activeTab === "appearance"}
         <div class="space-y-4">
-          <h3 class="text-lg font-bold text-white">Appearance</h3>
+          <h3 class="text-lg font-bold text-(--hako-fg)">Appearance</h3>
           <p class="text-sm text-slate-400">Customize how Hako looks.</p>
           <div
             class="h-40 bg-(--surface-dim) rounded-xl border border-(--surface-elevated) flex items-center justify-center text-xs text-slate-500"
@@ -250,15 +250,11 @@
         </div>
       {:else if activeTab === "privacy"}
         <div class="space-y-6">
-          <h3 class="text-lg font-bold text-white">Privacy</h3>
+          <h3 class="text-lg font-bold text-(--hako-fg)">Privacy</h3>
           <Select
-            label="Profile Visibility"
-            value="public"
-            items={[
-              { value: "public", label: "Public" },
-              { value: "followers", label: "Followers Only" },
-              { value: "private", label: "Private" },
-            ]}
+            label={SETTINGS_CONFIG.profileVisibility.label}
+            bind:value={settings.profileVisibility}
+            items={SETTINGS_CONFIG.profileVisibility.options}
           />
 
           <div class="space-y-3 pt-4 border-t border-(--surface-elevated)">
@@ -300,10 +296,4 @@
   </div>
 
   <!-- Footer -->
-  <div
-    class="mt-8 pt-6 border-t border-(--surface-elevated) flex justify-end gap-3 shrink-0"
-  >
-    <Button variant="secondary" onclick={closeModal}>Cancel</Button>
-    <Button variant="primary" onclick={closeModal}>Save Changes</Button>
-  </div>
 </div>

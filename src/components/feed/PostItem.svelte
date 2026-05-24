@@ -9,10 +9,22 @@
   import MediaCover from "../common/MediaCover.svelte";
   import type { Post, PostMetadata } from "../../types/index";
   import { STATUS_COLORS } from "../../utils/constants";
+  import { ui } from "../../core/ui.svelte";
+  import { getDisplayTitle, settings } from "../../core/settings.svelte";
+  import Skeleton from "../common/Skeleton.svelte";
 
   let { post }: { post: Post } = $props();
   let isLiked = $state(false);
   let showComments = $state(false);
+  let mediaInfo = $state<Media | null>(null);
+
+  $effect(() => {
+    if (post.post_type === "list_update" && post.metadata?.media_id) {
+      fetchMediaById(post.metadata.media_id).then(
+        (media) => (mediaInfo = media),
+      );
+    }
+  });
 
   // Extract counts (Direct integer columns)
   let likeCount = $state(post.likes_count || 0);
@@ -235,7 +247,14 @@
                 metadata.media_type ?? "anime",
               )}
           >
-            {metadata.title ?? "Untitled"}
+            <!-- Debug: {console.log('PostItem debug', { mediaInfo, title: metadata.title })} -->
+            {#if mediaInfo}
+              {getDisplayTitle(mediaInfo.title, settings.titlePreference)}
+            {:else if metadata?.title && metadata.title !== "Unknown Title" && metadata.title !== "Untitled"}
+              {metadata.title}
+            {:else}
+              <Skeleton type="text" class="w-32 h-5" />
+            {/if}
           </h4>
           <p class="text-xs text-slate-400">
             {getVerb(metadata)}

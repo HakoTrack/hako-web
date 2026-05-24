@@ -1,6 +1,18 @@
 <script lang="ts">
   import { onMount, onDestroy } from "svelte";
-  let { items = [], value = $bindable(), label = "", onchange } = $props();
+  let {
+    items = [],
+    value = $bindable(),
+    label = "",
+    onchange,
+    variant = "default",
+  } = $props<{
+    items: { value: string; label: string }[];
+    value: string;
+    label?: string;
+    onchange?: (val: any) => void;
+    variant?: "default" | "compact";
+  }>();
   let isOpen = $state(false);
   let containerRef = $state<HTMLElement | null>(null);
 
@@ -31,18 +43,24 @@
 
 <div bind:this={containerRef} class="relative w-full">
   <!-- svelte-ignore a11y_label_has_associated_control -->
-  <label
-    class="text-xs font-bold text-slate-400 uppercase tracking-wider mb-1.5 block"
-  >
-    {label}
-  </label>
+  {#if label}
+    <label
+      class="text-xs font-bold text-slate-400 uppercase tracking-wider mb-1.5 block"
+    >
+      {label}
+    </label>
+  {/if}
   <button
     type="button"
     onclick={toggle}
-    class="w-full h-10 flex justify-between items-center bg-(--surface-dim) text-(--hako-fg) text-sm rounded-xl border border-(--c8) p-3 focus:border-(--hako-accent) outline-none"
+    class="{variant === 'compact'
+      ? 'h-8 px-3 text-xs'
+      : 'h-10 p-3 text-sm'} w-full flex justify-between items-center bg-(--surface-dim) text-(--hako-fg) rounded-lg border border-(--c8) focus:border-(--hako-accent) outline-none transition-all"
   >
-    <span>{items.find((i) => i.value === value)?.label || "Select..."}</span>
-    <i class="fa-solid fa-chevron-down text-xs text-(--c8)"></i>
+    <span
+      >{items.find((i: any) => i.value === value)?.label || "Select..."}</span
+    >
+    <i class="fa-solid fa-chevron-down text-xs text-(--c8) ml-2"></i>
   </button>
 
   {#if isOpen}

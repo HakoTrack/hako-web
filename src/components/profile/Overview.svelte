@@ -1,6 +1,7 @@
 <script lang="ts">
   import FavoritesGrid from "../FavoritesGrid.svelte";
   import FeedWrapper from "../feed/FeedWrapper.svelte";
+  import Tooltip from "../common/Tooltip.svelte";
   import { ActivityService } from "../../services/activityService";
   import { getProfileAffinity } from "../../utils/vibeCalc";
   import Chart from "chart.js/auto";
@@ -20,6 +21,53 @@
   let chartCanvas: any = $state(null);
   let hasInitializedChart = $state(false);
   let persistedStats: Record<string, StatsResult> = $state({});
+
+  // Custom Tooltip State
+  let tooltip = $state<{
+    opacity: number;
+    top: number;
+    left: number;
+    datasetLabel: string;
+    label: string;
+    value: number;
+    color: string;
+  } | null>(null);
+
+  const VIBE_ICONS: Record<string, string> = {
+    Speculative: "fa-ghost",
+    Visceral: "fa-bolt",
+    Cerebral: "fa-brain",
+    Emotive: "fa-heart-pulse",
+    Interpersonal: "fa-users",
+    Lighthearted: "fa-face-smile",
+  };
+
+  const VIBE_LABELS: Record<string, string> = {
+    Speculative: "\uf6e2",
+    Visceral: "\uf0e7",
+    Cerebral: "\uf5dc",
+    Emotive: "\uf21e",
+    Interpersonal: "\uf0c0",
+    Lighthearted: "\uf118",
+  };
+
+  const VIBE_LABELS_TO_ICONS: Record<string, string> = {
+    "\uf6e2": "fa-ghost",
+    "\uf0e7": "fa-bolt",
+    "\uf5dc": "fa-brain",
+    "\uf21e": "fa-heart-pulse",
+    "\uf0c0": "fa-users",
+    "\uf118": "fa-face-smile",
+  };
+
+  const VIBE_LABELS_TO_NAMES: Record<string, string> = {
+    "\uf6e2": "Speculative",
+    "\uf0e7": "Visceral",
+    "\uf5dc": "Cerebral",
+    "\uf21e": "Emotive",
+    "\uf0c0": "Interpersonal",
+    "\uf118": "Lighthearted",
+  };
 
   // Stats calculation
   let allStats: Record<string, StatsResult> = $derived(
@@ -94,37 +142,51 @@
         radarChart.data.datasets = datasets as any[];
         radarChart.update();
       } else {
-        const VIBE_ICONS: Record<string, string> = {
-          Speculative: "\uf6e2",
-          Visceral: "\uf0e7",
-          Cerebral: "\uf5dc",
-          Emotive: "\uf21e",
-          Interpersonal: "\uf0c0",
-          Lighthearted: "\uf118",
-        };
-
         radarChart = new Chart(chartCanvas, {
           type: "radar",
           data: {
-            labels: Object.keys(VIBE_ICONS).map((name) => VIBE_ICONS[name]),
+            labels: Object.values(VIBE_LABELS),
             datasets: datasets as any[],
           },
           options: {
             responsive: true,
             maintainAspectRatio: false,
+            events: ["mousemove", "mouseout", "touchstart", "touchmove"],
             interaction: {
               mode: "nearest",
-              intersect: false,
+              intersect: true,
             },
             plugins: {
               legend: { display: false },
               tooltip: {
-                callbacks: {
-                  label: (context: any) => {
-                    const categories = Object.keys(VIBE_ICONS);
-                    return `${context.dataset.label} - ${categories[context.dataIndex]}: ${context.raw}`;
-                  },
+                enabled: false,
+                external: (context: any) => {
+                  const { chart, tooltip: tooltipModel } = context;
+                  if (
+                    tooltipModel.opacity === 0 ||
+                    !tooltipModel.dataPoints?.length
+                  ) {
+                    tooltip = null;
+                    return;
+                  }
+                  const closestPoint = tooltipModel.dataPoints[0];
+                  const position = chart.canvas.getBoundingClientRect();
+                  tooltip = {
+                    opacity: 1,
+                    top: position.top + closestPoint.element.y,
+                    left: position.left + closestPoint.element.x,
+                    datasetLabel: closestPoint.dataset.label,
+                    label: closestPoint.label,
+                    value: closestPoint.raw,
+                    color: closestPoint.dataset.borderColor,
+                  };
                 },
+              },
+            },
+            elements: {
+              point: {
+                radius: 4,
+                hitRadius: 25,
               },
             },
             scales: {
@@ -136,7 +198,7 @@
                 grid: { color: "#2b2d42" },
                 pointLabels: {
                   font: {
-                    family: "'Font Awesome 6 Free'",
+                    family: "'Font Awesome 6 Free', sans-serif",
                     size: 16,
                     weight: 900,
                   },
@@ -300,8 +362,7 @@
         <i class="fa-solid fa-chart-simple text-accent mr-2"></i> List Stats
       </h3>
       <div class="space-y-6">
-        {#each Object.entries(persistedStats) as [type, stat]}
-          {@const isLoaded = !!stat && stat.total > 0}
+        {#each Object.entries(allStats) as [type, stat]}
           <div class="border-b border-(--surface-elevated) pb-4 last:border-0">
             <h4
               class="text-[10px] uppercase text-accent font-bold mb-2 tracking-widest"
@@ -327,20 +388,29 @@
             <div
               class="h-2 w-full bg-slate-800 rounded-full flex overflow-hidden"
             >
-              {#if isLoaded}
-                {#each stat.statusDistribution as group}
-                  {#if group.percent > 0}
+              {#each stat.statusDistribution as group}
+                {#if group.percent > 0}
+                  <Tooltip
+                    contentClass="border border-(--surface-elevated) bg-(--surface-elevated)/90 backdrop-blur-md"
+                    style="width: {group.percent}%; flex-shrink: 0;"
+                  >
+                    {#snippet content()}
+                      <div class="flex items-center gap-2 text-xs">
+                        <span
+                          class="w-2 h-2 rounded-full"
+                          style="background-color: {group.color}"
+                        ></span>
+                        <span class="font-bold text-white">{group.label}</span>
+                        <span class="text-slate-300">{group.count} titles</span>
+                      </div>
+                    {/snippet}
                     <div
-                      style="width: {group.percent}%; background-color: {statusColors[
-                        group.id
-                      ] || 'var(--c7)'}"
-                      title="{group.label}: {group.count}"
+                      style="background-color: {group.color};"
+                      class="h-full w-full"
                     ></div>
-                  {/if}
-                {/each}
-              {:else}
-                <div class="w-full h-full bg-slate-700/50 animate-pulse"></div>
-              {/if}
+                  </Tooltip>
+                {/if}
+              {/each}
             </div>
           </div>
         {/each}
@@ -356,27 +426,65 @@
           <canvas bind:this={chartCanvas} id="genreChart"></canvas>
         </div>
       </div>
+      <!-- Custom Tooltip Overlay -->
+      {#if tooltip}
+        <div
+          class="fixed z-9999 pointer-events-none bg-(--surface-elevated)/90 text-white p-3 rounded-lg shadow-2xl text-xs backdrop-blur-md border border-(--surface-elevated)"
+          style="top: {tooltip.top}px; left: {tooltip.left}px; transform: translate(-50%, -100%); margin-top: -10px;"
+        >
+          <div class="flex items-center gap-2 mb-1">
+            <div
+              class="w-2 h-2 rounded-full"
+              style="background-color: {tooltip.color}"
+            ></div>
+            <span class="font-bold">{tooltip.datasetLabel}</span>
+          </div>
+          <div class="flex items-center gap-2 text-slate-300">
+            <i
+              class="fa-solid {VIBE_LABELS_TO_ICONS[
+                tooltip.label
+              ]} w-3.5 text-center"
+            ></i>
+            <span class="font-medium"
+              >{VIBE_LABELS_TO_NAMES[tooltip.label]}</span
+            >
+          </div>
+          <div class="mt-1">
+            Score: <span class="font-bold">{tooltip.value}</span>
+          </div>
+        </div>
+      {/if}
       <div
         class="grid grid-cols-2 gap-2 mt-6 text-[9px] uppercase tracking-tighter text-slate-500 font-bold"
       >
         <div class="flex items-center">
-          <i class="fa-solid fa-ghost mr-1 text-accent w-4 text-center"></i> Speculative
+          <i
+            class="fa-solid {VIBE_ICONS.Speculative} mr-1 text-accent w-4 text-center"
+          ></i> Speculative
         </div>
         <div class="flex items-center">
-          <i class="fa-solid fa-bolt mr-1 text-accent w-4 text-center"></i> Visceral
+          <i
+            class="fa-solid {VIBE_ICONS.Visceral} mr-1 text-accent w-4 text-center"
+          ></i> Visceral
         </div>
         <div class="flex items-center">
-          <i class="fa-solid fa-brain mr-1 text-accent w-4 text-center"></i> Cerebral
+          <i
+            class="fa-solid {VIBE_ICONS.Cerebral} mr-1 text-accent w-4 text-center"
+          ></i> Cerebral
         </div>
         <div class="flex items-center">
-          <i class="fa-solid fa-heart-pulse mr-1 text-accent w-4 text-center"
+          <i
+            class="fa-solid {VIBE_ICONS.Emotive} mr-1 text-accent w-4 text-center"
           ></i> Emotive
         </div>
         <div class="flex items-center">
-          <i class="fa-solid fa-users mr-1 text-accent w-4 text-center"></i> Interpersonal
+          <i
+            class="fa-solid {VIBE_ICONS.Interpersonal} mr-1 text-accent w-4 text-center"
+          ></i> Interpersonal
         </div>
         <div class="flex items-center">
-          <i class="fa-solid fa-face-smile mr-1 text-accent w-4 text-center"
+          <i
+            class="fa-solid {VIBE_ICONS.Lighthearted} mr-1 text-accent w-4 text-center"
           ></i> Lighthearted
         </div>
       </div>

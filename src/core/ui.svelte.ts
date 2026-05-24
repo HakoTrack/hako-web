@@ -3,6 +3,7 @@ import { fetchUserListEntry } from '../utils/mediaData';
 
 export interface ModalData {
   entry?: any;
+  profile?: any;
   isFetching?: boolean;
 }
 
@@ -33,6 +34,7 @@ export const ui: UIState = $state({
     this.favoriteIds.delete(id);
   }
 });
+
 
 export function openModal(type: ModalType, data: ModalData | null = null) {
   ui.activeModal = type;

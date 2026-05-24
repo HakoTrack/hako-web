@@ -1,6 +1,7 @@
 <script lang="ts">
   import Fuse from "fuse.js";
-  import { openQuickEditor } from "../../core/ui.svelte";
+  import { openQuickEditor, ui } from "../../core/ui.svelte";
+  import { getDisplayTitle, settings } from "../../core/settings.svelte";
   import { ListService } from "../../services/listService";
   import { MetadataService } from "../../services/metadataService";
   import { fetchMediaById } from "../../utils/mediaData";
@@ -9,6 +10,7 @@
   import MediaCover from "../common/MediaCover.svelte";
   import Select from "../common/Select.svelte";
   import SearchInput from "../common/SearchInput.svelte";
+  import Badge from "../common/Badge.svelte";
 
   let { type = "anime", profileId } = $props<{
     type?: string;
@@ -77,7 +79,8 @@
 
   function handleSearchInput(e: Event) {
     displayLimit = 50;
-    searchQuery = (e.target as HTMLInputElement).value;
+    const target = e.target as HTMLInputElement;
+    searchQuery = target?.value || "";
   }
 
   // Gradually increase display limit to render more items without hanging
@@ -121,10 +124,18 @@
   const processedItems = $derived(
     listDataEntries.map((item) => {
       const meta = metadata[item.media_id?.toString()] || {};
+      const titleObj = (meta as any).title || {};
+
+      const displayTitle =
+        getDisplayTitle(titleObj, settings.titlePreference) ||
+        (item as any).title ||
+        "";
+
       return {
         ...item,
         meta,
-        displayTitle: (meta as any).title?.romaji || (item as any).title || "",
+        title: titleObj, // Include full title object for searching
+        displayTitle,
       };
     }),
   );
@@ -149,7 +160,7 @@
 
     if (freeQuery.length > 0) {
       const fuse = new Fuse(items, {
-        keys: ["displayTitle"],
+        keys: ["title.romaji", "title.english", "title.native"],
         threshold: 0.3,
       });
       items = fuse.search(freeQuery).map((r: any) => r.item);
@@ -378,8 +389,10 @@
                       <div class="text-sm font-bold text-(--hako-fg)">
                         {displayTitle}
                       </div>
-                      <div class="text-[10px] text-(--c8) mt-1 uppercase">
-                        {(meta as any).genres?.slice(0, 5).join(" • ") || ""}
+                      <div class="flex flex-wrap gap-1 mt-1.5">
+                        {#each (meta as any).genres?.slice(0, 5) as genre}
+                          <Badge label={genre} variant="genre" />
+                        {/each}
                       </div>
                     </td>
                     <td

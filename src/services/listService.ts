@@ -1,7 +1,7 @@
 import { supabase } from '../utils/supabase.js';
 import { type Result, success, failure } from '../utils/result';
 import { MetadataService } from './metadataService';
-import { ActivityService } from './activityService';
+import { ActivityOrchestrator } from './activityOrchestrator';
 
 interface ListConfig {
   table: string;
@@ -38,7 +38,7 @@ export const ListService = {
     return success(list);
   },
 
-  async updateListEntry(profileId: string, type: string, mediaId: number, updates: Record<string, any>): Promise<Result<void>> {
+  async updateListEntry(profileId: string, type: string, mediaId: number, updates: Record<string, any>, oldEntry: any | null = null): Promise<Result<void>> {
     const config = TYPE_CONFIG[type];
     if (!config) return failure(`Unsupported media type: ${type}`);
 
@@ -56,7 +56,13 @@ export const ListService = {
 
     if (error) return failure(error.message);
 
-    await ActivityService.trackActivity(profileId);
+    // Track activity and handle feed posts via orchestrator
+    await ActivityOrchestrator.handleListUpdate(
+      profileId,
+      { ...updates, media_id: mediaId, status: updates.status }, // Simplified entry object
+      oldEntry,
+      type
+    );
 
     listCache.delete(`${type}_${profileId}`);
     MetadataService.invalidate(mediaId);

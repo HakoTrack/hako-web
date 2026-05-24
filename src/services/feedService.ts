@@ -135,7 +135,9 @@ export const FeedService = {
     if (error) return failure(error.message);
 
     try {
-      await ActivityService.trackActivity(userId);
+      if (type === 'thought') {
+        await ActivityService.trackActivity(userId);
+      }
       return success(undefined);
     } catch (err: any) {
       return failure(err.message || 'Failed to track activity');

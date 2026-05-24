@@ -15,6 +15,8 @@
     offset?: number;
     delay?: number;
     class?: string;
+    contentClass?: string;
+    style?: string;
   }
 
   let {
@@ -24,6 +26,8 @@
     offset: offsetValue = 8,
     delay = 200,
     class: className = "",
+    contentClass = "",
+    style = "",
   }: Props = $props();
 
   let isVisible = $state(false);
@@ -82,7 +86,8 @@
 <!-- svelte-ignore a11y_no_static_element_interactions -->
 <div
   bind:this={triggerRef}
-  class="inline-block {className}"
+  class="flex shrink-0 {className}"
+  {style}
   onmouseenter={show}
   onmouseleave={hide}
   onfocusin={show}
@@ -96,7 +101,7 @@
   <div
     bind:this={tooltipRef}
     style="visibility: hidden"
-    class="fixed z-9999 pointer-events-none bg-(--surface-elevated) text-(--hako-fg) p-2.5 rounded-lg shadow-2xl text-sm animate-in fade-in zoom-in-95 duration-200 backdrop-blur-md"
+    class="fixed z-9999 pointer-events-none bg-(--surface-elevated) text-(--hako-fg) p-2.5 rounded-lg shadow-2xl text-sm animate-in fade-in zoom-in-95 duration-200 backdrop-blur-md {contentClass}"
     role="tooltip"
   >
     {@render content()}

@@ -237,7 +237,11 @@
       </div>
 
       <div class:hidden={currentActiveTab !== "stats"}>
-        <Stats {profileData} />
+        {#if profileData}
+          <Stats {profileData} />
+        {:else}
+          <p class="text-slate-400">Loading profile...</p>
+        {/if}
       </div>
     </div>
   </div>

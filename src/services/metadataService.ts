@@ -4,7 +4,7 @@ import type { Media } from '../types/index';
 const cache = new Map<string, Media>();
 
 export const MetadataService = {
-  async getMetadata(ids: number[], type: string = 'anime'): Promise<Record<string, Media>> {
+  async getMetadata(ids: number[], type?: string): Promise<Record<string, Media>> {
     const validIds = ids.filter((id): id is number => id != null);
     const uncached = validIds.filter(id => !cache.has(id.toString()));
 

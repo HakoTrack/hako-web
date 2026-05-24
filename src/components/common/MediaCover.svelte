@@ -1,7 +1,8 @@
 <script lang="ts">
   import { HakoImage } from "../../utils/images";
   import { fetchMediaById } from "../../utils/mediaData";
-  import { openQuickEditor } from "../../core/ui.svelte";
+  import { openQuickEditor, ui } from "../../core/ui.svelte";
+  import { getDisplayTitle, settings } from "../../core/settings.svelte";
   import Tooltip from "./Tooltip.svelte";
   import type { Media } from "../../types";
 
@@ -51,7 +52,9 @@
 
 {#snippet defaultTooltip()}
   <div class="font-bold text-xs">
-    {mediaInfo?.title?.romaji || alt}
+    {mediaInfo
+      ? getDisplayTitle(mediaInfo.title, settings.titlePreference)
+      : alt}
   </div>
 {/snippet}
 
