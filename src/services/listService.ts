@@ -42,6 +42,8 @@ export const ListService = {
     const config = TYPE_CONFIG[type];
     if (!config) return failure(`Unsupported media type: ${type}`);
 
+    const { total, ...dbUpdates } = updates;
+
     const { error } = await supabase
       .from(config.table)
       .upsert(
@@ -49,7 +51,7 @@ export const ListService = {
           profile_id: profileId,
           media_id: mediaId,
           media_type: type,
-          ...updates
+          ...dbUpdates
         },
         { onConflict: 'profile_id, media_id' }
       );
@@ -59,7 +61,7 @@ export const ListService = {
     // Track activity and handle feed posts via orchestrator
     await ActivityOrchestrator.handleListUpdate(
       profileId,
-      { ...updates, media_id: mediaId, status: updates.status }, // Simplified entry object
+      { ...dbUpdates, total, media_id: mediaId, status: dbUpdates.status }, // Simplified entry object
       oldEntry,
       type
     );

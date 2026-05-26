@@ -5,8 +5,14 @@
   let isCalendarOpen = $state(false);
   let containerRef = $state(null);
 
+  function createLocalDate(dateStr) {
+    if (!dateStr) return new Date();
+    const [year, month, day] = dateStr.split("-").map(Number);
+    return new Date(year, month - 1, day);
+  }
+
   // Initial date for calendar display
-  let currentDisplayDate = $state(new Date(value || Date.now()));
+  let currentDisplayDate = $state(value ? createLocalDate(value) : new Date());
 
   const weekdays = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
   const months = [
@@ -51,20 +57,28 @@
 
   function handleDayClick(day) {
     if (day) {
-      value = day.toISOString().split("T")[0]; // YYYY-MM-DD format
+      // Create YYYY-MM-DD string from local date
+      const year = day.getFullYear();
+      const month = String(day.getMonth() + 1).padStart(2, "0");
+      const date = String(day.getDate()).padStart(2, "0");
+      value = `${year}-${month}-${date}`;
       isCalendarOpen = false;
     }
   }
 
   function nextMonth() {
     currentDisplayDate = new Date(
-      currentDisplayDate.setMonth(currentDisplayDate.getMonth() + 1),
+      currentDisplayDate.getFullYear(),
+      currentDisplayDate.getMonth() + 1,
+      1,
     );
   }
 
   function prevMonth() {
     currentDisplayDate = new Date(
-      currentDisplayDate.setMonth(currentDisplayDate.getMonth() - 1),
+      currentDisplayDate.getFullYear(),
+      currentDisplayDate.getMonth() - 1,
+      1,
     );
   }
 
@@ -74,7 +88,7 @@
     if (isCalendarOpen && !value) {
       currentDisplayDate = new Date(); // If no date, default to today
     } else if (isCalendarOpen && value) {
-      currentDisplayDate = new Date(value); // Set calendar to current value
+      currentDisplayDate = createLocalDate(value); // Set calendar to current value
     }
   }
 
@@ -102,7 +116,7 @@
 
   let formattedValue = $derived(
     value
-      ? new Date(value).toLocaleDateString(undefined, {
+      ? createLocalDate(value).toLocaleDateString(undefined, {
           year: "numeric",
           month: "long",
           day: "numeric",

@@ -317,7 +317,7 @@
           </div>
         </div>
       </div>
-    {:else if activeCategory === "anime-genres"}
+    {:else if activeCategory === "anime-genres" && stats?.anime?.genreStats}
       <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
         {#each Object.entries(stats.anime.genreStats).sort((a, b) => {
           const statsA = a[1];

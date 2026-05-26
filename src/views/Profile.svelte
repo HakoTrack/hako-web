@@ -1,11 +1,12 @@
 <script lang="ts">
-  import { ProfileService, type Profile } from "../services/profileService";
-  import type { ListEntry } from "../types";
+  import { ProfileService } from "../services/profileService";
+  import type { ListEntry, Profile } from "../types";
   import { HakoImage } from "../utils/images";
   import MediaList from "../components/profile/MediaList.svelte";
   import Stats from "../components/profile/Stats.svelte";
   import Overview from "../components/profile/Overview.svelte";
   import { fetchMediaByIds } from "../utils/mediaData";
+  import { ROLES } from "../utils/constants";
 
   let {
     currentPath,
@@ -17,6 +18,9 @@
   let profileData: Profile | null = $state(propProfileData);
   let metadata: Record<string, any> = $state({});
   let currentActiveTab = $derived(activeTab);
+  let listType = $derived(
+    currentActiveTab === "lightnovel" ? "light_novel" : currentActiveTab,
+  );
   let isFetchingLists = $state(false);
 
   // Sync state if propProfileData changes, but ignore nulls if we already have data
@@ -76,36 +80,6 @@
     },
     { id: "stats", label: "Stats", path: `/user/${username}/stats` },
   ]);
-
-  const ROLES: Record<
-    string,
-    { label: string; romaji: string; color: string; title: string }
-  > = {
-    owner: {
-      label: "総帥",
-      romaji: "Sousui",
-      color: "bg-red-500",
-      title: "Owner",
-    },
-    admin: {
-      label: "師匠",
-      romaji: "Shishou",
-      color: "bg-indigo-500",
-      title: "Admin",
-    },
-    moderator: {
-      label: "先生",
-      romaji: "Sensei",
-      color: "bg-emerald-500",
-      title: "Moderator",
-    },
-    contributor: {
-      label: "先輩",
-      romaji: "Senpai",
-      color: "bg-blue-500",
-      title: "Contributor",
-    },
-  };
 
   let roleConfig = $derived(
     (profileData as any)?.role
@@ -229,10 +203,10 @@
         )}
       >
         <MediaList
-          type={currentActiveTab === "lightnovel"
-            ? "light_novel"
-            : currentActiveTab}
+          type={listType}
           profileId={profileData?.id || ""}
+          initialListData={profileData?.mediaLists?.[listType] || []}
+          initialMetadata={metadata}
         />
       </div>
 

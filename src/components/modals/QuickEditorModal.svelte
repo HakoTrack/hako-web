@@ -108,6 +108,7 @@
           status,
           score: score > 0 && score <= 10 ? score : null,
           progress,
+          total: entry.total,
           started_at: startDate || null,
           completed_at: finishDate || null,
         },
@@ -127,6 +128,8 @@
   }
 </script>
 
+<!-- svelte-ignore a11y_click_events_have_key_events -->
+<!-- svelte-ignore a11y_no_static_element_interactions -->
 <div
   class="bg-(--surface) w-[640px] max-w-[95vw] max-h-[85vh] rounded-2xl shadow-2xl border border-(--surface-elevated) flex flex-col overflow-hidden"
   onclick={(e) => e.stopPropagation()}
@@ -141,6 +144,7 @@
     <div
       class="absolute inset-0 bg-linear-to-b from-transparent to-(--surface)"
     ></div>
+    <!-- svelte-ignore a11y_consider_explicit_label -->
     <button
       onclick={closeModal}
       class="absolute top-4 right-4 text-white/70 hover:text-white p-2"
@@ -164,6 +168,7 @@
     <!-- Main Inputs -->
     <div class="grid grid-cols-3 gap-4 shrink-0">
       <div class="space-y-1.5">
+        <!-- svelte-ignore a11y_label_has_associated_control -->
         <label
           class="text-xs font-bold text-slate-400 uppercase tracking-wider mb-1.5 block"
           >Status</label
@@ -188,6 +193,7 @@
         {/if}
       </div>
       <div class="space-y-1.5">
+        <!-- svelte-ignore a11y_label_has_associated_control -->
         <label
           class="text-xs font-bold text-slate-400 uppercase tracking-wider mb-1.5 block"
           >Score</label
@@ -206,6 +212,7 @@
         {/if}
       </div>
       <div class="space-y-1.5">
+        <!-- svelte-ignore a11y_label_has_associated_control -->
         <label
           class="text-xs font-bold text-slate-400 uppercase tracking-wider mb-1.5 block"
           >Progress</label
@@ -226,6 +233,7 @@
 
     <div class="grid grid-cols-2 gap-4 shrink-0">
       <div class="space-y-1.5">
+        <!-- svelte-ignore a11y_label_has_associated_control -->
         <label
           class="text-xs font-bold text-slate-400 uppercase tracking-wider mb-1.5 block"
           >Start Date</label
@@ -237,6 +245,7 @@
         {/if}
       </div>
       <div class="space-y-1.5">
+        <!-- svelte-ignore a11y_label_has_associated_control -->
         <label
           class="text-xs font-bold text-slate-400 uppercase tracking-wider mb-1.5 block"
           >Finish Date</label
@@ -252,6 +261,7 @@
     <!-- Description & Vibes -->
     <div class="space-y-4 flex-1 flex flex-col min-h-0">
       <div class="space-y-1.5 flex-1 flex flex-col min-h-0">
+        <!-- svelte-ignore a11y_label_has_associated_control -->
         <label
           class="text-xs font-bold text-slate-400 uppercase tracking-wider shrink-0"
           >Description</label
@@ -264,6 +274,7 @@
       </div>
 
       <div class="space-y-1.5 shrink-0">
+        <!-- svelte-ignore a11y_label_has_associated_control -->
         <label class="text-xs font-bold text-slate-400 uppercase tracking-wider"
           >Genres</label
         >
@@ -275,6 +286,7 @@
       </div>
 
       <div class="space-y-1.5 shrink-0">
+        <!-- svelte-ignore a11y_label_has_associated_control -->
         <label class="text-xs font-bold text-slate-400 uppercase tracking-wider"
           >Vibes</label
         >
@@ -300,6 +312,7 @@
       <i class="fa-solid fa-trash"></i> Delete
     </button>
     <div class="flex items-center gap-4">
+      <!-- svelte-ignore a11y_consider_explicit_label -->
       <button
         onclick={toggleFavorite}
         class="text-xl {isFavorited

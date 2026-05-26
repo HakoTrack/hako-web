@@ -1,4 +1,5 @@
 import type { ListEntry, Media } from '../types/index';
+import { getStatusGroups } from './constants';
 
 export interface StatsResult {
   total: number;
@@ -41,13 +42,7 @@ function calculateStatsForType(list: ListEntry[], metadata: Record<string, Media
   const yearStats: Record<number, { count: number; minutes: number; scores: number[] }> = {};
   const genreStats: Record<string, { completed: number; totalMinutes: number; scores: number[]; topTitles: { id: number; score: number }[] }> = {};
 
-  const statusGroups = [
-    { id: "current", label: type === "anime" ? "Watching" : "Reading", color: "var(--c2)" },
-    { id: "completed", label: "Completed", color: "var(--c12)" },
-    { id: "paused", label: "Paused", color: "var(--c3)" },
-    { id: "dropped", label: "Dropped", color: "var(--c1)" },
-    { id: "planning", label: "Planning", color: "var(--c8)" },
-  ];
+  const statusGroups = getStatusGroups(type);
 
   const counts: Record<string, number> = {};
   list.forEach((entry) => {

@@ -1,43 +1,47 @@
 <script lang="ts">
   import Fuse from "fuse.js";
-  import { openQuickEditor, ui } from "../../core/ui.svelte";
+  import { openQuickEditor } from "../../core/ui.svelte";
   import { getDisplayTitle, settings } from "../../core/settings.svelte";
   import { ListService } from "../../services/listService";
   import { MetadataService } from "../../services/metadataService";
   import { fetchMediaById } from "../../utils/mediaData";
   import { parseQuery } from "../../utils/search";
   import type { Media, ListEntry } from "../../types/index";
+  import { STATUS_COLORS, getStatusGroups } from "../../utils/constants";
   import MediaCover from "../common/MediaCover.svelte";
   import Select from "../common/Select.svelte";
   import SearchInput from "../common/SearchInput.svelte";
   import Badge from "../common/Badge.svelte";
 
-  let { type = "anime", profileId } = $props<{
+  let {
+    type = "anime",
+    profileId,
+    initialListData = [],
+    initialMetadata = {},
+  } = $props<{
     type?: string;
     profileId: string;
+    initialListData?: ListEntry[];
+    initialMetadata?: Record<string, Media>;
   }>();
 
-  let listDataEntries: ListEntry[] = $state([]);
-  let metadata: Record<string, Media> = $state({});
+  let listDataEntries: ListEntry[] = $state(initialListData);
+  let metadata: Record<string, Media> = $state(initialMetadata);
   let sortBy = $state("Title");
   let filterStatus = $state("all");
   let searchQuery = $state("");
   let isLoading = $state(true);
+  let isBackgroundFetching = $state(false);
+
+  // Sync state if props change (deferred in effect below)
+  $effect(() => {
+    if (Object.keys(initialMetadata).length > 0) metadata = initialMetadata;
+  });
 
   // Progressive rendering limit to avoid blocking the main thread
   let displayLimit = $state(50);
 
-  const statusGroups = $derived([
-    {
-      id: "current",
-      label: type === "anime" ? "Watching" : "Reading",
-      color: "bg-green-500",
-    },
-    { id: "completed", label: "Completed", color: "bg-sky-500" },
-    { id: "paused", label: "Paused", color: "bg-orange-500" },
-    { id: "dropped", label: "Dropped", color: "bg-red-500" },
-    { id: "planning", label: "Planning", color: "bg-slate-500" },
-  ]);
+  const statusGroups = $derived(getStatusGroups(type));
 
   function formatType(t: string): string {
     if (t === "light_novel" || t === "lightnovel") return "Light Novels";
@@ -46,24 +50,38 @@
     return t.charAt(0).toUpperCase() + t.slice(1) + "s";
   }
 
-  const statusColors: Record<string, string> = {
-    current: "var(--c2)",
-    completed: "var(--c12)",
-    paused: "var(--c3)",
-    dropped: "var(--c1)",
-    planning: "var(--c8)",
-  };
-
   // Sync state whenever the profileId or type arrives/changes
+  let lastType = "";
   $effect(() => {
     const supportedTypes = ["anime", "manga", "light_novel", "visual_novels"];
     if (profileId && type && supportedTypes.includes(type)) {
-      isLoading = true;
-      displayLimit = 50; // Reset limit on type change
-      loadData();
+      if (type !== lastType) {
+        lastType = type;
+
+        // 1. Immediately clear list and show loading to break the synchronous chain.
+        // This allows the click handler to return and the UI to respond instantly.
+        listDataEntries = [];
+        displayLimit = 50;
+        isLoading = true;
+
+        // 2. Defer heavy rendering to a new task
+        setTimeout(() => {
+          const cachedData = initialListData.length > 0 ? initialListData : [];
+
+          if (cachedData.length > 0) {
+            listDataEntries = cachedData;
+            isLoading = false;
+            isBackgroundFetching = true;
+            loadData();
+          } else {
+            loadData();
+          }
+        }, 10);
+      }
     } else {
       isLoading = false;
       listDataEntries = [];
+      lastType = "";
     }
   });
 
@@ -100,9 +118,11 @@
       const ids = listDataEntries.map((item) => item.media_id);
       metadata = await MetadataService.getMetadata(ids, type);
       isLoading = false;
+      isBackgroundFetching = false;
     } else {
       console.error("Error loading list:", result.error);
       isLoading = false;
+      isBackgroundFetching = false;
     }
   }
 
@@ -287,7 +307,14 @@
             <span class="w-2 h-2 rounded-full mr-3 bg-(--c7)"></span>
             <span>All {formatType(type)}</span>
           </div>
-          <span class="count text-xs text-slate-500">{statusCounts.all}</span>
+          <div class="flex items-center space-x-2">
+            {#if isBackgroundFetching}
+              <i
+                class="fa-solid fa-circle-notch fa-spin text-accent text-[10px]"
+              ></i>
+            {/if}
+            <span class="count text-xs text-slate-500">{statusCounts.all}</span>
+          </div>
         </button>
 
         {#each statusGroups as group}
@@ -301,7 +328,7 @@
             <div class="flex items-center">
               <span
                 class="w-2 h-2 rounded-full mr-3"
-                style="background-color: {statusColors[group.id]}"
+                style="background-color: {STATUS_COLORS[group.id]}"
               ></span>
               <span>{group.label}</span>
             </div>
@@ -328,7 +355,7 @@
           <div class="flex items-center space-x-3 mb-6">
             <div
               class="w-1.5 h-6 rounded-full"
-              style="background-color: {statusColors[group.id]}"
+              style="background-color: {STATUS_COLORS[group.id]}"
             ></div>
             <h2 class="text-lg font-bold text-white uppercase tracking-wider">
               {group.label}

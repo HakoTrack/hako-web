@@ -27,7 +27,7 @@ export const ActivityOrchestrator = {
         entry.media_id,
         getDisplayTitle(entry.rawMetadata?.title || { romaji: entry.title }, settings.titlePreference),
         entry.progress || 0,
-        entry.total || "?",
+        entry.total ?? null,
         mediaType,
         entry.status || "updated"
       );

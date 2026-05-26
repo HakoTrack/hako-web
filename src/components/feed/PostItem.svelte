@@ -7,7 +7,7 @@
   import PostRenderer from "../common/PostRenderer.svelte";
   import CommentSection from "./CommentSection.svelte";
   import MediaCover from "../common/MediaCover.svelte";
-  import type { Post, PostMetadata } from "../../types/index";
+  import type { Post, PostMetadata, Media } from "../../types/index";
   import { STATUS_COLORS } from "../../utils/constants";
   import { ui } from "../../core/ui.svelte";
   import { getDisplayTitle, settings } from "../../core/settings.svelte";
@@ -41,15 +41,22 @@
   });
 
   // Robust progress calculation with null checks
-  const percent = $derived(
-    post.post_type === "list_update" &&
-      post.metadata &&
-      Number(post.metadata.total) > 0
-      ? Math.round(
-          ((post.metadata.progress || 0) / Number(post.metadata.total)) * 100,
-        )
-      : 50,
-  );
+  const percent = $derived.by(() => {
+    if (post.post_type !== "list_update" || !post.metadata) return 0;
+
+    let total = Number(post.metadata.total);
+    if ((!total || total <= 0) && mediaInfo) {
+      total =
+        (post.metadata.media_type === "anime"
+          ? mediaInfo.episodes
+          : mediaInfo.chapters) ?? 0;
+    }
+
+    if (total > 0) {
+      return Math.round(((post.metadata.progress || 0) / total) * 100);
+    }
+    return 50;
+  });
 
   function getRelativeTime(timestamp: string): string {
     if (!timestamp) return "Recently";
@@ -77,35 +84,50 @@
   function getVerb(metadata: PostMetadata): string {
     const status = (metadata.status || "updated").toLowerCase();
     const progress = metadata.progress || 0;
-    const total = Number(metadata.total) || "?";
+    let total =
+      metadata.total !== null &&
+      metadata.total !== undefined &&
+      Number(metadata.total) > 0
+        ? Number(metadata.total)
+        : null;
+
+    if (total === null && mediaInfo) {
+      total =
+        (metadata.media_type === "anime"
+          ? mediaInfo.episodes
+          : mediaInfo.chapters) ?? null;
+    }
+
+    const progressStr =
+      total !== null ? `${progress}/${total}` : `${progress}/?`;
 
     if (status === "completed") return "Completed";
-    if (status === "paused") return `Paused at ${progress}/${total}`;
-    if (status === "dropped") return `Dropped at ${progress}/${total}`;
+    if (status === "paused") return `Paused at ${progressStr}`;
+    if (status === "dropped") return `Dropped at ${progressStr}`;
     if (status === "planning") return `Planning`;
 
     // Handle "current" status specifically
     if (status === "current") {
       switch (metadata.media_type) {
         case "anime":
-          return `Watching ${progress}/${total}`;
+          return `Watching ${progressStr}`;
         case "manga":
         case "light_novel":
-          return `Reading ${progress}/${total}`;
+          return `Reading ${progressStr}`;
         default:
-          return `Updating ${progress}/${total}`;
+          return `Updating ${progressStr}`;
       }
     }
 
     // Default for other status/action types
     switch (metadata.media_type) {
       case "anime":
-        return `Watched ${progress}/${total}`;
+        return `Watched ${progressStr}`;
       case "manga":
       case "light_novel":
-        return `Read ${progress}/${total}`;
+        return `Read ${progressStr}`;
       default:
-        return `${status.charAt(0).toUpperCase() + status.slice(1)} ${progress}/${total}`;
+        return `${status.charAt(0).toUpperCase() + status.slice(1)} ${progressStr}`;
     }
   }
 

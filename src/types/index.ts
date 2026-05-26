@@ -1,5 +1,18 @@
 import { z } from 'zod';
 
+// --- Profile Interface ---
+export interface Profile {
+  id: string;
+  username: string;
+  about_me?: string;
+  avatar_url?: string;
+  banner_url?: string;
+  display_name?: string;
+  bio?: string;
+  role?: string;
+  mediaLists: Record<string, any[]>;
+}
+
 // --- Media & List Interfaces ---
 export interface Media {
   media_id: number;
@@ -25,6 +38,7 @@ export interface Media {
 
 export interface ListEntry {
   media_id: number;
+  media_type?: string;
   score: number | null;
   progress: number | null;
   status: string;
@@ -41,6 +55,7 @@ export const PostMetadataSchema = z.object({
   media_type: z.string().optional(),
   title: z.string().optional(),
   status: z.string().optional(),
+  action: z.string().optional(),
   progress: z.number().optional(),
   total: z.union([z.number(), z.string()]).nullable().optional(),
 });

@@ -1,17 +1,6 @@
 import { supabase } from '../utils/supabase.js';
 import { type Result, success, failure } from '../utils/result';
-
-export interface Profile {
-  id: string;
-  username: string;
-  about_me?: string;
-  avatar_url?: string;
-  banner_url?: string;
-  display_name?: string;
-  bio?: string;
-  role?: string;
-  mediaLists: Record<string, any[]>;
-}
+import type { Profile } from '../types';
 
 async function fetchProfile(column: string, value: string): Promise<Profile | null> {
   const { data, error } = await supabase

@@ -118,6 +118,8 @@ body {
   width: 12px;
   height: 12px;
   border-radius: 2px;
+  transition-property: background-color;
+  transition-timing-function: ease;
 }
 
 @keyframes unroll {
@@ -137,26 +139,31 @@ body {
 /* Activity Levels mapped to the new pastel palette */
 .level-0 {
   background-color: var(--surface-dim);
+  transition-duration: 0.5s;
 }
 
 /* No activity */
 .level-1 {
   background-color: #4a5749;
+  transition-duration: 1s;
 }
 
 /* Muted Sage */
 .level-2 {
   background-color: #758a73;
+  transition-duration: 1.5s;
 }
 
 /* Soft Fern */
 .level-3 {
   background-color: #a5c1a1;
+  transition-duration: 2s;
 }
 
 /* Muted Mint */
 .level-4 {
   background-color: #d1e8d0;
+  transition-duration: 2.5s;
 }
 
 .media-card:hover .overlay {
