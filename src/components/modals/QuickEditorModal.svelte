@@ -1,19 +1,19 @@
 <script lang="ts">
   import { ui, closeModal } from "../../core/ui.svelte";
-  import { getVibes } from "../../utils/vibeCalc";
-  import { HakoImage } from "../../utils/images";
-  import { supabase } from "../../utils/supabase";
+  import { getVibes } from "../../features/profile/services/vibeCalc";
+  import { HakoImage } from "../../shared/utils/images";
+  import { supabase } from "../../core/supabase";
   import { AuthService } from "../../core/auth";
-  import { ListService } from "../../services/listService";
-  import { FavoritesService } from "../../services/favoritesService";
-  import { formatDescription } from "../../utils/mediaData";
+  import { ListService } from "../../features/profile/services/listService";
+  import { FavoritesService } from "../../features/profile/services/favoritesService";
+  import { formatDescription } from "../../shared/utils/mediaData";
   import { getDisplayTitle, settings } from "../../core/settings.svelte";
-  import Select from "../common/Select.svelte";
-  import NumberStepper from "../common/NumberStepper.svelte";
-  import DateInput from "../common/DateInput.svelte";
-  import Button from "../common/Button.svelte";
-  import Skeleton from "../common/Skeleton.svelte";
-  import Badge from "../common/Badge.svelte";
+  import Select from "../../shared/components/Select.svelte";
+  import NumberStepper from "../../shared/components/NumberStepper.svelte";
+  import DateInput from "../../shared/components/DateInput.svelte";
+  import Button from "../../shared/components/Button.svelte";
+  import Skeleton from "../../shared/components/Skeleton.svelte";
+  import Badge from "../../shared/components/Badge.svelte";
 
   let { entry: initialEntry } = $props<{ entry: any }>();
   let entry = $state(ui.modalData?.entry || initialEntry);

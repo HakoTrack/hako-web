@@ -1,7 +1,7 @@
 <script>
-  import { supabase } from "../../utils/supabase.js";
+  import { supabase } from "../../core/supabase.js";
   import { ui, closeModal } from "../../core/ui.svelte.ts";
-  import Button from "../common/Button.svelte";
+  import Button from "../../shared/components/Button.svelte";
 
   let email = "";
   let password = "";

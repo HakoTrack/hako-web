@@ -1,7 +1,7 @@
-import './styles/global.css';
+import './shared/styles/global.css';
 import { mount } from 'svelte';
 import App from './App.svelte';
-import './utils/images';
+import './shared/utils/images';
 import { injectSpeedInsights } from '@vercel/speed-insights';
 import { inject } from '@vercel/analytics';
 

@@ -1,5 +1,5 @@
 import { AuthService } from '../core/auth';
-import { fetchUserListEntry } from '../utils/mediaData';
+import { fetchUserListEntry } from '../shared/utils/mediaData';
 
 export interface ModalData {
   entry?: any;

@@ -1,10 +1,10 @@
 <script lang="ts">
   import { closeModal as close } from "../../core/ui.svelte";
-  import { HakoImage } from "../../utils/images";
-  import Button from "../common/Button.svelte";
-  import DateInput from "../common/DateInput.svelte";
-  import TextInput from "../common/TextInput.svelte";
-  import Select from "../common/Select.svelte";
+  import { HakoImage } from "../../shared/utils/images";
+  import Button from "../../shared/components/Button.svelte";
+  import DateInput from "../../shared/components/DateInput.svelte";
+  import TextInput from "../../shared/components/TextInput.svelte";
+  import Select from "../../shared/components/Select.svelte";
   import { SETTINGS_CONFIG, settings } from "../../core/settings.svelte";
   import { ui } from "../../core/ui.svelte";
 

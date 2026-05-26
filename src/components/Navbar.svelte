@@ -1,12 +1,12 @@
 <script lang="ts">
   import { onMount, onDestroy } from "svelte";
   import { AuthService } from "../core/auth";
-  import { HakoImage } from "../utils/images";
+  import { HakoImage } from "../shared/utils/images";
   import { openModal } from "../core/ui.svelte";
-  import Dropdown from "./common/Dropdown.svelte";
-  import SearchInput from "./common/SearchInput.svelte";
-  import { MediaService } from "../services/mediaService";
-  import type { Media } from "../types/index";
+  import Dropdown from "../shared/components/Dropdown.svelte";
+  import SearchInput from "../shared/components/SearchInput.svelte";
+  import { MediaService } from "../features/media/services/mediaService";
+  import type { Media } from "../shared/types/index";
 
   let { user = null, profile = null } = $props();
 

@@ -2,11 +2,11 @@
   import { onMount } from "svelte";
   import Navbar from "./components/Navbar.svelte";
   import Footer from "./components/Footer.svelte";
-  import Landing from "./views/Landing.svelte";
+  import Landing from "./features/landing/Landing.svelte";
   import ModalWrapper from "./components/modals/ModalWrapper.svelte";
   import { AuthService } from "./core/auth";
-  import { ProfileService } from "./services/profileService.ts";
-  import { supabase } from "./utils/supabase.js";
+  import { ProfileService } from "./features/profile/services/profileService";
+  import { supabase } from "./core/supabase.js";
   import { openModal } from "./core/ui.svelte.ts";
   import { routes } from "./routes";
   import GlobalQuickUpdateDrawer from "./components/GlobalQuickUpdateDrawer.svelte";

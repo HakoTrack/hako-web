@@ -1,6 +1,7 @@
-import Feed from "./views/Feed.svelte";
-import Profile from "./views/Profile.svelte";
-import MediaDetail from "./views/MediaDetail.svelte";
+import Feed from "./features/feed/Feed.svelte";
+import Landing from "./features/landing/Landing.svelte";
+import Profile from "./features/profile/Profile.svelte";
+import MediaDetail from "./features/media/MediaDetail.svelte";
 
 export interface Route {
   path: string;

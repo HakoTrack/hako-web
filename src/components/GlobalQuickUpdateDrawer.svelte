@@ -1,6 +1,6 @@
 <script>
-  import { ListService } from "../services/listService";
-  import MediaCover from "./common/MediaCover.svelte";
+  import { ListService } from "../features/profile/services/listService";
+  import MediaCover from "../shared/components/MediaCover.svelte";
   import { ui } from "../core/ui.svelte.ts";
 
   let { isOpen, onToggle, profileId } = $props();

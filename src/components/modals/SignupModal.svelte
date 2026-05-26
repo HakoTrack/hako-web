@@ -1,6 +1,6 @@
 <script>
   import { ui, closeModal } from "../../core/ui.svelte.ts";
-  import Button from "../common/Button.svelte";
+  import Button from "../../shared/components/Button.svelte";
 </script>
 
 <div
