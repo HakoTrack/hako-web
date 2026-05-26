@@ -9,7 +9,6 @@
   import MediaCover from "../common/MediaCover.svelte";
   import type { Post, PostMetadata, Media } from "../../types/index";
   import { STATUS_COLORS } from "../../utils/constants";
-  import { ui } from "../../core/ui.svelte";
   import { getDisplayTitle, settings } from "../../core/settings.svelte";
   import Skeleton from "../common/Skeleton.svelte";
 

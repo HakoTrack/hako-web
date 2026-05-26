@@ -190,6 +190,8 @@
     </div>
 
     <!-- Content -->
+    <!-- All of these are set to hidden to improve load performance on tab switching (it works, trust me) -->
+    <!-- Non-essential data fetching should be deferred until the tab is active -->
     <div class="py-8 min-h-screen">
       <div class:hidden={currentActiveTab !== "overview"}>
         {#if profileData}
