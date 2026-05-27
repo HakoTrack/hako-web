@@ -102,7 +102,7 @@
 
 <div class="min-h-screen flex flex-col">
   <ModalWrapper />
-  {#if !isLanding}
+  {#if user}
     <Navbar {user} {profile} />
     <GlobalQuickUpdateDrawer
       isOpen={isDrawerOpen}
