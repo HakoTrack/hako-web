@@ -3,6 +3,8 @@ import Landing from "./features/landing/Landing.svelte";
 import Profile from "./features/profile/Profile.svelte";
 import MediaDetail from "./features/media/MediaDetail.svelte";
 
+import Browse from "./features/browse/Browse.svelte";
+
 export interface Route {
   path: string;
   component: any;
@@ -35,6 +37,11 @@ export const routes: Route[] = [
     path: "/lightnovel/",
     component: MediaDetail,
     props: (path) => ({ mediaId: path.split("/")[2], type: "light_novel" })
+  },
+  {
+    path: "/browse/",
+    component: Browse,
+    props: (path) => ({ mediaType: path.split("/")[2] || "anime" })
   },
   {
     path: "/feed",

@@ -28,7 +28,6 @@ yarn-error.log*
 
 # Misc
 tools/
-plans/
 public/assets/
 mockup/
 landingMockup.html

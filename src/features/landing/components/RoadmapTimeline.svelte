@@ -23,7 +23,6 @@
         { name: "User Profiles", status: "completed" },
         { name: "Initial Vibes System", status: "completed" },
         { name: "Activity Feed", status: "in-progress" },
-        { name: "Feature Showcase on Landing Page", status: "in-progress" },
       ],
     },
     {
@@ -32,10 +31,10 @@
       description: "Refining features based on feedback, database expansion.",
       features: [
         { name: "Robust Media Search", status: "in-progress" },
-        { name: "Database Parity With Similar Sites", status: "in-progress" },
         { name: "Forums", status: "upcoming" },
         { name: "Refining Vibes System", status: "upcoming" },
         { name: "Vibes Based Recommendations", status: "upcoming" },
+        { name: "Mobile Responsive Design", status: "in-progress" },
       ],
     },
     {
@@ -43,12 +42,28 @@
       status: "upcoming",
       description: "Social and community expansion.",
       features: [
+        { name: "Database Parity with MAL/AniList", status: "in-progress" },
         { name: "Refined Social Features", status: "upcoming" },
         { name: "Groups", status: "upcoming" },
         { name: "Collections", status: "upcoming" },
         { name: "Achievements System", status: "upcoming" },
-        { name: "Visual Novel Data and Tracking", status: "upcoming" },
         { name: "User Reviews", status: "upcoming" },
+      ],
+    },
+    {
+      name: "Post Release",
+      status: "upcoming",
+      description: "Going further beyond.",
+      features: [
+        { name: "Visual Novel Data and Tracking", status: "upcoming" },
+        {
+          name: "Changes and refinements based on user feedback",
+          status: "upcoming",
+        },
+        {
+          name: "In-depth Profile themeing via custom CSS",
+          status: "upcoming",
+        },
       ],
     },
   ];

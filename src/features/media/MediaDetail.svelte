@@ -6,6 +6,7 @@
   import { openQuickEditor, ui } from "../../core/ui.svelte";
   import { getDisplayTitle, settings } from "../../core/settings.svelte";
   import { formatDescription } from "../../shared/utils/mediaData";
+  import MediaCover from "../../shared/components/MediaCover.svelte";
   import type { Media } from "../../shared/types/index";
 
   let { mediaId, type = "anime" } = $props<{
@@ -68,9 +69,12 @@
     <div class="max-w-375 mx-auto px-4 sm:px-6 lg:px-8">
       <div class="relative -mt-20 flex items-end space-x-6 pb-8">
         <!-- Cover -->
-        <img
-          src={HakoImage.getCover(media.media_id, "large")}
-          class="media-cover w-40 h-56 rounded-xl border-4 border-[#0b1622] shadow-2xl object-cover bg-[#151f2e]"
+        <MediaCover
+          mediaId={media.media_id}
+          {type}
+          size="large"
+          class="rounded-xl border-4 border-[#0b1622] shadow-2xl bg-[#151f2e]"
+          showTooltip={false}
           alt={displayTitle}
         />
 

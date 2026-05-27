@@ -107,6 +107,24 @@
     },
   ]);
 
+  let browseDropdownItems = $derived([
+    {
+      label: "Anime",
+      action: () => navigate("/browse/anime", true),
+      icon: "fa-tv",
+    },
+    {
+      label: "Manga",
+      action: () => navigate("/browse/manga", true),
+      icon: "fa-book",
+    },
+    {
+      label: "Light Novels",
+      action: () => navigate("/browse/lightnovel", true),
+      icon: "fa-book-open",
+    },
+  ]);
+
   async function handleLogout() {
     await AuthService.logout();
   }
@@ -172,14 +190,9 @@
           <Dropdown items={listDropdownItems}>
             <span class="nav-link cursor-pointer">Lists</span>
           </Dropdown>
-          <a
-            href="/browse"
-            class="nav-link ring-0 outline-none"
-            onclick={(e) => {
-              e.preventDefault();
-              navigate(`/browse`);
-            }}>Browse</a
-          >
+          <Dropdown items={browseDropdownItems}>
+            <span class="nav-link cursor-pointer">Browse</span>
+          </Dropdown>
         {:else}
           <button
             id="nav-login"
