@@ -24,5 +24,22 @@ export const MediaService = {
 
     const media = (data || []).map(mapSupabaseMedia).filter((m): m is Media => m !== null);
     return success(media);
+  },
+
+  /**
+   * Fetches recently added media by type.
+   */
+  async getRecentlyAdded(type: string, limit: number = 5): Promise<Result<Media[]>> {
+    const { data, error } = await supabase
+      .from('media')
+      .select('*')
+      .eq('media_type', type)
+      .order('created_at', { ascending: false })
+      .limit(limit);
+
+    if (error) return failure(error.message);
+
+    const media = (data || []).map(mapSupabaseMedia).filter((m): m is Media => m !== null);
+    return success(media);
   }
 };

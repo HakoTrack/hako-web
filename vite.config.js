@@ -1,8 +1,21 @@
 import { defineConfig } from 'vite';
 import { svelte } from '@sveltejs/vite-plugin-svelte';
 import { VitePWA } from 'vite-plugin-pwa';
+import path from 'path';
+import { fileURLToPath } from 'url';
+
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
 export default defineConfig({
+  resolve: {
+    alias: {
+      '$core': path.resolve(__dirname, './src/core/'),
+      '$shared': path.resolve(__dirname, './src/shared/'),
+      '$utils': path.resolve(__dirname, './src/shared/utils/'),
+      '$features': path.resolve(__dirname, './src/features/'),
+      '$components': path.resolve(__dirname, './src/shared/components/'),
+    }
+  },
   plugins: [
     svelte({
       onwarn: (warning, handler) => {

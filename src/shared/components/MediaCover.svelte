@@ -1,10 +1,10 @@
 <script lang="ts">
   import { HakoImage } from "../utils/images";
   import { fetchMediaById } from "../utils/mediaData";
-  import { openQuickEditor, ui } from "../../core/ui.svelte";
+  import { openQuickEditor } from "../../core/ui.svelte";
   import { getDisplayTitle, settings } from "../../core/settings.svelte";
   import Tooltip from "./Tooltip.svelte";
-  import type { Media } from "../../types";
+  import type { Media } from "../types";
 
   interface Props {
     mediaId: string | number;
