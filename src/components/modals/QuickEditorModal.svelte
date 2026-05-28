@@ -35,6 +35,7 @@
   let isFavorited = $state(false);
   let isSaving = $state(false);
   let isLoaded = $state(false);
+  let bannerError = $state(false);
 
   $effect(() => {
     isFavorited = ui.favoriteIds.has(entry.id);
@@ -59,6 +60,7 @@
   let status = $state("planning");
   let score = $state(0);
   let progress = $state(0);
+  let progressVolumes = $state(0);
   let startDate = $state("");
   let finishDate = $state("");
 
@@ -72,6 +74,7 @@
     status = entry.status || "planning";
     score = entry.score || 0;
     progress = entry.progress || 0;
+    progressVolumes = entry.progress_volumes || 0;
 
     startDate = entry.startedAt?.year
       ? `${entry.startedAt.year}-${String(entry.startedAt.month).padStart(2, "0")}-${String(entry.startedAt.day).padStart(2, "0")}`
@@ -108,6 +111,7 @@
           status,
           score: score > 0 && score <= 10 ? score : null,
           progress,
+          progress_volumes: progressVolumes,
           total: entry.total,
           started_at: startDate || null,
           completed_at: finishDate || null,
@@ -135,15 +139,31 @@
   onclick={(e) => e.stopPropagation()}
 >
   <!-- Header with Banner -->
-  <div class="relative h-40 shrink-0">
-    <img
-      src={HakoImage.getBanner(entry.id, 700)}
-      class="w-full h-full object-cover opacity-50"
-      alt="banner"
-    />
-    <div
-      class="absolute inset-0 bg-linear-to-b from-transparent to-(--surface)"
-    ></div>
+  <div class="relative h-40 shrink-0 bg-(--surface)">
+    {#if bannerError}
+      <div
+        class="absolute inset-0"
+        style="
+            --s: 40px;
+            --c1: var(--surface-elevated);
+            --c2: var(--surface-dim);
+            --c: #0000 71%, var(--c1) 0 79%, #0000 0;
+            --_s: calc(var(--s)/2)/calc(2*var(--s)) calc(2*var(--s));
+            background:
+              linear-gradient(45deg, var(--c)) calc(var(--s)/-2) var(--_s),
+              linear-gradient(135deg, var(--c)) calc(var(--s)/2) var(--_s),
+              radial-gradient(var(--c1) 35%, var(--c2) 37%) 0 0/var(--s) var(--s);
+            opacity: 0.15;
+          "
+      ></div>
+    {:else}
+      <img
+        src={HakoImage.getBanner(entry.id, 700)}
+        class="w-full h-full object-cover opacity-50"
+        alt="banner"
+        onerror={() => (bannerError = true)}
+      />
+    {/if}
     <!-- svelte-ignore a11y_consider_explicit_label -->
     <button
       onclick={closeModal}
@@ -215,8 +235,13 @@
         <!-- svelte-ignore a11y_label_has_associated_control -->
         <label
           class="text-xs font-bold text-slate-400 uppercase tracking-wider mb-1.5 block"
-          >Progress</label
         >
+          {#if mediaType === "anime"}
+            Episodes
+          {:else}
+            Chapters
+          {/if}
+        </label>
         {#if !isLoaded}
           <Skeleton />
         {:else}
@@ -225,13 +250,11 @@
             bind:value={progress}
             min={0}
             max={entry.total || Infinity}
-            suffix="/ {entry.total}"
+            suffix="/ {entry.total || '?'}"
           />
         {/if}
       </div>
-    </div>
 
-    <div class="grid grid-cols-2 gap-4 shrink-0">
       <div class="space-y-1.5">
         <!-- svelte-ignore a11y_label_has_associated_control -->
         <label
@@ -254,6 +277,27 @@
           <Skeleton />
         {:else}
           <DateInput label="" bind:value={finishDate} />
+        {/if}
+      </div>
+
+      <div class="space-y-1.5">
+        {#if mediaType !== "anime"}
+          <!-- svelte-ignore a11y_label_has_associated_control -->
+          <label
+            class="text-xs font-bold text-slate-400 uppercase tracking-wider mb-1.5 block"
+            >Volumes</label
+          >
+          {#if !isLoaded}
+            <Skeleton />
+          {:else}
+            <NumberStepper
+              label=""
+              bind:value={progressVolumes}
+              min={0}
+              max={entry.totalVolumes || Infinity}
+              suffix="/ {entry.totalVolumes || '?'}"
+            />
+          {/if}
         {/if}
       </div>
     </div>

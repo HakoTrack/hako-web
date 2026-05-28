@@ -43,7 +43,12 @@
     <div class="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-6">
       {#each media as item}
         <div class="space-y-2">
-          <MediaCover mediaId={item.id} type={mediaType} size="medium" />
+          <MediaCover
+            mediaId={item.id}
+            type={mediaType}
+            size="medium"
+            class="w-full"
+          />
           <div
             class="text-sm font-medium text-(--hako-fg) truncate"
             title={item.title_romaji}

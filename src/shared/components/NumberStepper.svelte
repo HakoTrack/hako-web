@@ -18,7 +18,7 @@
     {label}
   </label>
   <div
-    class="grid grid-cols-[auto_1fr_auto] items-center bg-(--surface-dim) rounded-xl overflow-hidden h-10 border border-(--c8)"
+    class="grid grid-cols-[auto_1fr_auto] items-center bg-(--surface-dim) rounded-lg overflow-hidden h-10 border border-(--c8)"
   >
     <!-- Minus Button -->
     <!-- svelte-ignore a11y_consider_explicit_label -->

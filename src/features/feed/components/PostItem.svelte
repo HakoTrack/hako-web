@@ -54,7 +54,15 @@
     if (total > 0) {
       return Math.round(((post.metadata.progress || 0) / total) * 100);
     }
-    return 50;
+    return (post.metadata.progress || 0) > 0 ? 50 : 0;
+  });
+
+  // Animation for progress bar
+  let displayedPercent = $state(0);
+  $effect(() => {
+    if (percent > 0) {
+      setTimeout(() => (displayedPercent = percent), 50);
+    }
   });
 
   function getRelativeTime(timestamp: string): string {
@@ -242,9 +250,7 @@
       {/if}
     {:else if post.post_type === "list_update" && post.metadata}
       {@const metadata = post.metadata}
-      <div
-        class="flex items-start gap-4 p-4 rounded-xl bg-(--surface-dim)/50 border border-(--surface-elevated)/50"
-      >
+      <div class="flex items-start gap-5">
         <!-- svelte-ignore a11y_no_noninteractive_element_interactions -->
         <!-- svelte-ignore a11y_click_events_have_key_events -->
         <div class="shrink-0">
@@ -257,7 +263,7 @@
             showTooltip={true}
           />
         </div>
-        <div class="flex flex-col justify-center gap-1.5 flex-1">
+        <div class="flex flex-col justify-center gap-2 flex-1 min-w-0">
           <!-- svelte-ignore a11y_no_noninteractive_element_interactions -->
           <!-- svelte-ignore a11y_click_events_have_key_events -->
           <h4
@@ -281,11 +287,11 @@
             {getVerb(metadata)}
           </p>
           <div
-            class="w-full max-w-48 bg-slate-800 h-1.5 rounded-full overflow-hidden"
+            class="w-full max-w-48 bg-(--c8)/20 h-1.5 rounded-full overflow-hidden"
           >
             <div
-              class="h-full transition-all duration-500"
-              style="width: {percent}%; background-color: {statusColor};"
+              class="h-full transition-all duration-1000 ease-out"
+              style="width: {displayedPercent}%; background-color: {statusColor};"
             ></div>
           </div>
         </div>

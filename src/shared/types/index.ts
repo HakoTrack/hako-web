@@ -41,6 +41,7 @@ export interface ListEntry {
   media_type?: string;
   score: number | null;
   progress: number | null;
+  progress_volumes?: number | null;
   status: string;
   updatedAt: string;
   advancedScores: Record<string, any>;

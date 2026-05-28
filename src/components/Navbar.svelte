@@ -224,11 +224,16 @@
             {#each searchResults as media}
               <button
                 type="button"
-                onclick={() =>
-                  handleResultClick(
-                    media.media_id,
-                    media.format?.toLowerCase() === "manga" ? "manga" : "anime",
-                  )}
+                onclick={() => {
+                  const fmt = media.format?.toLowerCase();
+                  const type =
+                    fmt === "manga" || fmt === "one_shot"
+                      ? "manga"
+                      : fmt === "novel"
+                        ? "lightnovel"
+                        : "anime";
+                  handleResultClick(media.media_id, type);
+                }}
                 class="w-full text-left px-4 py-2.5 rounded-xl text-sm text-(--hako-fg) hover:bg-(--surface-elevated) transition-colors flex items-center gap-3"
               >
                 <img

@@ -7,11 +7,14 @@
   import ListStats from "./ListStats.svelte";
   import { calculateAllStats } from "../services/statsCalc";
   import type { Profile, Media } from "../../../shared/types";
+  import SegmentedControl from "../../../shared/components/SegmentedControl.svelte";
 
   let { profileData, metadata } = $props<{
     profileData: Profile | null;
     metadata: Record<string, Media>;
   }>();
+
+  let feedFilter = $state("all");
 
   // Stats calculation (shared by multiple sub-components if needed)
   let allStats = $derived(
@@ -36,12 +39,17 @@
     <div class="space-y-6">
       <div class="flex items-center justify-between">
         <h3 class="text-white font-bold text-lg">Activity Feed</h3>
-        <div class="text-sm text-accent cursor-pointer hover:underline">
-          View All
-        </div>
+        <SegmentedControl
+          bind:value={feedFilter}
+          options={[
+            { label: "All", value: "all" },
+            { label: "Posts", value: "posts" },
+            { label: "Updates", value: "updates" },
+          ]}
+        />
       </div>
       {#if profileData?.id}
-        <FeedWrapper profileId={profileData.id} />
+        <FeedWrapper profileId={profileData.id} filter={feedFilter} />
       {/if}
     </div>
   </div>

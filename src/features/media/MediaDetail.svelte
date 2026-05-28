@@ -16,6 +16,7 @@
   let media: Media | null = $state(null);
   let isLoading = $state(true);
   let currentActiveTab = $state("overview"); // Tab tracking state
+  let bannerError = $state(false);
 
   // Derived title based on user preference
   const displayTitle = $derived.by(() => {
@@ -48,18 +49,145 @@
 </script>
 
 {#if isLoading}
-  <div class="flex items-center justify-center p-20 text-white">Loading...</div>
+  <div class="animate-in fade-in duration-300">
+    <!-- Banner Skeleton -->
+    <div
+      class="w-full h-80 bg-[#0b1622] animate-pulse relative overflow-hidden"
+    >
+      <div
+        class="absolute inset-0 bg-linear-to-t from-[#0b1622] to-transparent"
+      ></div>
+    </div>
+
+    <!-- Main Content Container Skeleton -->
+    <div class="max-w-375 mx-auto px-4 sm:px-6 lg:px-8">
+      <div class="relative -mt-20 flex items-end space-x-6 pb-8">
+        <!-- Cover Skeleton -->
+        <div
+          class="w-40 h-56 rounded-xl border-4 border-[#0b1622] bg-[#151f2e] animate-pulse shadow-2xl shrink-0"
+        ></div>
+
+        <!-- Header Info Skeleton -->
+        <div class="mb-2 space-y-4 w-full">
+          <div
+            class="w-1/3 h-10 bg-(--surface-elevated) animate-pulse rounded"
+          ></div>
+          <div class="flex gap-2">
+            <div class="w-20 h-5 bg-blue-500/10 animate-pulse rounded"></div>
+            <div class="w-20 h-5 bg-blue-500/10 animate-pulse rounded"></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Main Layout Skeleton -->
+      <div class="flex flex-col lg:flex-row gap-8">
+        <!-- Sidebar Skeleton -->
+        <aside class="lg:w-50 shrink-0">
+          <div
+            class="bg-card rounded-xl border border-slate-800 overflow-hidden"
+          >
+            {#each Array(4) as _}
+              <div
+                class="h-11 w-full border-l-4 border-transparent bg-slate-800/20 animate-pulse mb-[1px]"
+              ></div>
+            {/each}
+          </div>
+        </aside>
+
+        <!-- Main Content Area Skeleton -->
+        <main class="lg:w-[65%] min-h-100 pb-12 space-y-6">
+          <div
+            class="bg-card p-6 rounded-xl shadow-lg border border-slate-800 space-y-4"
+          >
+            <div
+              class="w-32 h-6 bg-(--surface-elevated) animate-pulse rounded"
+            ></div>
+            <div class="space-y-3">
+              <div
+                class="w-full h-4 bg-(--surface-elevated)/50 animate-pulse rounded"
+              ></div>
+              <div
+                class="w-full h-4 bg-(--surface-elevated)/50 animate-pulse rounded"
+              ></div>
+              <div
+                class="w-full h-4 bg-(--surface-elevated)/50 animate-pulse rounded"
+              ></div>
+              <div
+                class="w-3/4 h-4 bg-(--surface-elevated)/50 animate-pulse rounded"
+              ></div>
+            </div>
+          </div>
+        </main>
+
+        <!-- Metadata Column Skeleton -->
+        <div class="lg:w-[20%] space-y-6">
+          <div
+            class="bg-card p-6 rounded-xl shadow-lg border border-slate-800 space-y-4"
+          >
+            <div
+              class="w-20 h-5 bg-(--surface-elevated) animate-pulse rounded"
+            ></div>
+            <div class="flex flex-wrap gap-2">
+              <div class="w-16 h-6 bg-slate-800 animate-pulse rounded"></div>
+              <div class="w-16 h-6 bg-slate-800 animate-pulse rounded"></div>
+            </div>
+          </div>
+          <div
+            class="bg-card p-6 rounded-xl shadow-lg border border-slate-800 space-y-4"
+          >
+            <div
+              class="w-16 h-5 bg-(--surface-elevated) animate-pulse rounded"
+            ></div>
+            <div class="space-y-4">
+              {#each Array(4) as _}
+                <div class="flex justify-between">
+                  <div
+                    class="w-12 h-4 bg-(--surface-elevated)/50 animate-pulse rounded"
+                  ></div>
+                  <div
+                    class="w-16 h-4 bg-(--surface-elevated) animate-pulse rounded"
+                  ></div>
+                </div>
+              {/each}
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
 {:else if !media}
   <div class="text-white p-10 text-center">Media not found.</div>
 {:else}
   <div class="relative">
     <!-- Banner -->
     <div class="w-full h-80 relative overflow-hidden bg-[#0b1622]">
-      <img
-        src={HakoImage.getBanner(media.media_id)}
-        class="w-full h-full object-cover opacity-50"
-        alt="Banner"
-      />
+      {#if bannerError}
+        <div
+          class="absolute inset-0"
+          style="
+            --s: 40px;
+            --c1: var(--surface-elevated);
+            --c2: var(--surface-dim);
+            --c: #0000 71%, var(--c1) 0 79%, #0000 0;
+            --_s: calc(var(--s)/2)/calc(2*var(--s)) calc(2*var(--s));
+            background:
+              linear-gradient(45deg, var(--c)) calc(var(--s)/-2) var(--_s),
+              linear-gradient(135deg, var(--c)) calc(var(--s)/2) var(--_s),
+              radial-gradient(var(--c1) 35%, var(--c2) 37%) 0 0/var(--s) var(--s);
+            opacity: 0.15;
+          "
+        ></div>
+        <div
+          class="absolute inset-0 bg-linear-to-b from-transparent to-[#0b1622]"
+        ></div>
+      {:else}
+        <img
+          src={HakoImage.getBanner(media.media_id)}
+          class="w-full h-full object-cover opacity-50"
+          alt="Banner"
+          onerror={() => (bannerError = true)}
+        />
+      {/if}
       <div
         class="absolute inset-0 bg-linear-to-t from-[#0b1622] to-transparent"
       ></div>
@@ -167,11 +295,18 @@
                   >
                 </div>
                 <div class="flex justify-between">
-                  <span>{type === "anime" ? "Episodes" : "Chapters"}</span><span
-                    class="text-white"
-                    >{(type === "anime" ? media.episodes : media.chapters) ||
-                      "N/A"}</span
-                  >
+                  {#if type === "anime"}
+                    <span>Episodes</span>
+                  {:else}
+                    <span>Chapters</span>
+                  {/if}
+                  <span class="text-white">
+                    {#if type === "anime"}
+                      {media.episodes || "N/A"}
+                    {:else}
+                      {media.chapters || "N/A"}
+                    {/if}
+                  </span>
                 </div>
                 <div class="flex justify-between">
                   <span>Duration</span><span class="text-white"

@@ -345,8 +345,101 @@
   </aside>
   <main class="lg:w-[80%] order-1 lg:order-2 space-y-10 min-h-100">
     {#if isLoading}
-      <div class="flex items-center justify-center p-20">
-        <i class="fa-solid fa-circle-notch fa-spin text-accent text-2xl"></i>
+      <div class="space-y-4">
+        <div class="flex items-center space-x-3 mb-6">
+          <div
+            class="w-1.5 h-6 rounded-full bg-(--surface-elevated) animate-pulse"
+          ></div>
+          <h2
+            class="text-lg font-bold uppercase tracking-wider bg-(--surface-elevated) animate-pulse rounded text-transparent"
+          >
+            Placeholder Header
+          </h2>
+        </div>
+        <div class="bg-card rounded-xl overflow-hidden shadow-sm">
+          <table class="w-full text-left border-separate border-spacing-0">
+            <thead>
+              <tr
+                class="text-[10px] uppercase text-(--c8) border-b border-(--surface-elevated)"
+              >
+                <th
+                  class="p-4 w-16 text-center border-b border-(--surface-elevated)"
+                ></th>
+                <th class="p-4 border-b border-(--surface-elevated)">Title</th>
+                <th
+                  class="p-4 text-center w-24 border-b border-(--surface-elevated)"
+                  >Score</th
+                >
+                <th
+                  class="p-4 text-center w-32 border-b border-(--surface-elevated)"
+                  >Progress</th
+                >
+                <th
+                  class="p-4 text-center w-28 border-b border-(--surface-elevated)"
+                  >Format</th
+                >
+              </tr>
+            </thead>
+            <tbody>
+              {#each Array(8) as _, i}
+                <tr
+                  class="group hover:bg-(--surface-elevated)/30 last:border-0"
+                >
+                  <td
+                    class="p-2 border-b border-(--surface-elevated) group-last:border-0"
+                  >
+                    <div
+                      class="w-12 aspect-[17/23] bg-(--surface-elevated) animate-pulse rounded mx-auto"
+                    ></div>
+                  </td>
+                  <td
+                    class="p-4 cursor-pointer border-b border-(--surface-elevated) group-last:border-0"
+                  >
+                    <div
+                      class="text-sm font-bold bg-(--surface-elevated) animate-pulse rounded text-transparent w-2/3"
+                    >
+                      Placeholder
+                    </div>
+                    <div class="flex flex-wrap gap-1 mt-1.5">
+                      <span
+                        class="text-[10px] px-3 py-1 rounded-full bg-(--surface-elevated)/50 animate-pulse text-transparent font-bold uppercase tracking-wider"
+                        >Badge</span
+                      >
+                      <span
+                        class="text-[10px] px-3 py-1 rounded-full bg-(--surface-elevated)/50 animate-pulse text-transparent font-bold uppercase tracking-wider"
+                        >Badge</span
+                      >
+                    </div>
+                  </td>
+                  <td
+                    class="p-4 text-center text-sm font-mono border-b border-(--surface-elevated) group-last:border-0"
+                  >
+                    <span
+                      class="bg-(--surface-elevated) animate-pulse rounded text-transparent"
+                      >0.0</span
+                    >
+                  </td>
+                  <td
+                    class="p-4 text-center text-sm font-mono border-b border-(--surface-elevated) group-last:border-0"
+                  >
+                    <span
+                      class="bg-(--surface-elevated) animate-pulse rounded text-transparent"
+                      >00/00</span
+                    >
+                  </td>
+                  <td
+                    class="p-4 text-center border-b border-(--surface-elevated) group-last:border-0"
+                  >
+                    <span
+                      class="text-[10px] font-bold bg-(--surface-elevated) animate-pulse px-2 py-1 rounded text-transparent border border-transparent"
+                      >TV</span
+                    >
+                  </td>
+                </tr>
+              {/each}
+            </tbody>
+          </table>
+        </div>
       </div>
     {:else if visibleGroups.length === 0}
       <div class="p-10 text-center text-[20px] text-slate-500">
@@ -393,7 +486,9 @@
                 {#each group.items as item}
                   {@const meta = item.meta || {}}
                   {@const total =
-                    type === "manga"
+                    type === "manga" ||
+                    type === "light_novel" ||
+                    type === "lightnovel"
                       ? meta.chapters || item.total || "?"
                       : meta.episodes || item.total || "?"}
                   {@const displayTitle = item.displayTitle}

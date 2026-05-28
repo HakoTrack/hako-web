@@ -137,7 +137,7 @@
     onclick={toggleCalendar}
     class="w-full h-10 flex items-center justify-between bg-(--surface-dim) {value
       ? 'text-(--hako-fg)'
-      : 'text-(--c8)'} text-sm rounded-xl border border-(--c8) p-2.5 focus:border-(--hako-accent) outline-none transition-colors"
+      : 'text-(--c8)'} text-sm rounded-lg border border-(--c8) p-2.5 focus:border-(--hako-accent) outline-none transition-colors"
   >
     <span>{formattedValue || "Select Date"}</span>
     <i class="fa-solid fa-calendar-days text-xs text-(--c8)"></i>

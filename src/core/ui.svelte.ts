@@ -47,13 +47,19 @@ export function closeModal() {
 }
 
 export async function openQuickEditor(media: any, type: string = 'anime') {
+  // Determine total count based on media type
+  let total = media.episodes;
+  if (type === 'manga' || type === 'light_novel') total = media.chapters;
+
   // Construct a standard entry object
   let entry = {
     ...media,
     id: media.media_id || media.id,
     type: type,
     title: media.title?.romaji || media.title,
-    total: media.episodes,
+    total: total,
+    totalChapters: media.chapters,
+    totalVolumes: media.volumes,
     rawMetadata: media
   };
 

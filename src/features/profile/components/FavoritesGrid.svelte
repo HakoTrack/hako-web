@@ -41,7 +41,7 @@
 </script>
 
 <div class="bg-card p-6 rounded-xl shadow-md space-y-6">
-  <h3 class="text-white font-bold flex items-center mb-4">
+  <h3 class="text-(--hako-fg) font-bold flex items-center mb-4">
     <i class="fa-solid fa-heart text-accent mr-2"></i> Favorites
   </h3>
 

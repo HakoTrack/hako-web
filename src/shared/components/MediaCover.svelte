@@ -29,9 +29,9 @@
   }: Props = $props();
 
   const sizeClasses = {
-    small: "w-12 h-16",
-    medium: "aspect-85/115",
-    large: "w-40 h-56",
+    small: "w-12 aspect-[17/23]",
+    medium: "w-28 aspect-[17/23]",
+    large: "w-40 aspect-[17/23]",
   };
 
   let loaded = $state(false);

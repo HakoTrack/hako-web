@@ -3,9 +3,25 @@
   import PostItem from "./PostItem.svelte";
   import PostCreator from "./PostCreator.svelte";
 
-  let { profileId = null, userId = null, mode = "global" } = $props();
+  let {
+    profileId = null,
+    userId = null,
+    mode = "global",
+    filter = "all",
+  } = $props();
 
   let posts: any[] = $state([]);
+
+  // Client-side filtering logic
+  const filteredPosts = $derived.by(() => {
+    if (filter === "all") return posts;
+    if (filter === "posts")
+      return posts.filter((p) => p.post_type === "thought");
+    if (filter === "updates")
+      return posts.filter((p) => p.post_type === "list_update");
+    return posts;
+  });
+
   let isLoading = $state(true);
   let isLoadingMore = $state(false);
   let page = $state(0);
@@ -102,22 +118,30 @@
     <div class="flex items-center justify-center p-20">
       <i class="fa-solid fa-circle-notch fa-spin text-accent text-2xl"></i>
     </div>
-  {:else if posts.length === 0}
-    <p class="text-slate-500 text-sm p-4 text-center">
-      This feed is currently stuck in filler episodes... ( ￣_￣)
-    </p>
   {:else}
-    {#each posts as post (post.id)}
-      <PostItem {post} />
-    {/each}
+    <div class="space-y-6">
+      {#if filteredPosts.length === 0}
+        <p class="text-slate-500 text-sm p-4 text-center">
+          {filter === "all"
+            ? "This feed is currently stuck in filler episodes... ( ￣_￣)"
+            : `No ${filter} found in this feed yet.`}
+        </p>
+      {:else}
+        {#each filteredPosts as post (post.id)}
+          <PostItem {post} />
+        {/each}
+      {/if}
 
-    <!-- Sentinel for IntersectionObserver -->
-    <div bind:this={sentinelRef} class="h-10"></div>
+      <!-- Sentinel for IntersectionObserver -->
+      {#if hasMore}
+        <div bind:this={sentinelRef} class="h-10"></div>
+      {/if}
 
-    {#if isLoadingMore}
-      <div class="flex items-center justify-center p-4">
-        <i class="fa-solid fa-circle-notch fa-spin text-accent text-lg"></i>
-      </div>
-    {/if}
+      {#if isLoadingMore}
+        <div class="flex items-center justify-center p-4">
+          <i class="fa-solid fa-circle-notch fa-spin text-accent text-lg"></i>
+        </div>
+      {/if}
+    </div>
   {/if}
 </div>

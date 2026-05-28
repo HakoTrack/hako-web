@@ -59,6 +59,7 @@ export function mapSupabaseListEntry(entry: any): ListEntry | null {
     media_id: entry.media_id,
     score: entry.score,
     progress: entry.progress,
+    progress_volumes: entry.progress_volumes,
     status: entry.status,
     updatedAt: entry.updated_at,
     advancedScores: entry.advanced_scores || {},
@@ -75,7 +76,7 @@ export async function fetchUserListEntry(profileId: string, mediaId: number, typ
   const { data, error } = await supabase
     .from('profile_list')
     .select(`
-        media_id, score, progress, status, updated_at, advanced_scores, profile_id,
+        media_id, score, progress, progress_volumes, status, updated_at, advanced_scores, profile_id,
         started_at, completed_at
     `)
     .eq('profile_id', profileId)

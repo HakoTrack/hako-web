@@ -20,7 +20,7 @@
         value = option.value;
         if (onchange) onchange(option.value);
       }}
-      class="px-3 py-1 text-xs font-bold rounded transition-colors outline-none focus:ring-0 {value ===
+      class="px-3 py-1 text-xs font-bold rounded transition-colors cursor-pointer outline-none focus:ring-0 {value ===
       option.value
         ? 'bg-(--surface-elevated) text-white'
         : 'text-slate-500 hover:text-white'}"
