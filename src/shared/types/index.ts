@@ -23,6 +23,7 @@ export interface Media {
   };
   description: string;
   format: string;
+  source: string | null;
   status: string;
   episodes: number | null;
   chapters: number | null;

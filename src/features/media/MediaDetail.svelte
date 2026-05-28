@@ -3,10 +3,11 @@
   import { fetchMediaById } from "../../shared/utils/mediaData";
   import { HakoImage } from "../../shared/utils/images";
   import { getVibes } from "../profile/services/vibeCalc";
-  import { openQuickEditor, ui } from "../../core/ui.svelte";
   import { getDisplayTitle, settings } from "../../core/settings.svelte";
   import { formatDescription } from "../../shared/utils/mediaData";
   import MediaCover from "../../shared/components/MediaCover.svelte";
+  import Badge from "../../shared/components/Badge.svelte";
+  import TasteProfile from "../profile/components/TasteProfile.svelte";
   import type { Media } from "../../shared/types/index";
 
   let { mediaId, type = "anime" } = $props<{
@@ -26,9 +27,13 @@
     }
     return "";
   });
-
   // Reactive vibe calculation
   let vibes = $derived(media ? getVibes(media) : null);
+
+  function toTitleCase(str: string | null | undefined): string {
+    if (!str) return "N/A";
+    return str.charAt(0).toUpperCase() + str.slice(1).toLowerCase();
+  }
 
   onMount(async () => {
     try {
@@ -43,6 +48,8 @@
   const tabs = [
     { id: "overview", label: "Overview", icon: "fa-info-circle" },
     { id: "characters", label: "Characters", icon: "fa-users" },
+    { id: "staff", label: "Staff", icon: "fa-user-tie" },
+    { id: "recommendations", label: "Recommendations", icon: "fa-thumbs-up" },
     { id: "reviews", label: "Reviews", icon: "fa-comments" },
     { id: "stats", label: "Stats", icon: "fa-chart-simple" },
   ];
@@ -80,7 +87,7 @@
       </div>
 
       <!-- Main Layout Skeleton -->
-      <div class="flex flex-col lg:flex-row gap-8">
+      <div class="flex flex-col lg:flex-row gap-8 mb-12">
         <!-- Sidebar Skeleton -->
         <aside class="lg:w-50 shrink-0">
           <div
@@ -213,17 +220,14 @@
           </h1>
           <div class="flex flex-wrap gap-2">
             {#each media.genres as genre}
-              <span
-                class="bg-blue-500/10 text-blue-400 text-xs px-2 py-0.5 rounded font-bold uppercase tracking-wider"
-                >{genre}</span
-              >
+              <Badge label={genre} variant="genre" />
             {/each}
           </div>
         </div>
       </div>
 
       <!-- Main Layout -->
-      <div class="flex flex-col lg:flex-row gap-8">
+      <div class="flex flex-col lg:flex-row gap-8 mb-12">
         <!-- Sidebar Navigation -->
         <aside class="lg:w-50 shrink-0">
           <div class="sticky top-24">
@@ -233,7 +237,7 @@
               {#each tabs as tab}
                 <button
                   onclick={() => (currentActiveTab = tab.id)}
-                  class="flex items-center px-4 py-3 text-sm font-medium w-full transition-all border-l-4 {currentActiveTab ===
+                  class="flex items-center px-4 py-3 text-sm font-medium w-full transition-all border-l-4 outline-none focus:ring-0 {currentActiveTab ===
                   tab.id
                     ? 'text-white bg-slate-800/50 border-accent'
                     : 'text-slate-400 hover:text-white border-transparent'} "
@@ -261,27 +265,27 @@
           <div class:hidden={currentActiveTab !== "characters"}>
             <div class="p-10 text-slate-500">Character view coming soon...</div>
           </div>
+          <div class:hidden={currentActiveTab !== "staff"}>
+            <div class="p-10 text-slate-500">Staff view coming soon...</div>
+          </div>
+          <div class:hidden={currentActiveTab !== "recommendations"}>
+            <div class="p-10 text-slate-500">
+              Recommendations view coming soon...
+            </div>
+          </div>
+          <div class:hidden={currentActiveTab !== "reviews"}>
+            <div class="p-10 text-slate-500">Reviews view coming soon...</div>
+          </div>
+          <div class:hidden={currentActiveTab !== "stats"}>
+            <div class="p-10 text-slate-500">Stats view coming soon...</div>
+          </div>
         </main>
 
         <!-- Metadata Column -->
         {#if currentActiveTab === "overview"}
           <div class="lg:w-[20%] space-y-6">
             <!-- Vibes -->
-            <div
-              class="bg-card p-6 rounded-xl shadow-lg border border-slate-800"
-            >
-              <h3 class="text-white font-bold mb-4">Vibes</h3>
-              <div class="flex flex-wrap gap-2">
-                {#if vibes && vibes.sorted}
-                  {#each vibes.sorted.slice(0, 3) as pillar}
-                    <span
-                      class="bg-slate-800 text-slate-300 text-[10px] px-2 py-1 rounded font-bold uppercase tracking-wider"
-                      >{pillar.name}</span
-                    >
-                  {/each}
-                {/if}
-              </div>
-            </div>
+            <TasteProfile {vibes} />
 
             <!-- Info -->
             <div
@@ -289,6 +293,11 @@
             >
               <h3 class="text-white font-bold mb-4">Info</h3>
               <div class="space-y-3 text-sm text-slate-300">
+                <div class="flex justify-between">
+                  <span>Source</span><span class="text-white"
+                    >{toTitleCase(media.source)}</span
+                  >
+                </div>
                 <div class="flex justify-between">
                   <span>Format</span><span class="text-white"
                     >{media.format}</span
@@ -317,9 +326,11 @@
                 <div class="space-y-1">
                   <div class="flex justify-between">
                     <span>Season</span><span class="text-white"
-                      >{media.season || ""} {media.seasonYear || ""}</span
+                      >{toTitleCase(media.season)}
+                      {media.seasonYear || ""}</span
                     >
                   </div>
+
                   {#if media.startDate?.year || media.endDate?.year}
                     <div class="text-[10px] text-slate-500 text-right">
                       {media.startDate?.year

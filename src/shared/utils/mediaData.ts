@@ -25,6 +25,7 @@ export function mapSupabaseMedia(media: any): Media | null {
     },
     description: media.description,
     format: media.format,
+    source: media.source,
     status: media.status,
     episodes: media.episodes,
     chapters: media.chapters,
