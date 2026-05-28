@@ -106,14 +106,12 @@
           <div class="text-lg font-bold text-(--hako-fg) mb-1">
             {phase.name}
           </div>
-          <p
-            class="text-xs text-(--c8) mb-6 leading-tight max-w-[200px] mx-auto"
-          >
+          <p class="text-xs text-(--c8) mb-6 leading-tight max-w-50 mx-auto">
             {phase.description}
           </p>
 
           <!-- Checklist -->
-          <ul class="text-left space-y-2 w-full inline-block max-w-[240px]">
+          <ul class="text-left space-y-2 w-full inline-block max-w-60">
             {#each phase.features as feature}
               <li class="flex items-center text-xs text-(--hako-fg)">
                 <i

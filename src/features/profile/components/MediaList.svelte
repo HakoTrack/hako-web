@@ -389,7 +389,7 @@
                     class="p-2 border-b border-(--surface-elevated) group-last:border-0"
                   >
                     <div
-                      class="w-12 aspect-[17/23] bg-(--surface-elevated) animate-pulse rounded mx-auto"
+                      class="w-12 aspect-17/23 bg-(--surface-elevated) animate-pulse rounded mx-auto"
                     ></div>
                   </td>
                   <td
