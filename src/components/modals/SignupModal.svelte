@@ -21,6 +21,7 @@
     ? 'max-w-4xl'
     : 'max-w-md'} max-h-[90vh] text-left relative transition-all duration-300 flex flex-col"
 >
+  <!-- svelte-ignore a11y_consider_explicit_label -->
   <button
     onclick={() => closeModal()}
     class="absolute top-4 right-4 text-slate-500 hover:text(--hako-fg) cursor-pointer"

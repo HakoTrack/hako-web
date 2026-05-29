@@ -1,5 +1,4 @@
 <script lang="ts">
-  import { HakoImage } from "../../../shared/utils/images";
   import MediaCover from "../../../shared/components/MediaCover.svelte";
 
   let { genre, stats, type, activeMetric } = $props<{
@@ -29,7 +28,7 @@
   const average = $derived(() => {
     if (stats.scores.length === 0) return "0.0";
     // Summing scores as numbers, then applying toFixed(1) for display
-    const sum = stats.scores.reduce((a, b) => a + b, 0);
+    const sum = stats.scores.reduce((a: number, b: number) => a + b, 0);
     return (sum / stats.scores.length).toFixed(1);
   });
 </script>

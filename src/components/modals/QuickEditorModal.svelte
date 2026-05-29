@@ -318,7 +318,7 @@
           >Description</label
         >
         <div
-          class="text-sm text-slate-300 bg-(--surface-dim) p-4 rounded-xl border border-(--surface-elevated) overflow-y-auto scrollbar-thin flex-1 min-h-[100px]"
+          class="text-sm text-slate-300 bg-(--surface-dim) p-4 rounded-xl border border-(--surface-elevated) overflow-y-auto scrollbar-thin flex-1 min-h-25"
         >
           {@html formatDescription(entry.description)}
         </div>
