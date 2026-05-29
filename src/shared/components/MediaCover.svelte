@@ -79,7 +79,7 @@
       onerror={(e) => {
         const img = e.target as HTMLImageElement;
         img.src =
-          "https://ik.imagekit.io/HakoImage/covers/placeholder.jpg?tr=w-240,f=webp";
+          "https://ik.imagekit.io/HakoImage/covers/placeholder.webp?tr=w-240,f=webp";
       }}
       onclick={handleOpenEditor}
       onmouseenter={handleHover}
