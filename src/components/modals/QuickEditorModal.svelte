@@ -142,7 +142,7 @@
 <!-- svelte-ignore a11y_click_events_have_key_events -->
 <!-- svelte-ignore a11y_no_static_element_interactions -->
 <div
-  class="bg-(--surface) w-[640px] max-w-[95vw] max-h-[85vh] rounded-2xl shadow-2xl border border-(--surface-elevated) flex flex-col overflow-hidden"
+  class="bg-(--surface) w-160 max-w-[95dvw] max-h-[95dvh] rounded-2xl shadow-2xl border border-(--surface-elevated) flex flex-col overflow-hidden"
   onclick={(e) => e.stopPropagation()}
 >
   <!-- Header with Banner -->
@@ -310,7 +310,7 @@
     </div>
 
     <!-- Description & Vibes -->
-    <div class="space-y-4 flex-1 flex flex-col min-h-0">
+    <div class="space-y-4 flex-1 flex flex-col min-h-0 overflow-hidden">
       <div class="space-y-1.5 flex-1 flex flex-col min-h-0">
         <!-- svelte-ignore a11y_label_has_associated_control -->
         <label
@@ -318,7 +318,7 @@
           >Description</label
         >
         <div
-          class="text-sm text-slate-300 bg-(--surface-dim) p-4 rounded-xl border border-(--surface-elevated) overflow-y-auto scrollbar-thin flex-1"
+          class="text-sm text-slate-300 bg-(--surface-dim) p-4 rounded-xl border border-(--surface-elevated) overflow-y-auto scrollbar-thin flex-1 min-h-[100px]"
         >
           {@html formatDescription(entry.description)}
         </div>

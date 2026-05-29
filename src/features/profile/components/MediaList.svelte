@@ -356,7 +356,9 @@
             Placeholder Header
           </h2>
         </div>
-        <div class="bg-card rounded-xl overflow-hidden shadow-sm">
+        <div
+          class="bg-card rounded-xl overflow-hidden shadow-sm w-full overflow-x-auto"
+        >
           <table class="w-full text-left border-separate border-spacing-0">
             <thead>
               <tr
@@ -367,15 +369,15 @@
                 ></th>
                 <th class="p-4 border-b border-(--surface-elevated)">Title</th>
                 <th
-                  class="p-4 text-center w-24 border-b border-(--surface-elevated)"
+                  class="p-4 text-center w-24 border-b border-(--surface-elevated) hidden sm:table-cell"
                   >Score</th
                 >
                 <th
-                  class="p-4 text-center w-32 border-b border-(--surface-elevated)"
+                  class="p-4 text-center w-32 border-b border-(--surface-elevated) hidden sm:table-cell"
                   >Progress</th
                 >
                 <th
-                  class="p-4 text-center w-28 border-b border-(--surface-elevated)"
+                  class="p-4 text-center w-28 border-b border-(--surface-elevated) hidden sm:table-cell"
                   >Format</th
                 >
               </tr>
@@ -412,7 +414,7 @@
                     </div>
                   </td>
                   <td
-                    class="p-4 text-center text-sm font-mono border-b border-(--surface-elevated) group-last:border-0"
+                    class="p-4 text-center text-sm font-mono border-b border-(--surface-elevated) group-last:border-0 hidden sm:table-cell"
                   >
                     <span
                       class="bg-(--surface-elevated) animate-pulse rounded text-transparent"
@@ -420,7 +422,7 @@
                     >
                   </td>
                   <td
-                    class="p-4 text-center text-sm font-mono border-b border-(--surface-elevated) group-last:border-0"
+                    class="p-4 text-center text-sm font-mono border-b border-(--surface-elevated) group-last:border-0 hidden sm:table-cell"
                   >
                     <span
                       class="bg-(--surface-elevated) animate-pulse rounded text-transparent"
@@ -428,7 +430,7 @@
                     >
                   </td>
                   <td
-                    class="p-4 text-center border-b border-(--surface-elevated) group-last:border-0"
+                    class="p-4 text-center border-b border-(--surface-elevated) group-last:border-0 hidden sm:table-cell"
                   >
                     <span
                       class="text-[10px] font-bold bg-(--surface-elevated) animate-pulse px-2 py-1 rounded text-transparent border border-transparent"
@@ -457,7 +459,9 @@
               {group.label}
             </h2>
           </div>
-          <div class="bg-card rounded-xl overflow-hidden shadow-sm">
+          <div
+            class="bg-card rounded-xl overflow-hidden shadow-sm w-full overflow-x-auto"
+          >
             <table class="w-full text-left border-separate border-spacing-0">
               <thead>
                 <tr
@@ -477,7 +481,7 @@
                     >Progress</th
                   >
                   <th
-                    class="p-4 text-center w-28 border-b border-(--surface-elevated)"
+                    class="p-4 text-center w-28 border-b border-(--surface-elevated) hidden sm:table-cell"
                     >Format</th
                   >
                 </tr>
@@ -511,10 +515,12 @@
                       class="p-4 cursor-pointer border-b border-(--surface-elevated) group-last:border-0"
                       onclick={() => handleOpenEditor(item.media_id)}
                     >
-                      <div class="text-sm font-bold text-(--hako-fg)">
+                      <div
+                        class="text-sm font-bold text-(--hako-fg) truncate sm:whitespace-normal"
+                      >
                         {displayTitle}
                       </div>
-                      <div class="flex flex-wrap gap-1 mt-1.5">
+                      <div class="flex flex-wrap gap-1 mt-1.5 hidden sm:flex">
                         {#each (meta as any).genres?.slice(0, 5) as genre}
                           <Badge label={genre} variant="genre" />
                         {/each}
@@ -534,7 +540,7 @@
                       ><span class="text-(--c8) text-xs">{total}</span>
                     </td>
                     <td
-                      class="p-4 text-center border-b border-(--surface-elevated) group-last:border-0"
+                      class="p-4 text-center border-b border-(--surface-elevated) group-last:border-0 hidden sm:table-cell"
                     >
                       <span
                         class="text-[10px] font-bold bg-(--surface-dim) px-2 py-1 rounded text-slate-400 border border-(--surface-elevated)"

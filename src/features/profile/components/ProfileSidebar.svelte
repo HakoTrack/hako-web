@@ -17,7 +17,15 @@
     class="space-y-3 pt-4 border-t border-(--surface-elevated) text-xs uppercase tracking-wider font-semibold text-slate-500"
   >
     <div class="flex justify-between">
-      <span>Joined</span><span class="text-white">May 13th, 2026</span>
+      <span>Joined</span><span class="text-white"
+        >{profileData?.join_date
+          ? new Date(profileData.join_date).toLocaleDateString("en-US", {
+              month: "short",
+              day: "numeric",
+              year: "numeric",
+            })
+          : "N/A"}</span
+      >
     </div>
     <div class="flex justify-between">
       <span>Location</span><span class="text-white">Tokyo, JP</span>

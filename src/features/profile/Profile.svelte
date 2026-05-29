@@ -153,7 +153,7 @@
             {profileData?.display_name || profileData?.username || ""}
           </h1>
           <p class="text-slate-400 text-sm max-w-xl">
-            {profileData?.bio || ""}
+            {profileData?.quote || ""}
           </p>
         </div>
         <div class="flex space-x-3">

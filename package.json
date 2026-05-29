@@ -27,6 +27,7 @@
     "@vercel/analytics": "^2.0.1",
     "@vercel/speed-insights": "^2.0.0",
     "chart.js": "^4.5.1",
+    "cropperjs": "^1.6.2",
     "fuse.js": "^7.3.0",
     "svelte": "^5.55.7",
     "zod": "^4.4.3"
@@ -35,6 +36,7 @@
     "@sveltejs/vite-plugin-svelte": "^7.1.2",
     "@tailwindcss/postcss": "^4.3.0",
     "@tsconfig/svelte": "^5.0.8",
+    "@types/cropperjs": "^1.1.5",
     "autoprefixer": "^10.5.0",
     "postcss": "^8.5.14",
     "tailwindcss": "^4.3.0",

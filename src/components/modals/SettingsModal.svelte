@@ -7,9 +7,21 @@
   import Select from "../../shared/components/Select.svelte";
   import { SETTINGS_CONFIG, settings } from "../../core/settings.svelte";
   import { ui } from "../../core/ui.svelte";
+  import { supabase } from "../../core/supabase";
+  import { uploadProfileImage } from "../../features/profile/services/imageUploadService";
+  import CropModal from "./CropModal.svelte";
 
   let activeTab = $state("profile");
   let profile = $derived(ui.modalData?.profile);
+  let isUploading = $state(false);
+
+  // Local state for cropping
+  let fileToCrop: {
+    file: File;
+    src: string;
+    bucket: "avatars" | "banners";
+    aspectRatio: number;
+  } | null = $state(null);
 
   // Local state for inputs to avoid binding to potentially undefined profile fields
   let birthday = $state("");
@@ -17,14 +29,56 @@
   let favoriteStudio = $state("");
   let username = $state("");
   let email = $state("");
+  let aboutMe = $state("");
   let deleteEmail = $state("");
   let deletePassword = $state("");
   let deletionCode = $state("");
+
+  let avatarInput: HTMLInputElement;
+  let bannerInput: HTMLInputElement;
+
+  async function initiateCrop(event: Event, bucket: "avatars" | "banners") {
+    const target = event.target as HTMLInputElement;
+    const file = target.files?.[0];
+    if (!file) return;
+
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      fileToCrop = {
+        file,
+        src: e.target?.result as string,
+        bucket,
+        aspectRatio: bucket === "avatars" ? 1 : 3.5, // 1:1 for avatar, 7:2 for banner
+      };
+    };
+    reader.readAsDataURL(file);
+  }
+
+  async function handleCropConfirmed(croppedFile: File) {
+    if (!fileToCrop || !profile?.id) return;
+
+    const { bucket } = fileToCrop;
+    fileToCrop = null; // Close modal
+
+    isUploading = true;
+    const newUrl = await uploadProfileImage(profile.id, croppedFile, bucket);
+    if (newUrl) {
+      // Append timestamp to bust browser cache for the display URL
+      const cacheBustedUrl = `${newUrl}?t=${new Date().getTime()}`;
+
+      // Update the local state for immediate UI feedback
+      if (bucket === "avatars")
+        ui.modalData.profile.avatar_url = cacheBustedUrl;
+      else ui.modalData.profile.banner_url = cacheBustedUrl;
+    }
+    isUploading = false;
+  }
 
   $effect(() => {
     if (profile) {
       username = profile.username || "";
       email = profile.email || "";
+      aboutMe = profile.about_me || "";
     }
   });
 
@@ -36,10 +90,38 @@
     { id: "privacy", label: "Privacy", icon: "fa-shield" },
   ];
 
-  function closeModal() {
-    close();
+  async function saveProfile() {
+    if (!profile?.id) return;
+
+    isUploading = true;
+    const { error } = await supabase
+      .from("profiles")
+      .update({
+        about_me: aboutMe || null,
+        location: location || null,
+        birthday: birthday || null,
+        favorite_studio: favoriteStudio || null,
+      })
+      .eq("id", profile.id);
+
+    if (error) {
+      console.error("Error saving profile:", error);
+      alert("Failed to save changes.");
+    } else {
+      alert("Profile updated successfully!");
+    }
+    isUploading = false;
   }
 </script>
+
+{#if fileToCrop}
+  <CropModal
+    imageSrc={fileToCrop.src}
+    aspectRatio={fileToCrop.aspectRatio}
+    onCrop={handleCropConfirmed}
+    onCancel={() => (fileToCrop = null)}
+  />
+{/if}
 
 <div
   class="bg-card p-6 rounded-2xl shadow-2xl w-160 h-175 border border-(--surface-elevated) flex flex-col"
@@ -50,7 +132,7 @@
       <i class="fa-solid fa-cog text-accent"></i> Settings
     </h2>
     <button
-      onclick={closeModal}
+      onclick={close}
       class="text-slate-500 hover:text-(--hako-fg) transition-colors"
       aria-label="Close"
     >
@@ -85,7 +167,17 @@
           <h3 class="text-lg font-bold text-(--hako-fg)">Profile Settings</h3>
 
           <div class="flex gap-4 items-center">
-            <div class="relative w-20 h-20 group cursor-pointer">
+            <input
+              type="file"
+              accept="image/*"
+              class="hidden"
+              bind:this={avatarInput}
+              onchange={(e) => initiateCrop(e, "avatars")}
+            />
+            <div
+              class="relative w-20 h-20 group cursor-pointer"
+              onclick={() => avatarInput.click()}
+            >
               <img
                 src={HakoImage.get(profile?.avatar_url, { w: 80, f: "webp" })}
                 class="w-full h-full rounded-full object-cover border-2 border-slate-700"
@@ -94,10 +186,21 @@
               <div
                 class="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 flex items-center justify-center rounded-full text-xs font-bold transition-opacity"
               >
-                Edit
+                {isUploading ? "..." : "Edit"}
               </div>
             </div>
-            <div class="relative w-48 h-20 group cursor-pointer">
+
+            <input
+              type="file"
+              accept="image/*"
+              class="hidden"
+              bind:this={bannerInput}
+              onchange={(e) => initiateCrop(e, "banners")}
+            />
+            <div
+              class="relative w-48 h-20 group cursor-pointer"
+              onclick={() => bannerInput.click()}
+            >
               <img
                 src={HakoImage.get(profile?.banner_url, { w: 192, f: "webp" })}
                 class="w-full h-full rounded-lg object-cover border border-slate-700"
@@ -106,7 +209,7 @@
               <div
                 class="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 flex items-center justify-center rounded-lg text-xs font-bold transition-opacity"
               >
-                Edit
+                {isUploading ? "..." : "Edit"}
               </div>
             </div>
           </div>
@@ -122,6 +225,7 @@
             <textarea
               class="w-full bg-(--surface-dim) border border-(--c8) rounded-xl p-3 text-sm text-(--hako-fg) outline-none min-h-[80px]"
               placeholder="Tell us about yourself..."
+              bind:value={aboutMe}
             ></textarea>
           </div>
 
@@ -144,6 +248,17 @@
               placeholder="e.g. Kyoto Animation"
               bind:value={favoriteStudio}
             />
+          </div>
+
+          <div class="pt-4">
+            <Button
+              variant="primary"
+              class="w-full"
+              onclick={saveProfile}
+              disabled={isUploading}
+            >
+              {isUploading ? "Saving..." : "Save Changes"}
+            </Button>
           </div>
         </div>
       {:else if activeTab === "account"}

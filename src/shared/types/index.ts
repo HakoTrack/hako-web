@@ -7,8 +7,9 @@ export interface Profile {
   about_me?: string;
   avatar_url?: string;
   banner_url?: string;
+  join_date?: string;
   display_name?: string;
-  bio?: string;
+  quote?: string;
   role?: string;
   mediaLists: Record<string, any[]>;
 }
