@@ -141,15 +141,17 @@
           />
           {#if roleConfig}
             <div
-              class="absolute -bottom-2 -right-2 text-white text-[10px] font-bold px-2 py-1 rounded shadow-lg uppercase tracking-tighter {roleConfig.color}"
+              class="absolute -bottom-2 -right-2 text-(--hako-fg) text-[10px] font-bold px-2 py-1 rounded shadow-lg uppercase tracking-tighter {roleConfig.color}"
               title="{roleConfig.romaji} ({roleConfig.title})"
             >
               {roleConfig.label}
             </div>
           {/if}
         </div>
-        <div class="flex-1 text-center md:text-left">
-          <h1 class="text-3xl md:text-4xl font-bold text-white mb-1">
+        <div class="flex-1 text-center md:text-left h-20 overflow-hidden">
+          <h1
+            class="text-3xl md:text-4xl font-bold text-(--hako-fg) mb-1 truncate"
+          >
             {profileData?.display_name || profileData?.username || ""}
           </h1>
           <p class="text-slate-400 text-sm max-w-xl">
@@ -158,12 +160,12 @@
         </div>
         <div class="flex space-x-3">
           <button
-            class="bg-accent hover:bg-opacity-90 text-white px-6 py-2 rounded-lg font-bold text-sm transition-all shadow-lg shadow-blue-500/10"
+            class="bg-accent hover:bg-opacity-90 text-(--hako-fg) px-6 py-2 rounded-lg font-bold text-sm transition-all shadow-lg shadow-blue-500/10"
             >Follow</button
           >
           <!-- svelte-ignore a11y_consider_explicit_label -->
           <button
-            class="bg-slate-800 hover:bg-slate-700 text-white p-2 rounded-lg transition-all"
+            class="bg-slate-800 hover:bg-slate-700 text-(--hako-fg) p-2 rounded-lg transition-all"
             ><i class="fa-solid fa-ellipsis"></i></button
           >
         </div>

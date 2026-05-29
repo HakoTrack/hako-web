@@ -24,11 +24,11 @@
 <p class="whitespace-pre-wrap text-sm leading-relaxed text-(--hako-fg)">
   {#each parts as part}
     {#if part.type === "bold"}
-      <strong class="font-bold text-white">{part.content}</strong>
+      <strong class="font-bold text(--hako-fg)">{part.content}</strong>
     {:else if part.type === "italic"}
       <em class="italic text-slate-300">{part.content}</em>
     {:else if part.type === "bold-italic"}
-      <strong class="font-bold text-white"
+      <strong class="font-bold text(--hako-fg)"
         ><em class="italic text-slate-300">{part.content}</em></strong
       >
     {:else if part.type === "link"}

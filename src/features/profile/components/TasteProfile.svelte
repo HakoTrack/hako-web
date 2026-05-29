@@ -193,7 +193,7 @@
 </script>
 
 <div class="bg-card p-6 rounded-xl shadow-md">
-  <h3 class="text-white font-bold mb-4 flex items-center">
+  <h3 class="text(--hako-fg) font-bold mb-4 flex items-center">
     <i class="fa-solid fa-brain text-accent mr-2"></i> Taste Profile
   </h3>
   <div class="pt-2">
@@ -204,7 +204,7 @@
 
   {#if tooltip}
     <div
-      class="fixed z-9999 pointer-events-none bg-(--surface-elevated)/90 text-white p-3 rounded-lg shadow-2xl text-xs backdrop-blur-md border border-(--surface-elevated)"
+      class="fixed z-9999 pointer-events-none bg-(--surface-elevated)/90 text(--hako-fg) p-3 rounded-lg shadow-2xl text-xs backdrop-blur-md border border-(--surface-elevated)"
       style="top: {tooltip.top}px; left: {tooltip.left}px; transform: translate(-50%, -100%); margin-top: -10px;"
     >
       <div class="flex items-center gap-2 mb-1">

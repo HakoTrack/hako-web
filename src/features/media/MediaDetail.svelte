@@ -163,7 +163,7 @@
     </div>
   </div>
 {:else if !media}
-  <div class="text-white p-10 text-center">Media not found.</div>
+  <div class="text(--hako-fg) p-10 text-center">Media not found.</div>
 {:else}
   <div class="relative">
     <!-- Banner -->
@@ -215,7 +215,7 @@
 
         <!-- Header Info -->
         <div class="mb-2">
-          <h1 class="text-4xl font-bold text-white mb-2">
+          <h1 class="text-4xl font-bold text(--hako-fg) mb-2">
             {displayTitle}
           </h1>
           <div class="flex flex-wrap gap-2">
@@ -239,8 +239,8 @@
                   onclick={() => (currentActiveTab = tab.id)}
                   class="flex items-center px-4 py-3 text-sm font-medium w-full transition-all border-l-4 outline-none focus:ring-0 {currentActiveTab ===
                   tab.id
-                    ? 'text-white bg-slate-800/50 border-accent'
-                    : 'text-slate-400 hover:text-white border-transparent'} "
+                    ? 'text(--hako-fg) bg-slate-800/50 border-accent'
+                    : 'text-slate-400 hover:text(--hako-fg) border-transparent'} "
                 >
                   <i class="fa-solid {tab.icon} mr-3"></i>
                   {tab.label}
@@ -256,7 +256,7 @@
             <div
               class="bg-card p-6 rounded-xl shadow-lg border border-slate-800"
             >
-              <h3 class="text-white font-bold mb-4">Description</h3>
+              <h3 class="text(--hako-fg) font-bold mb-4">Description</h3>
               <div class="text-slate-400 text-sm leading-relaxed">
                 {@html formatDescription(media.description)}
               </div>
@@ -291,15 +291,15 @@
             <div
               class="bg-card p-6 rounded-xl shadow-lg border border-slate-800"
             >
-              <h3 class="text-white font-bold mb-4">Info</h3>
+              <h3 class="text(--hako-fg) font-bold mb-4">Info</h3>
               <div class="space-y-3 text-sm text-slate-300">
                 <div class="flex justify-between">
-                  <span>Source</span><span class="text-white"
+                  <span>Source</span><span class="text(--hako-fg)"
                     >{toTitleCase(media.source)}</span
                   >
                 </div>
                 <div class="flex justify-between">
-                  <span>Format</span><span class="text-white"
+                  <span>Format</span><span class="text(--hako-fg)"
                     >{media.format}</span
                   >
                 </div>
@@ -309,7 +309,7 @@
                   {:else}
                     <span>Chapters</span>
                   {/if}
-                  <span class="text-white">
+                  <span class="text(--hako-fg)">
                     {#if type === "anime"}
                       {media.episodes || "N/A"}
                     {:else}
@@ -318,14 +318,14 @@
                   </span>
                 </div>
                 <div class="flex justify-between">
-                  <span>Duration</span><span class="text-white"
+                  <span>Duration</span><span class="text(--hako-fg)"
                     >{media.duration || "N/A"}
                     {type === "anime" ? "mins" : ""}</span
                   >
                 </div>
                 <div class="space-y-1">
                   <div class="flex justify-between">
-                    <span>Season</span><span class="text-white"
+                    <span>Season</span><span class="text(--hako-fg)"
                       >{toTitleCase(media.season)}
                       {media.seasonYear || ""}</span
                     >

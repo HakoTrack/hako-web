@@ -192,8 +192,8 @@
               onclick={() => (activeCategory = sub.id)}
               class="w-full text-left px-4 py-3 text-sm font-medium transition-colors outline-none focus:ring-0 {activeCategory ===
               sub.id
-                ? 'text-white bg-(--surface-dim) border-l-4 border-(--hako-accent)'
-                : 'text-slate-400 hover:text-white border-l-4 border-transparent hover:bg-card'}"
+                ? 'text(--hako-fg) bg-(--surface-dim) border-l-4 border-(--hako-accent)'
+                : 'text-slate-400 hover:text(--hako-fg) border-l-4 border-transparent hover:bg-card'}"
             >
               {sub.label}
             </button>
@@ -204,7 +204,7 @@
   </aside>
 
   <main class="flex-1 p-0 rounded-xl space-y-8">
-    <h3 class="text-white font-bold flex items-center justify-between h-8">
+    <h3 class="text(--hako-fg) font-bold flex items-center justify-between h-8">
       <div class="flex items-center">
         <i class="fa-solid fa-chart-line text-accent mr-2"></i>
         {activeCategory === "anime-general"
@@ -254,7 +254,7 @@
 
       <!-- Score Distribution -->
       <div class="bg-card p-6 rounded-xl border border-(--surface-elevated)">
-        <h4 class="text-white font-bold mb-6">Score Distribution</h4>
+        <h4 class="text(--hako-fg) font-bold mb-6">Score Distribution</h4>
         <div class="flex items-end gap-2 h-40">
           {#each stats.anime.scoreDistribution.slice(1) as count, index}
             {@const score = index + 1}
@@ -286,7 +286,7 @@
       <!-- Year Chart -->
       <div class="bg-card p-6 rounded-xl border border-(--surface-elevated)">
         <div class="flex justify-between items-center mb-6">
-          <h4 class="text-white font-bold">Anime by Release Year</h4>
+          <h4 class="text(--hako-fg) font-bold">Anime by Release Year</h4>
           <div class="flex gap-2">
             <div
               class="w-32"

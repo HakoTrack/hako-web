@@ -174,7 +174,7 @@
     <!-- svelte-ignore a11y_consider_explicit_label -->
     <button
       onclick={closeModal}
-      class="absolute top-4 right-4 text-white/70 hover:text-white p-2"
+      class="absolute top-4 right-4 text(--hako-fg)/70 hover:text(--hako-fg) p-2"
     >
       <i class="fa-solid fa-xmark text-xl"></i>
     </button>
@@ -184,7 +184,7 @@
         class="w-24 h-32 rounded-lg shadow-lg border-2 border-(--surface)"
         alt="cover"
       />
-      <h2 class="text-2xl font-bold text-white drop-shadow-md pb-2">
+      <h2 class="text-2xl font-bold text(--hako-fg) drop-shadow-md pb-2">
         {displayTitle}
       </h2>
     </div>

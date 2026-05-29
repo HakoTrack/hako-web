@@ -8,7 +8,7 @@
 </script>
 
 <div class="bg-card p-6 rounded-xl shadow-md">
-  <h3 class="text-white font-bold mb-4 flex items-center">
+  <h3 class="text(--hako-fg) font-bold mb-4 flex items-center">
     <i class="fa-solid fa-chart-simple text-accent mr-2"></i> List Stats
   </h3>
   <div class="space-y-6">
@@ -22,15 +22,15 @@
         </h4>
 
         <div class="flex justify-between text-xs mb-1">
-          <span>Total</span><span class="text-white">{s.total}</span>
+          <span>Total</span><span class="text(--hako-fg)">{s.total}</span>
         </div>
         <div class="flex justify-between text-xs mb-1">
-          <span>{s.metricLabel}</span><span class="text-white"
+          <span>{s.metricLabel}</span><span class="text(--hako-fg)"
             >{s.metricValue}</span
           >
         </div>
         <div class="flex justify-between text-xs mb-4">
-          <span>Median Score</span><span class="text-white font-bold"
+          <span>Median Score</span><span class="text(--hako-fg) font-bold"
             >{s.medianScore}</span
           >
         </div>
@@ -49,7 +49,7 @@
                       class="w-2 h-2 rounded-full"
                       style="background-color: {group.color}"
                     ></span>
-                    <span class="font-bold text-white">{group.label}</span>
+                    <span class="font-bold text(--hako-fg)">{group.label}</span>
                     <span class="text-slate-300">{group.count} titles</span>
                   </div>
                 {/snippet}

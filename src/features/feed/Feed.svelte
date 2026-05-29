@@ -41,7 +41,7 @@
 <div class="max-w-300 mx-auto py-12 px-4 grid grid-cols-[1.5fr_2fr] gap-8">
   <aside class="space-y-8">
     <div class="bg-card p-6 rounded-xl shadow-md">
-      <h3 class="text-white font-bold mb-4 flex items-center">
+      <h3 class="text(--hako-fg) font-bold mb-4 flex items-center">
         <i class="fa-solid fa-fire text-accent mr-2"></i> Trending
       </h3>
       <div class="grid grid-cols-5 gap-2">
@@ -52,7 +52,7 @@
     </div>
 
     <div class="bg-card p-6 rounded-xl shadow-md space-y-6">
-      <h3 class="text-white font-bold flex items-center">
+      <h3 class="text(--hako-fg) font-bold flex items-center">
         <i class="fa-solid fa-clock text-accent mr-2"></i> Recently Added
       </h3>
 
@@ -105,7 +105,7 @@
 
   <main>
     <div class="flex items-center justify-between mb-8">
-      <h1 class="text-3xl font-bold text-white">Activity Feed</h1>
+      <h1 class="text-3xl font-bold text(--hako-fg)">Activity Feed</h1>
       <div class="flex items-center space-x-4">
         <SegmentedControl
           bind:value={feedMode}

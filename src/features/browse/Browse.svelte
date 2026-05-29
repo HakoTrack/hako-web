@@ -11,7 +11,7 @@
 
 <div class="py-12 px-6 max-w-6xl mx-auto">
   <div class="flex items-center justify-between mb-12">
-    <h1 class="text-4xl font-bold text-white capitalize">{mediaType}</h1>
+    <h1 class="text-4xl font-bold text(--hako-fg) capitalize">{mediaType}</h1>
 
     <div>
       <SegmentedControl

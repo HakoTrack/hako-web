@@ -9,11 +9,9 @@
   import { supabase } from "./core/supabase.js";
   import { openModal } from "./core/ui.svelte.ts";
   import { routes } from "./routes";
-  import GlobalQuickUpdateDrawer from "./components/GlobalQuickUpdateDrawer.svelte";
 
   let user = $state(null);
   let profile = $state(null);
-  let isDrawerOpen = $state(false);
   let targetProfileData = $state(null);
   let currentPath = $state(window.location.pathname);
   let activeTab = $state("overview");
@@ -103,12 +101,10 @@
 <div class="min-h-screen flex flex-col">
   <ModalWrapper />
   {#if user}
-    <Navbar {user} {profile} />
-    <GlobalQuickUpdateDrawer
-      isOpen={isDrawerOpen}
-      onToggle={(state) => (isDrawerOpen = state)}
-      profileId={user?.id}
-    />
+    <div class="h-15 w-full sticky top-0 z-50">
+      <!-- Reserved space and sticky -->
+      <Navbar {user} {profile} />
+    </div>
   {/if}
 
   <main id="app-view" class="grow min-h-screen">
@@ -126,7 +122,7 @@
         )}
       />
     {:else}
-      <div class="text-white p-10">404 - Not Found</div>
+      <div class="text-(--hako-fg) p-10">404 - Not Found</div>
     {/if}
   </main>
 

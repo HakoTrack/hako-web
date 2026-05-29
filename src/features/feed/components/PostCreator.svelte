@@ -89,7 +89,7 @@
       <button
         type="button"
         onclick={() => insertMarkdown("**", "**")}
-        class="p-2 text-slate-500 hover:text-white transition-colors"
+        class="p-2 text-slate-500 hover:text(--hako-fg) transition-colors"
         title="Bold"
       >
         <i class="fa-solid fa-bold text-xs"></i>
@@ -97,7 +97,7 @@
       <button
         type="button"
         onclick={() => insertMarkdown("*", "*")}
-        class="p-2 text-slate-500 hover:text-white transition-colors"
+        class="p-2 text-slate-500 hover:text(--hako-fg) transition-colors"
         title="Italic"
       >
         <i class="fa-solid fa-italic text-xs"></i>
@@ -105,7 +105,7 @@
       <button
         type="button"
         onclick={() => insertMarkdown("[", "](url)")}
-        class="p-2 text-slate-500 hover:text-white transition-colors"
+        class="p-2 text-slate-500 hover:text(--hako-fg) transition-colors"
         title="Link"
       >
         <i class="fa-solid fa-link text-xs"></i>
@@ -113,7 +113,7 @@
       <button
         type="button"
         onclick={handleImageButtonClick}
-        class="p-2 text-slate-500 hover:text-white transition-colors"
+        class="p-2 text-slate-500 hover:text(--hako-fg) transition-colors"
         title="Image"
       >
         <i class="fa-solid fa-image text-xs"></i>
@@ -128,7 +128,7 @@
       <button
         onclick={handlePost}
         disabled={isPosting || !content.trim() || charCount > 450}
-        class="bg-accent hover:bg-opacity-90 disabled:opacity-50 text-white px-6 py-2 rounded-lg text-sm font-bold transition-all cursor-pointer"
+        class="bg-accent hover:bg-opacity-90 disabled:opacity-50 text(--hako-fg) px-6 py-2 rounded-lg text-sm font-bold transition-all cursor-pointer"
       >
         {isPosting ? "Posting..." : "Post Thought"}
       </button>

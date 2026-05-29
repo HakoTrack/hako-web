@@ -23,14 +23,16 @@
 >
   <button
     onclick={() => closeModal()}
-    class="absolute top-4 right-4 text-slate-500 hover:text-white cursor-pointer"
+    class="absolute top-4 right-4 text-slate-500 hover:text(--hako-fg) cursor-pointer"
   >
     <i class="fa-solid fa-xmark"></i>
   </button>
 
   <div class="flex gap-8 overflow-y-auto">
     <div class="w-full {showTos ? 'max-w-md' : ''} shrink-0">
-      <h2 class="text-2xl font-bold mb-6 text-white text-center">Join Hako</h2>
+      <h2 class="text-2xl font-bold mb-6 text(--hako-fg) text-center">
+        Join Hako
+      </h2>
 
       <form
         onsubmit={(e) => {
@@ -43,28 +45,28 @@
           type="text"
           placeholder="Username"
           bind:value={username}
-          class="w-full p-3 rounded-lg bg-(--surface-dim) text-white border border-(--surface-elevated)"
+          class="w-full p-3 rounded-lg bg-(--surface-dim) text(--hako-fg) border border-(--surface-elevated)"
           required
         />
         <input
           type="email"
           placeholder="Email"
           bind:value={email}
-          class="w-full p-3 rounded-lg bg-(--surface-dim) text-white border border-(--surface-elevated)"
+          class="w-full p-3 rounded-lg bg-(--surface-dim) text(--hako-fg) border border-(--surface-elevated)"
           required
         />
         <input
           type="password"
           placeholder="Password"
           bind:value={password}
-          class="w-full p-3 rounded-lg bg-(--surface-dim) text-white border border-(--surface-elevated)"
+          class="w-full p-3 rounded-lg bg-(--surface-dim) text(--hako-fg) border border-(--surface-elevated)"
           required
         />
         <input
           type="text"
           placeholder="Invite Code"
           bind:value={inviteCode}
-          class="w-full p-3 rounded-lg bg-(--surface-dim) text-white border border-(--surface-elevated)"
+          class="w-full p-3 rounded-lg bg-(--surface-dim) text(--hako-fg) border border-(--surface-elevated)"
           required
         />
 
