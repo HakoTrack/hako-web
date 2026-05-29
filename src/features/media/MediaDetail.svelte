@@ -95,7 +95,7 @@
           >
             {#each Array(4) as _}
               <div
-                class="h-11 w-full border-l-4 border-transparent bg-slate-800/20 animate-pulse mb-[1px]"
+                class="h-11 w-full border-l-4 border-transparent bg-slate-800/20 animate-pulse mb-px"
               ></div>
             {/each}
           </div>
