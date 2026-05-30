@@ -201,7 +201,7 @@
         alt="avatar"
         onerror={(e: Event) => ((e.target as HTMLImageElement).src = "")}
       />
-      <span class="text-xs font-bold text(--hako-fg)">
+      <span class="text-xs font-bold text-(--hako-fg)">
         {post.author?.username || "User"}
       </span>
     </button>
@@ -267,7 +267,7 @@
           <!-- svelte-ignore a11y_no_noninteractive_element_interactions -->
           <!-- svelte-ignore a11y_click_events_have_key_events -->
           <h4
-            class="text(--hako-fg) font-bold text-sm cursor-pointer hover:text-accent transition-colors line-clamp-1"
+            class="text-(--hako-fg) font-bold text-sm cursor-pointer hover:text-accent transition-colors line-clamp-1"
             onclick={() =>
               handleOpenEditor(
                 metadata.media_id ?? 0,

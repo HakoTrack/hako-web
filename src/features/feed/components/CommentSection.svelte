@@ -72,7 +72,7 @@
       <button
         onclick={handleSubmit}
         disabled={isSubmitting || !newComment.trim() || charCount > 450}
-        class="bg-accent hover:bg-opacity-90 disabled:opacity-50 text(--hako-fg) px-4 py-2 rounded-lg text-sm font-bold transition-all"
+        class="bg-accent hover:bg-opacity-90 disabled:opacity-50 text-(--hako-fg) px-4 py-2 rounded-lg text-sm font-bold transition-all"
       >
         {isSubmitting ? "..." : "Send"}
       </button>

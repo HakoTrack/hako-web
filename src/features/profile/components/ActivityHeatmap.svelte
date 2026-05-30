@@ -21,7 +21,7 @@
 
 <div class="bg-card p-6 rounded-xl shadow-md">
   <div class="flex justify-between items-center mb-6">
-    <h3 class="text(--hako-fg) font-bold flex items-center">
+    <h3 class="text-(--hako-fg) font-bold flex items-center">
       <i class="fa-solid fa-fire text-accent mr-2"></i> Activity Heatmap
     </h3>
     <span class="text-xs text-slate-500"

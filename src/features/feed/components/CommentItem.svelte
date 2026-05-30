@@ -43,7 +43,7 @@
     <div class="flex items-center gap-2">
       <button
         type="button"
-        class="text-xs font-bold text(--hako-fg) hover:underline cursor-pointer"
+        class="text-xs font-bold text-(--hako-fg) hover:underline cursor-pointer"
         onclick={() => navigateToProfile(comment.author?.username)}
       >
         {comment.author?.username || "User"}

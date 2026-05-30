@@ -20,9 +20,9 @@
     primary:
       "bg-[var(--hako-accent)] text-[var(--hako-bg)] hover:opacity-90 shadow-lg shadow-[var(--hako-accent)/20]",
     secondary:
-      "bg-white/5 backdrop-blur-xl text(--hako-fg) border border-white/10 hover:bg-white/10",
+      "bg-white/5 backdrop-blur-xl text-(--hako-fg) border border-white/10 hover:bg-white/10",
     danger:
-      "bg-[var(--c1)] text(--hako-fg) hover:opacity-90 shadow-lg shadow-[var(--c1)/20]",
+      "bg-[var(--c1)] text-(--hako-fg) hover:opacity-90 shadow-lg shadow-[var(--c1)/20]",
   };
 </script>
 

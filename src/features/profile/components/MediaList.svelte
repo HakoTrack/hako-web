@@ -294,7 +294,7 @@
       <div class="bg-card rounded-xl overflow-hidden">
         <div class="p-4">
           <h3
-            class="text-xs font-bold uppercase tracking-widest text(--hako-fg) flex items-center"
+            class="text-xs font-bold uppercase tracking-widest text-(--hako-fg) flex items-center"
           >
             <i class="fa-solid fa-layer-group text-accent mr-2"></i> Categories
           </h3>
@@ -303,8 +303,8 @@
           onclick={() => setFilter("all")}
           class="flex items-center justify-between px-4 py-3 text-sm font-medium w-full transition-all border-l-4 ring-0 outline-none {filterStatus ===
           'all'
-            ? 'text(--hako-fg) bg-(--surface-dim) border-(--hako-accent)'
-            : 'text-slate-400 hover:text(--hako-fg) border-transparent hover:bg-card'} transition-all w-full ring-0 outline-none"
+            ? 'text-(--hako-fg) bg-(--surface-elevated) border-(--hako-accent)'
+            : 'text-slate-400 hover:text-(--hako-fg) border-transparent hover:bg-card'} transition-all w-full ring-0 outline-none"
         >
           <div class="flex items-center">
             <span class="w-2 h-2 rounded-full mr-3 bg-(--c7)"></span>
@@ -325,8 +325,8 @@
             onclick={() => setFilter(group.id)}
             class="flex items-center justify-between px-4 py-3 text-sm font-medium ring-0 outline-none {filterStatus ===
             group.id
-              ? 'text(--hako-fg) bg-(--surface-dim) border-l-4 border-(--hako-accent)'
-              : 'text-slate-400 hover:text(--hako-fg) border-l-4 border-transparent hover:bg-card'} transition-all w-full ring-0 outline-none"
+              ? 'text-(--hako-fg) bg-(--surface-elevated) border-l-4 border-(--hako-accent)'
+              : 'text-slate-400 hover:text-(--c15) border-l-4 border-transparent hover:bg-card'} transition-all w-full ring-0 outline-none"
           >
             <div class="flex items-center">
               <span
@@ -456,7 +456,7 @@
               style="background-color: {STATUS_COLORS[group.id]}"
             ></div>
             <h2
-              class="text-lg font-bold text(--hako-fg) uppercase tracking-wider"
+              class="text-lg font-bold text-(--hako-fg) uppercase tracking-wider"
             >
               {group.label}
             </h2>

@@ -109,7 +109,7 @@
     class="fixed top-0 left-0 w-full h-100 md:h-100 -z-20 mt-15 overflow-hidden"
   >
     <img
-      src={HakoImage.get(profileData?.banner_url || `banners/${username}.jpg`, {
+      src={HakoImage.get(profileData?.banner_url, {
         w: 1200,
         f: "webp",
         q: 80,
@@ -148,10 +148,8 @@
             </div>
           {/if}
         </div>
-        <div class="flex-1 text-center md:text-left h-20 overflow-hidden">
-          <h1
-            class="text-3xl md:text-4xl font-bold text-(--hako-fg) mb-1 truncate"
-          >
+        <div class="flex-1 text-center md:text-left h-20">
+          <h1 class="text-3xl md:text-4xl font-bold text-(--hako-fg) mb-1">
             {profileData?.display_name || profileData?.username || ""}
           </h1>
           <p class="text-slate-400 text-sm max-w-xl">

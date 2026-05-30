@@ -22,6 +22,6 @@
     <div class="text-slate-400 text-xs font-bold uppercase tracking-wider">
       {label}
     </div>
-    <div class="text-xl font-bold text(--hako-fg)">{value}</div>
+    <div class="text-xl font-bold text-(--hako-fg)">{value}</div>
   </div>
 </div>

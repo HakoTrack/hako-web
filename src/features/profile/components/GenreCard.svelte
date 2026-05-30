@@ -36,19 +36,19 @@
 <div
   class="bg-card p-6 rounded-xl border border-(--surface-elevated) space-y-4"
 >
-  <h4 class="text(--hako-fg) font-bold text-lg">{genre}</h4>
+  <h4 class="text-(--hako-fg) font-bold text-lg">{genre}</h4>
 
   <div class="grid grid-cols-2 gap-4 text-sm">
     <div class="text-slate-400">Completed</div>
-    <div class="text(--hako-fg) font-bold text-right">{stats.completed}</div>
+    <div class="text-(--hako-fg) font-bold text-right">{stats.completed}</div>
     <div class="text-slate-400">
       {activeMetric === "median" ? "Median" : "Average"} Score
     </div>
-    <div class="text(--hako-fg) font-bold text-right">
+    <div class="text-(--hako-fg) font-bold text-right">
       {activeMetric === "median" ? median() : average()}
     </div>
     <div class="text-slate-400">Days Watched</div>
-    <div class="text(--hako-fg) font-bold text-right">
+    <div class="text-(--hako-fg) font-bold text-right">
       {(stats.totalMinutes / 1440).toFixed(1)}
     </div>
   </div>
