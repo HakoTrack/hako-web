@@ -164,9 +164,7 @@
         class="text-2xl font-bold tracking-tighter flex items-center cursor-pointer select-none group"
         onclick={() => navigate(user ? "/feed" : "/")}
       >
-        <span
-          class="font-['Zen_Antique_Soft'] font-bold text-accent mr-2 text-[2rem] leading-8"
-          >箱</span
+        <span class="font-bold text-accent mr-2 text-[2rem] leading-8">箱</span
         >Hako
       </div>
       <div class="hidden md:flex space-x-6 text-sm font-medium">

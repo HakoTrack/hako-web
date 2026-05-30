@@ -41,8 +41,8 @@
         <h1
           class="text-6xl md:text-8xl font-extrabold mb-6 tracking-tighter flex items-center justify-center gap-4 md:gap-6"
         >
-          <span class="font-['Zen_Antique'] text-(--hako-accent)">箱</span>
-          <span class="font-['Zen_Antique'] text-(--hako-fg)">Hako</span>
+          <span class="text-(--hako-accent)">箱</span>
+          <span class="text-(--hako-fg)">Hako</span>
         </h1>
         <p
           class="text-lg md:text-xl text-(--hako-fg) mb-10 max-w-lg mx-auto leading-relaxed"
