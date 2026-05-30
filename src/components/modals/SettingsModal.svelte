@@ -8,6 +8,7 @@
   import { SETTINGS_CONFIG, settings } from "../../core/settings.svelte";
   import { ui } from "../../core/ui.svelte";
   import { supabase } from "../../core/supabase";
+  import { toast } from "../../shared/utils/toast";
   import { uploadProfileImage } from "../../features/profile/services/imageUploadService";
   import CropModal from "./CropModal.svelte";
 
@@ -106,9 +107,9 @@
 
     if (error) {
       console.error("Error saving profile:", error);
-      alert("Failed to save changes.");
+      toast.error("Failed to save changes! (」゜ロ゜)」");
     } else {
-      alert("Profile updated successfully!");
+      toast.success("Profile updated successfully! ヾ(＾-＾)ノ");
     }
     isUploading = false;
   }

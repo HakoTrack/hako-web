@@ -9,6 +9,7 @@
   import { supabase } from "./core/supabase.js";
   import { openModal } from "./core/ui.svelte.ts";
   import { routes } from "./routes";
+  import { Toasts } from "./shared/components";
 
   let user = $state(null);
   let profile = $state(null);
@@ -99,13 +100,14 @@
 />
 
 <div class="min-h-screen flex flex-col">
+  <Toasts />
   <ModalWrapper />
-  {#if user}
-    <div class="h-15 w-full sticky top-0 z-50">
-      <!-- Reserved space and sticky -->
+  <div class="h-15 w-full sticky top-0 z-50">
+    <!-- Reserved space and sticky -->
+    {#if user}
       <Navbar {user} {profile} />
-    </div>
-  {/if}
+    {/if}
+  </div>
 
   <main id="app-view" class="grow min-h-screen">
     {#if currentPath === "/"}
