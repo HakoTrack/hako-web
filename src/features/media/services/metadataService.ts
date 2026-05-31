@@ -22,7 +22,6 @@ export const MetadataService = {
       return acc;
     }, {});
   },
-
   invalidate(id?: number): void {
     if (id) cache.delete(id.toString());
     else cache.clear();

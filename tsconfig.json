@@ -6,12 +6,19 @@
     "src/**/*.d.ts"
   ],
   "compilerOptions": {
-    "baseUrl": ".",
     "paths": {
-      "$core": ["src/core/index.ts"],
-      "$utils": ["src/shared/utils/index.ts"],
-      "$features/*": ["src/features/*"],
-      "$components": ["src/shared/components/index.ts"]
+      "$core": [
+        "./src/core/index.ts"
+      ],
+      "$utils": [
+        "./src/shared/utils/index.ts"
+      ],
+      "$features/*": [
+        "./src/features/*"
+      ],
+      "$components": [
+        "./src/shared/components/index.ts"
+      ]
     },
     "allowJs": true,
     "moduleResolution": "bundler",

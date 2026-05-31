@@ -1,18 +1,17 @@
 {
   "compilerOptions": {
-    "baseUrl": ".",
     "paths": {
       "$core": [
-        "src/core/index.ts"
+        "./src/core/index.ts"
       ],
       "$utils": [
-        "src/shared/utils/index.ts"
+        "./src/shared/utils/index.ts"
       ],
       "$features/*": [
-        "src/features/*"
+        "./src/features/*"
       ],
       "$components": [
-        "src/shared/components/index.ts"
+        "./src/shared/components/index.ts"
       ]
     }
   }

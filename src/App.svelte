@@ -1,5 +1,5 @@
 <script>
-  import { onMount } from "svelte";
+  import { onMount, onDestroy } from "svelte";
   import Navbar from "./components/Navbar.svelte";
   import Footer from "./components/Footer.svelte";
   import Landing from "./features/landing/Landing.svelte";
@@ -18,6 +18,7 @@
   let activeTab = $state("overview");
   let mediaType = $state("anime");
   let authInitialized = $state(false);
+  let authSubscription = null;
 
   let isLanding = $derived(authInitialized && currentPath === "/" && !user);
 
@@ -80,13 +81,19 @@
     user = await AuthService.getCurrentUser();
     authInitialized = true;
 
-    supabase.auth.onAuthStateChange((_event, session) => {
+    const { data } = supabase.auth.onAuthStateChange((_event, session) => {
       user = session?.user ?? null;
       handleRouting();
     });
+    authSubscription = data.subscription;
 
     window.addEventListener("popstate", handleRouting);
     handleRouting();
+  });
+
+  onDestroy(() => {
+    window.removeEventListener("popstate", handleRouting);
+    authSubscription?.unsubscribe();
   });
 
   let activeRoute = $derived(

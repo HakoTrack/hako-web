@@ -175,6 +175,8 @@
               bind:this={avatarInput}
               onchange={(e) => initiateCrop(e, "avatars")}
             />
+            <!-- svelte-ignore a11y_click_events_have_key_events -->
+            <!-- svelte-ignore a11y_no_static_element_interactions -->
             <div
               class="relative w-20 h-20 group cursor-pointer"
               onclick={() => avatarInput.click()}
@@ -198,6 +200,8 @@
               bind:this={bannerInput}
               onchange={(e) => initiateCrop(e, "banners")}
             />
+            <!-- svelte-ignore a11y_click_events_have_key_events -->
+            <!-- svelte-ignore a11y_no_static_element_interactions -->
             <div
               class="relative w-48 h-20 group cursor-pointer"
               onclick={() => bannerInput.click()}

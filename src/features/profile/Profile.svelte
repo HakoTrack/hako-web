@@ -78,7 +78,29 @@
       label: "Light Novels",
       path: `/user/${username}/lightnovel`,
     },
+    {
+      id: "visualnovel",
+      label: "Visual Novels",
+      path: `/user/${username}/visualnovel`,
+    },
+    {
+      id: "favorites",
+      label: "Favorites",
+      path: `/user/${username}/favorites`,
+    },
     { id: "stats", label: "Stats", path: `/user/${username}/stats` },
+    { id: "social", label: "Social", path: `/user/${username}/social` },
+    { id: "reviews", label: "Reviews", path: `/user/${username}/reviews` },
+    {
+      id: "collections",
+      label: "Collections",
+      path: `/user/${username}/collections`,
+    },
+    {
+      id: "achievements",
+      label: "Achievements",
+      path: `/user/${username}/achievements`,
+    },
   ]);
 
   let roleConfig = $derived(

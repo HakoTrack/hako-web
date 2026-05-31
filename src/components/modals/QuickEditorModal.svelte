@@ -181,7 +181,7 @@
     <div class="absolute -bottom-6 left-6 flex items-end gap-4">
       <img
         src={HakoImage.getCover(entry.id, "medium")}
-        class="w-24 h-32 rounded-lg shadow-lg border-2 border-(--surface)"
+        class="w-24 h-32 object-cover rounded-lg shadow-lg border-2 border-(--surface)"
         alt="cover"
       />
       <h2 class="text-2xl font-bold text-(--hako-fg) drop-shadow-md pb-2">
@@ -233,7 +233,7 @@
             bind:value={score}
             min={0}
             max={10}
-            step={0.1}
+            step={0.5}
             suffix="/ 10"
           />
         {/if}
@@ -373,7 +373,7 @@
         <i class="fa-solid fa-heart"></i>
       </button>
       <Button variant="primary" onclick={save} disabled={isSaving}>
-        {isSaving ? "Saving..." : "Save Changes"}
+        {isSaving ? "Saving" : "Save"}
       </Button>
     </div>
   </div>
