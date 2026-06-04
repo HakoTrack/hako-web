@@ -121,11 +121,9 @@
       const ids = listDataEntries.map((item) => item.media_id);
       metadata = await MetadataService.getMetadata(ids, type);
       isLoading = false;
-      isBackgroundFetching = false;
     } else {
       console.error("Error loading list:", result.error);
       isLoading = false;
-      isBackgroundFetching = false;
     }
   }
 
@@ -394,7 +392,7 @@
               </tr>
             </thead>
             <tbody>
-              {#each Array(8) as _, i}
+              {#each Array(8) as _}
                 <tr
                   class="group hover:bg-(--surface-elevated)/30 last:border-0"
                 >
