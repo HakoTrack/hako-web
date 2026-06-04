@@ -119,7 +119,7 @@
                   <span
                     class="text-[10px] font-bold bg-(--surface-dim) px-2 py-1 rounded text-slate-400 border border-(--surface-elevated)"
                   >
-                    {item.meta.format || item.type || "TV"}
+                    {(item.meta.format || item.type || "TV").replace(/_/g, " ")}
                   </span>
                 </td>
               </tr>

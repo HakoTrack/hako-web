@@ -134,14 +134,7 @@ export const FeedService = {
 
     if (error) return failure(error.message);
 
-    try {
-      if (type === 'thought') {
-        await ActivityService.trackActivity(userId);
-      }
-      return success(undefined);
-    } catch (err: any) {
-      return failure(err.message || 'Failed to track activity');
-    }
+    return success(undefined);
   },
 
   async createListUpdatePost(userId: string, targetProfileId: string, entryId: number, title: string, progress: number, total: number | string, mediaType: string, status: string = 'updated'): Promise<Result<void>> {

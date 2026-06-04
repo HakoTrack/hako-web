@@ -329,11 +329,6 @@
             <span>All {formatType(type)}</span>
           </div>
           <div class="flex items-center space-x-2">
-            {#if isBackgroundFetching}
-              <i
-                class="fa-solid fa-circle-notch fa-spin text-accent text-[10px]"
-              ></i>
-            {/if}
             <span class="count text-xs text-slate-500">{statusCounts.all}</span>
           </div>
         </button>
@@ -568,7 +563,10 @@
                       >
                         <span
                           class="text-[10px] font-bold bg-(--surface-dim) px-2 py-1 rounded text-slate-400 border border-(--surface-elevated)"
-                          >{meta.format || item.type || "TV"}</span
+                          >{(meta.format || item.type || "TV").replace(
+                            /_/g,
+                            " ",
+                          )}</span
                         >
                       </td>
                     </tr>
