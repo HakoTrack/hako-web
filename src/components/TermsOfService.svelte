@@ -1,7 +1,4 @@
-<div
-  class="text-xs text-(--hako-fg) space-y-3 p-4 bg-(--surface-dim) rounded-lg border border-(--surface-elevated) h-full overflow-y-auto"
->
-  <h4 class="font-bold text-sm">Terms of Service</h4>
+<div class="text-xs text-(--hako-fg) space-y-3 p-4 h-full overflow-y-auto">
   <h3 class="font-semibold text-sm">
     0. The conversations on Hako should be as inoffensive as possible to not
     interfere with others' enjoyment of cute anime girls.

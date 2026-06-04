@@ -3,7 +3,7 @@
   import { FavoritesService } from "../services/favoritesService";
   import MediaCover from "../../../shared/components/MediaCover.svelte";
 
-  let { profileId, limit } = $props();
+  let { profileId } = $props();
 
   let mediaData: Record<string, number[]> = $state({
     anime: [],
@@ -41,26 +41,35 @@
 </script>
 
 <div class="bg-card p-6 shadow-md space-y-6">
-  <h3 class="text-(--hako-fg) font-bold flex items-center mb-4">
-    <i class="fa-solid fa-heart text-accent mr-2"></i> Favorites
+  <h3 class="text-(--hako-fg) font-bold text-xl flex items-center mb-6">
+    <i class="fa-solid fa-heart text-accent mr-3"></i> All Favorites
   </h3>
 
-  {#if !isLoading}
-    {#each Object.entries(mediaData) as [type, ids]}
-      {#if ids.length > 0}
-        <div id="fav-{type}-section" class="mb-6 last:mb-0">
-          <h4
-            class="text-[10px] uppercase text-slate-500 font-bold mb-3 tracking-widest"
-          >
-            {formatType(type)}
-          </h4>
-          <div id="fav-{type}-grid" class="grid grid-cols-5 gap-2">
-            {#each limit ? ids.slice(0, limit) : ids as id}
-              <MediaCover mediaId={id} {type} size="medium" alt="{type} {id}" />
-            {/each}
+  {#if isLoading}
+    <p class="text-slate-400">Loading favorites...</p>
+  {:else}
+    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
+      {#each Object.entries(mediaData) as [type, ids]}
+        {#if ids.length > 0}
+          <div id="fav-{type}-section" class="space-y-4">
+            <h4
+              class="text-xs uppercase text-slate-500 font-bold tracking-widest border-b border-(--surface-elevated) pb-2"
+            >
+              {formatType(type)} ({ids.length})
+            </h4>
+            <div id="fav-{type}-grid" class="grid grid-cols-5 gap-3">
+              {#each ids as id}
+                <MediaCover
+                  mediaId={id}
+                  {type}
+                  size="medium"
+                  alt="{type} {id}"
+                />
+              {/each}
+            </div>
           </div>
-        </div>
-      {/if}
-    {/each}
+        {/if}
+      {/each}
+    </div>
   {/if}
 </div>

@@ -1,11 +1,12 @@
 <script lang="ts">
   import { ProfileService } from "./services/profileService";
-  import type { ListEntry, Profile } from "../../shared/types";
+  import { MetadataService } from "../media/services/metadataService";
+  import type { Profile } from "../../shared/types";
   import { HakoImage } from "../../shared/utils/images";
   import MediaList from "./components/MediaList.svelte";
+  import FavoritesFullGrid from "./components/FavoritesFullGrid.svelte";
   import Stats from "./components/Stats.svelte";
   import Overview from "./components/Overview.svelte";
-  import { fetchMediaByIds } from "../../shared/utils/mediaData";
   import { ROLES } from "../../shared/utils/constants";
 
   let {
@@ -16,21 +17,24 @@
 
   let username = $derived(currentPath.split("/")[2]);
   let profileData: Profile | null = $state(propProfileData);
-  let metadata: Record<string, any> = $state({});
-  let currentActiveTab = $derived(activeTab);
+  let metadataCache: Record<string, Record<string, any>> = $state({});
+  let currentActiveTab = $state(activeTab);
+  let isFetchingLists = $state(false);
+
+  $effect(() => {
+    currentActiveTab = activeTab;
+  });
+
   let listType = $derived(
     currentActiveTab === "lightnovel" ? "light_novel" : currentActiveTab,
   );
-  let isFetchingLists = $state(false);
 
-  // Sync state if propProfileData changes, but ignore nulls if we already have data
   $effect(() => {
     if (propProfileData) {
       profileData = propProfileData;
     }
   });
 
-  // Fetch full media lists in background when profile changes
   $effect(() => {
     if (profileData?.id && !isFetchingLists) {
       const hasLists =
@@ -41,6 +45,15 @@
         ProfileService.getMediaLists(profileData.id).then((lists) => {
           if (profileData) {
             profileData = { ...profileData, mediaLists: lists };
+
+            Object.entries(lists).forEach(([type, items]) => {
+              const ids = items.map((i: any) => i.media_id);
+              if (ids.length > 0) {
+                MetadataService.getMetadata(ids, type).then((m) => {
+                  metadataCache[type] = m;
+                });
+              }
+            });
           }
           isFetchingLists = false;
         });
@@ -51,22 +64,6 @@
   function switchTab(tab: string, path: string) {
     currentActiveTab = tab;
     window.history.pushState({}, "", path);
-
-    // Defer scroll to ensure layout has settled
-    requestAnimationFrame(() => {
-      const tabsWrapper = document.getElementById("tabs-wrapper");
-      if (tabsWrapper) {
-        const navbarHeight = 60; // Adjust as needed
-        const elementPosition = tabsWrapper.getBoundingClientRect().top;
-        const offsetPosition =
-          elementPosition + window.scrollY - navbarHeight - 20;
-
-        window.scrollTo({
-          top: offsetPosition,
-          behavior: "smooth",
-        });
-      }
-    });
   }
 
   const tabs = $derived([
@@ -79,28 +76,11 @@
       path: `/user/${username}/lightnovel`,
     },
     {
-      id: "visualnovel",
-      label: "Visual Novels",
-      path: `/user/${username}/visualnovel`,
-    },
-    {
       id: "favorites",
       label: "Favorites",
       path: `/user/${username}/favorites`,
     },
     { id: "stats", label: "Stats", path: `/user/${username}/stats` },
-    { id: "social", label: "Social", path: `/user/${username}/social` },
-    { id: "reviews", label: "Reviews", path: `/user/${username}/reviews` },
-    {
-      id: "collections",
-      label: "Collections",
-      path: `/user/${username}/collections`,
-    },
-    {
-      id: "achievements",
-      label: "Achievements",
-      path: `/user/${username}/achievements`,
-    },
   ]);
 
   let roleConfig = $derived(
@@ -108,28 +88,10 @@
       ? ROLES[(profileData as any).role.toLowerCase()]
       : null,
   );
-
-  // Reactively fetch metadata when media lists are populated in the background
-  $effect(() => {
-    if (profileData?.mediaLists && Object.keys(metadata).length === 0) {
-      const allLists = Object.values(
-        profileData.mediaLists,
-      ).flat() as ListEntry[];
-      if (allLists.length > 0) {
-        const ids = [...new Set(allLists.map((a) => a.media_id))];
-        fetchMediaByIds(ids).then((data) => {
-          metadata = data;
-        });
-      }
-    }
-  });
 </script>
 
 <div id="profile-container" class="relative">
-  <!-- Layer 1: Fixed Banner -->
-  <div
-    class="fixed top-0 left-0 w-full h-100 md:h-100 -z-20 mt-15 overflow-hidden"
-  >
+  <div class="fixed top-0 left-0 w-full h-100 -z-20 mt-15 overflow-hidden">
     <img
       src={HakoImage.get(profileData?.banner_url, {
         w: 1200,
@@ -141,13 +103,11 @@
     />
   </div>
 
-  <!-- Layer 2: Scrolling Gradient Background -->
   <div
     class="absolute top-0 -z-10 w-screen left-[50%] translate-x-[-50%] h-full"
     style="background: linear-gradient(to bottom, transparent 350px, var(--hako-bg) 400px);"
   ></div>
 
-  <!-- Layer 3: Content Container -->
   <div class="relative z-10 max-w-375 mx-auto px-4 sm:px-6 lg:px-8">
     <div class="h-50 md:h-75"></div>
 
@@ -164,7 +124,6 @@
           {#if roleConfig}
             <div
               class="absolute -bottom-2 -right-2 text-(--hako-fg) text-[10px] font-bold px-2 py-1 rounded shadow-lg uppercase tracking-tighter {roleConfig.color}"
-              title="{roleConfig.romaji} ({roleConfig.title})"
             >
               {roleConfig.label}
             </div>
@@ -178,21 +137,9 @@
             {profileData?.quote || ""}
           </p>
         </div>
-        <div class="flex space-x-3">
-          <button
-            class="bg-accent hover:bg-opacity-90 text-(--hako-fg) px-6 py-2 rounded-lg font-bold text-sm transition-all shadow-lg shadow-blue-500/10"
-            >Follow</button
-          >
-          <!-- svelte-ignore a11y_consider_explicit_label -->
-          <button
-            class="bg-slate-800 hover:bg-slate-700 text-(--hako-fg) p-2 rounded-lg transition-all"
-            ><i class="fa-solid fa-ellipsis"></i></button
-          >
-        </div>
       </div>
     </div>
 
-    <!-- Tabs Wrapper -->
     <div class="relative" id="tabs-wrapper">
       <div
         class="profile-tabs flex space-x-8 border-b border-(--surface-elevated) mb-8 overflow-x-auto whitespace-nowrap scrollbar-hide focus:ring-0"
@@ -211,13 +158,11 @@
       </div>
     </div>
 
-    <!-- Content -->
-    <!-- All of these are set to hidden to improve load performance on tab switching (it works, trust me) -->
-    <!-- Non-essential data fetching should be deferred until the tab is active -->
+    <!-- Content Container -->
     <div class="py-8 min-h-screen">
       <div class:hidden={currentActiveTab !== "overview"}>
         {#if profileData}
-          <Overview {profileData} {metadata} />
+          <Overview {profileData} />
         {/if}
       </div>
 
@@ -229,16 +174,21 @@
         <MediaList
           type={listType}
           profileId={profileData?.id || ""}
+          isActive={["anime", "manga", "lightnovel"].includes(currentActiveTab)}
           initialListData={profileData?.mediaLists?.[listType] || []}
-          initialMetadata={metadata}
+          initialMetadata={metadataCache[listType] || {}}
         />
+      </div>
+
+      <div class:hidden={currentActiveTab !== "favorites"}>
+        {#if profileData?.id}
+          <FavoritesFullGrid profileId={profileData.id} />
+        {/if}
       </div>
 
       <div class:hidden={currentActiveTab !== "stats"}>
         {#if profileData}
           <Stats {profileData} />
-        {:else}
-          <p class="text-slate-400">Loading profile...</p>
         {/if}
       </div>
     </div>

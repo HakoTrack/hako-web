@@ -4,11 +4,17 @@
     placeholder = "",
     label = "",
     type = "text",
+    name = "",
+    autocomplete = "",
+    maxlength,
   } = $props<{
     value?: string;
     placeholder?: string;
     label?: string;
     type?: string;
+    name?: string;
+    autocomplete?: string;
+    maxlength?: string | number;
   }>();
 </script>
 
@@ -24,6 +30,9 @@
   <input
     {type}
     {placeholder}
+    {name}
+    {autocomplete}
+    {maxlength}
     bind:value
     class="w-full h-10 bg-(--surface-dim) border border-(--c8) rounded-xl px-3 text-sm text-(--hako-fg) placeholder:text-(--c8) focus:border-(--hako-accent) outline-none transition-colors"
   />

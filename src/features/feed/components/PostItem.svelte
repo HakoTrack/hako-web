@@ -184,7 +184,7 @@
 </script>
 
 <div
-  class="relative mt-6 bg-card rounded-xl shadow-md border border-(--surface-elevated)/50"
+  class="relative mt-6 bg-card shadow-md border border-(--surface-elevated)/50"
 >
   <!-- Author Pill -->
   <div

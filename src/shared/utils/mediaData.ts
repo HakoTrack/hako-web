@@ -7,7 +7,16 @@ import type { Media, ListEntry } from '../types/index';
 
 export function formatDescription(description: string | null | undefined): string {
   if (!description) return "";
-  return description.replace(/\n/g, '<br />');
+
+  // If the description already contains HTML-style line breaks,
+  // assume it's already formatted and just strip the raw newlines
+  // to avoid double-processing.
+  if (description.includes('<br')) {
+    return description.replace(/\n/g, '');
+  }
+
+  // Otherwise, treat as plain text and convert newlines to <br />
+  return description.replace(/\n\n/g, '<br /><br />').replace(/\n/g, '<br />');
 }
 
 /**

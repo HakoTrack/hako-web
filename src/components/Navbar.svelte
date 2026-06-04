@@ -198,12 +198,6 @@
             onclick={() => window.dispatchEvent(new CustomEvent("show-login"))}
             >Login</button
           >
-          <button
-            id="nav-signup"
-            class="nav-link ring-0 outline-none"
-            onclick={() => window.dispatchEvent(new CustomEvent("show-signup"))}
-            >Sign Up</button
-          >
         {/if}
       </div>
     </div>

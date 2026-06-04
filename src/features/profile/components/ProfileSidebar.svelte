@@ -6,7 +6,7 @@
   }>();
 </script>
 
-<div class="bg-card p-6 rounded-xl shadow-md">
+<div class="bg-card p-6 shadow-md">
   <h3 class="text-(--hako-fg) font-bold mb-4 flex items-center">
     <i class="fa-solid fa-user-tag text-accent mr-2"></i> About Me
   </h3>

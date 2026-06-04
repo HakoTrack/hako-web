@@ -13,7 +13,7 @@
 </script>
 
 <div
-  class="bg-card p-4 rounded-xl border border-(--surface-elevated) flex items-center gap-4"
+  class="bg-card p-4 border border-(--surface-elevated) flex items-center gap-4"
 >
   <div style="color: {color}">
     <i class="fa-solid {icon} text-xl"></i>

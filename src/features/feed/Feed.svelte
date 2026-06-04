@@ -40,7 +40,7 @@
 
 <div class="max-w-300 mx-auto py-12 px-4 grid grid-cols-[1.5fr_2fr] gap-8">
   <aside class="space-y-8">
-    <div class="bg-card p-6 rounded-xl shadow-md">
+    <div class="bg-card p-6 shadow-md">
       <h3 class="text-(--hako-fg) font-bold mb-4 flex items-center">
         <i class="fa-solid fa-fire text-accent mr-2"></i> Trending
       </h3>
@@ -51,7 +51,7 @@
       </div>
     </div>
 
-    <div class="bg-card p-6 rounded-xl shadow-md space-y-6">
+    <div class="bg-card p-6 shadow-md space-y-6">
       <h3 class="text-(--hako-fg) font-bold flex items-center">
         <i class="fa-solid fa-clock text-accent mr-2"></i> Recently Added
       </h3>

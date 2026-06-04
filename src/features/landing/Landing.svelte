@@ -21,7 +21,8 @@
   }
 
   function showSignup() {
-    window.dispatchEvent(new CustomEvent("show-signup"));
+    window.history.pushState({}, "", "/signup");
+    window.dispatchEvent(new PopStateEvent("popstate"));
   }
 </script>
 

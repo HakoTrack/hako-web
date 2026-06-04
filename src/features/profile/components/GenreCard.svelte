@@ -33,9 +33,7 @@
   });
 </script>
 
-<div
-  class="bg-card p-6 rounded-xl border border-(--surface-elevated) space-y-4"
->
+<div class="bg-card p-6 border border-(--surface-elevated) space-y-4">
   <h4 class="text-(--hako-fg) font-bold text-lg">{genre}</h4>
 
   <div class="grid grid-cols-2 gap-4 text-sm">

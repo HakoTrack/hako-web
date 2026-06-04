@@ -76,7 +76,7 @@
   }
 </script>
 
-<div class="bg-card p-4 rounded-xl shadow-md mb-6">
+<div class="bg-card p-4 shadow-md mb-6">
   <textarea
     bind:this={textareaRef}
     bind:value={content}

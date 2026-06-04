@@ -127,6 +127,7 @@
             options: {
               responsive: true,
               maintainAspectRatio: false,
+              animation: false, // Disable initial animation
               events: ["mousemove", "mouseout", "touchstart", "touchmove"],
               interaction: {
                 mode: "nearest",
@@ -192,7 +193,7 @@
   });
 </script>
 
-<div class="bg-card p-6 rounded-xl shadow-md">
+<div class="bg-card p-6 shadow-md">
   <h3 class="text-(--hako-fg) font-bold mb-4 flex items-center">
     <i class="fa-solid fa-brain text-accent mr-2"></i> Taste Profile
   </h3>

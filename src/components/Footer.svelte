@@ -1,13 +1,11 @@
-<footer class="bg-card py-12 border-t border-slate-800">
+<footer class="bg-(--hako-bg) py-12">
   <div
     class="max-w-375 mx-auto px-4 flex flex-col md:flex-row justify-between items-center"
   >
-    <div
-      class="text-2xl font-bold tracking-tighter text-slate-600 mb-6 md:mb-0"
-    >
+    <div class="text-2xl font-bold tracking-tighter text-(--c0) mb-6 md:mb-0">
       HAKO
     </div>
-    <div class="flex space-x-8 text-sm font-medium text-slate-500">
+    <div class="flex space-x-8 text-sm font-medium text-(--c0)">
       <a href="#" class="hover:text-accent">Donate</a>
       <a href="https://github.com/HakoTrack" class="hover:text-accent">GitHub</a
       >

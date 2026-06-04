@@ -21,10 +21,16 @@
   let authSubscription = null;
 
   let isLanding = $derived(authInitialized && currentPath === "/" && !user);
+  let isSignup = $derived(currentPath === "/signup");
 
   $effect(() => {
     // Auth Guard: Redirect to landing if not logged in and not already on landing
-    if (authInitialized && user === null && currentPath !== "/") {
+    if (
+      authInitialized &&
+      user === null &&
+      currentPath !== "/" &&
+      currentPath !== "/signup"
+    ) {
       window.history.pushState({}, "", "/");
       handleRouting();
     }
@@ -101,20 +107,19 @@
   );
 </script>
 
-<svelte:window
-  on:show-login={() => openModal("login")}
-  on:show-signup={() => openModal("signup")}
-/>
+<svelte:window on:show-login={() => openModal("login")} />
 
 <div class="min-h-screen flex flex-col">
   <Toasts />
   <ModalWrapper />
-  <div class="h-15 w-full sticky top-0 z-50">
-    <!-- Reserved space and sticky -->
-    {#if user}
-      <Navbar {user} {profile} />
-    {/if}
-  </div>
+  {#if !isSignup}
+    <div class="h-15 w-full sticky top-0 z-50">
+      <!-- Reserved space and sticky -->
+      {#if user}
+        <Navbar {user} {profile} />
+      {/if}
+    </div>
+  {/if}
 
   <main id="app-view" class="grow min-h-screen">
     {#if currentPath === "/"}
@@ -135,7 +140,7 @@
     {/if}
   </main>
 
-  {#if !isLanding}
+  {#if !isLanding && !isSignup}
     <Footer />
   {/if}
 </div>

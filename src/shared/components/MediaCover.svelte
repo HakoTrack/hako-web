@@ -36,6 +36,7 @@
 
   let loaded = $state(false);
   let mediaInfo = $state<Media | null>(null);
+  let isHovered = $state(false);
 
   async function handleOpenEditor() {
     const media = mediaInfo || (await fetchMediaById(Number(mediaId)));
@@ -43,6 +44,7 @@
   }
 
   async function handleHover() {
+    isHovered = true;
     if (onmouseover) onmouseover();
     if (showTooltip && !mediaInfo) {
       mediaInfo = await fetchMediaById(Number(mediaId));

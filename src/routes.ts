@@ -2,6 +2,7 @@ import Feed from "./features/feed/Feed.svelte";
 import Landing from "./features/landing/Landing.svelte";
 import Profile from "./features/profile/Profile.svelte";
 import MediaDetail from "./features/media/MediaDetail.svelte";
+import SignupPage from "./features/auth/SignupPage.svelte";
 
 import Browse from "./features/browse/Browse.svelte";
 
@@ -47,5 +48,10 @@ export const routes: Route[] = [
     path: "/feed",
     component: Feed,
     props: (_, user) => ({ user })
+  },
+  {
+    path: "/signup",
+    component: SignupPage,
+    props: () => ({})
   }
 ];

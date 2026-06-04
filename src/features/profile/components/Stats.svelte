@@ -178,7 +178,7 @@
 <div class="flex gap-8">
   <aside class="w-56 shrink-0 space-y-6">
     <div
-      class="sticky top-24 bg-card rounded-xl overflow-hidden border border-(--surface-elevated)"
+      class="sticky top-24 bg-card overflow-hidden border border-(--surface-elevated)"
     >
       {#each categories as category}
         <div class="border-b border-(--surface-elevated) last:border-0">
@@ -255,7 +255,7 @@
       </div>
 
       <!-- Score Distribution -->
-      <div class="bg-card p-6 rounded-xl border border-(--surface-elevated)">
+      <div class="bg-card p-6 border border-(--surface-elevated)">
         <h4 class="text-(--hako-fg) font-bold mb-6">Score Distribution</h4>
         <div class="flex items-end gap-2 h-40">
           {#each stats.anime.scoreDistribution.slice(1) as count, index}
@@ -286,7 +286,7 @@
       </div>
 
       <!-- Year Chart -->
-      <div class="bg-card p-6 rounded-xl border border-(--surface-elevated)">
+      <div class="bg-card p-6 border border-(--surface-elevated)">
         <div class="flex justify-between items-center mb-6">
           <h4 class="text-(--hako-fg) font-bold">Anime by Release Year</h4>
           <div class="flex gap-2">
