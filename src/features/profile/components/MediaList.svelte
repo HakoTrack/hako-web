@@ -36,7 +36,6 @@
   let filterStatus = $state("all");
   let searchQuery = $state("");
   let isLoading = $state(true);
-  let isBackgroundFetching = $state(false);
 
   // Sync state if props change (deferred in effect below)
   $effect(() => {
@@ -76,7 +75,6 @@
           if (cachedData.length > 0) {
             listDataEntries = cachedData;
             isLoading = false;
-            isBackgroundFetching = true;
             loadData();
           } else {
             loadData();
