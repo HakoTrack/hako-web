@@ -64,7 +64,7 @@
   const isReallyLoading = $derived(isLoading || !isWasmReady);
 
   // Progressive rendering limit to avoid blocking the main thread
-  let displayLimit = $state(50);
+  let displayLimit = $state(20);
 
   const statusGroups = $derived(getStatusGroups(type));
 
@@ -92,13 +92,13 @@
 
       if (hasData) {
         listDataEntries = initialListData;
-        if (typeChanged) displayLimit = 50;
+        if (typeChanged) displayLimit = 20;
         isLoading = false;
         // metadata might still be loading or needs refresh
         loadData();
       } else if (typeChanged) {
         listDataEntries = [];
-        displayLimit = 50;
+        displayLimit = 20;
         isLoading = true;
         loadData();
       }
@@ -110,17 +110,17 @@
   });
 
   function setFilter(status: string) {
-    displayLimit = 50;
+    displayLimit = 20;
     filterStatus = status;
   }
 
   function setSort(sort: string) {
-    displayLimit = 50;
+    displayLimit = 20;
     sortBy = sort;
   }
 
   function handleSearchInput(e: Event) {
-    displayLimit = 50;
+    displayLimit = 20;
     const target = e.target as HTMLInputElement;
     searchQuery = target?.value || "";
   }
@@ -129,7 +129,7 @@
   $effect(() => {
     if (!isReallyLoading && displayLimit < listDataEntries.length) {
       const timer = setTimeout(() => {
-        displayLimit += 100; // Can be larger with Wasm performance
+        displayLimit += 50; // Can be larger with Wasm performance
       }, 50);
       return () => clearTimeout(timer);
     }
@@ -235,7 +235,7 @@
     // Use a microtask or slight delay to ensure the click handler returns quickly
     // before the heavy rendering work starts
     const timer = setTimeout(() => {
-      displayLimit = 50;
+      displayLimit = 20;
     }, 0);
     return () => clearTimeout(timer);
   });

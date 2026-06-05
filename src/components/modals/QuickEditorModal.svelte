@@ -7,11 +7,8 @@
     settings,
     getDisplayTitle,
   } from "$core";
-  import {
-    getVibes,
-    ListService,
-    FavoritesService,
-  } from "$features/profile/services";
+  import { get_vibes_wasm } from "$wasm/hako_wasm";
+  import { ListService, FavoritesService } from "$features/profile/services";
   import { HakoImage, formatDescription } from "$utils";
   import {
     Select,
@@ -37,7 +34,7 @@
   });
 
   const mediaType = $derived(entry.type);
-  let vibes = $derived(getVibes(entry?.rawMetadata));
+  let vibes = $derived(get_vibes_wasm(entry?.rawMetadata));
   // Reactive favorite status
   let isFavorited = $state(false);
   let isSaving = $state(false);

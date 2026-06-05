@@ -2,7 +2,7 @@
   import { onMount } from "svelte";
   import { fetchMediaById } from "../../shared/utils/mediaData";
   import { HakoImage } from "../../shared/utils/images";
-  import { getVibes } from "../profile/services/vibeCalc";
+  import { get_vibes_wasm } from "$wasm/hako_wasm";
   import { getDisplayTitle, settings } from "../../core/settings.svelte";
   import { formatDescription } from "../../shared/utils/mediaData";
   import MediaCover from "../../shared/components/MediaCover.svelte";
@@ -28,7 +28,7 @@
     return "";
   });
   // Reactive vibe calculation
-  let vibes = $derived(media ? getVibes(media) : null);
+  let vibes = $derived(media ? get_vibes_wasm(media) : null);
 
   function toTitleCase(str: string | null | undefined): string {
     if (!str) return "N/A";

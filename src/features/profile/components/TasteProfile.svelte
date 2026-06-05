@@ -1,6 +1,6 @@
 <script lang="ts">
   import Chart from "chart.js/auto";
-  import { getProfileAffinity } from "../services/vibeCalc";
+  import { get_profile_affinity_wasm } from "$wasm/hako_wasm";
   import type {
     Profile,
     Media,
@@ -98,7 +98,10 @@
 
               if (activeEntries.length === 0) return null;
 
-              const affinities = getProfileAffinity(activeEntries, metadata);
+              const affinities = get_profile_affinity_wasm(
+                activeEntries,
+                metadata,
+              );
               const color = COLORS[type] || "#ffffff";
 
               return {
