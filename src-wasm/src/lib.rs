@@ -1,10 +1,28 @@
 use fuzzy_matcher::FuzzyMatcher;
 use fuzzy_matcher::skim::SkimMatcherV2;
+use pulldown_cmark::{Options, Parser, html};
 use serde::{Deserialize, Serialize};
 use serde_wasm_bindgen::{Serializer, from_value};
 use std::collections::HashMap;
 use wasm_bindgen::prelude::*;
 
+/// Renders Markdown text to HTML using pulldown-cmark.
+#[wasm_bindgen]
+pub fn parse_markdown_wasm(text: &str) -> String {
+    let mut options = Options::empty();
+    options.insert(Options::ENABLE_TABLES);
+    options.insert(Options::ENABLE_FOOTNOTES);
+    options.insert(Options::ENABLE_STRIKETHROUGH);
+    options.insert(Options::ENABLE_TASKLISTS);
+    options.insert(Options::ENABLE_SMART_PUNCTUATION);
+
+    let parser = Parser::new_ext(text, options);
+    let mut html = String::new();
+    html::push_html(&mut html, parser);
+    html.replace("<img", "<img data-image-modal=\"true\"")
+}
+
+/// Media title information in different formats.
 #[derive(Serialize, Deserialize, Clone, Default, Debug)]
 pub struct Title {
     #[serde(default)]
@@ -13,6 +31,7 @@ pub struct Title {
     pub native: Option<String>,
 }
 
+/// A date structure with optional components to handle imprecise dates.
 #[derive(Serialize, Deserialize, Clone, Default, Debug)]
 pub struct FuzzyDate {
     pub year: Option<i32>,
@@ -20,6 +39,7 @@ pub struct FuzzyDate {
     pub day: Option<i32>,
 }
 
+/// Represents a media item with its associated metadata.
 #[derive(Serialize, Deserialize, Clone, Default, Debug)]
 pub struct Media {
     #[serde(rename = "media_id", alias = "id", default)]
@@ -41,12 +61,14 @@ pub struct Media {
     pub tags: Vec<Tag>,
 }
 
+/// A tag associated with a media item, with a ranking.
 #[derive(Serialize, Deserialize, Clone, Default, Debug)]
 pub struct Tag {
     pub name: String,
     pub rank: i32,
 }
 
+/// An entry in a user's media list.
 #[derive(Serialize, Deserialize, Clone, Default, Debug)]
 pub struct ListEntry {
     #[serde(rename = "media_id", default)]
@@ -59,6 +81,7 @@ pub struct ListEntry {
     pub updated_at: Option<String>,
 }
 
+/// A processed media item for display or analysis purposes.
 #[derive(Serialize, Deserialize, Clone, Default)]
 pub struct ProcessedItem {
     #[serde(rename = "media_id")]
@@ -73,6 +96,7 @@ pub struct ProcessedItem {
     pub meta: Media,
 }
 
+/// Result structure for media statistics.
 #[derive(Serialize, Deserialize)]
 pub struct StatsResult {
     pub total: i32,
@@ -98,6 +122,7 @@ pub struct StatsResult {
     pub genre_stats: HashMap<String, GenreStat>,
 }
 
+/// Distribution info for a specific list status.
 #[derive(Serialize, Deserialize)]
 pub struct StatusDist {
     pub id: String,
@@ -107,6 +132,7 @@ pub struct StatusDist {
     pub percent: f32,
 }
 
+/// Statistics for a specific year.
 #[derive(Serialize, Deserialize)]
 pub struct YearStat {
     pub count: i32,
@@ -114,6 +140,7 @@ pub struct YearStat {
     pub scores: Vec<f32>,
 }
 
+/// Statistics for a specific genre.
 #[derive(Serialize, Deserialize)]
 pub struct GenreStat {
     pub completed: i32,
@@ -124,12 +151,14 @@ pub struct GenreStat {
     pub top_titles: Vec<TopTitle>,
 }
 
+/// Reference to a top-rated title within a statistic.
 #[derive(Serialize, Deserialize)]
 pub struct TopTitle {
     pub id: i32,
     pub score: f32,
 }
 
+/// Scores categorized by vibe pillars.
 #[derive(Serialize, Deserialize, Clone, Debug, Default)]
 #[serde(rename_all = "PascalCase")] // VibeScore categories are PascalCase
 pub struct VibeScore {
@@ -141,24 +170,28 @@ pub struct VibeScore {
     pub lighthearted: f32,
 }
 
+/// A specific vibe pillar name and its calculated score.
 #[derive(Serialize, Deserialize, Clone, Debug)]
 pub struct VibePillar {
     pub name: String,
     pub score: f32,
 }
 
+/// The result of vibe analysis, including scores and sorted pillars.
 #[derive(Serialize, Deserialize, Clone, Debug)]
 pub struct VibeResult {
     pub scores: VibeScore,
     pub sorted: Vec<VibePillar>,
 }
 
+/// Affinity percentage for a specific vibe.
 #[derive(Serialize, Deserialize, Clone, Debug)]
 pub struct VibeAffinity {
     pub name: String,
     pub value: i32,
 }
 
+/// Enum representing the different vibe categories.
 #[derive(Deserialize, Debug)]
 enum VibeCategory {
     Speculative,
@@ -169,18 +202,21 @@ enum VibeCategory {
     Lighthearted,
 }
 
+/// Mapping of a genre to its primary and optionally secondary vibe categories.
 #[derive(Deserialize, Debug)]
 struct GenreVibeMap {
     primary: VibeCategory,
     secondary: Option<VibeCategory>,
 }
 
+/// Configuration for how a tag affects vibe scores.
 #[derive(Deserialize, Debug)]
 struct TagVibeMap {
     p: VibeCategory,
     w: i32,
 }
 
+/// Structure of the full vibe schema configuration.
 #[derive(Deserialize, Debug)]
 struct VibeSchema {
     genres: HashMap<String, GenreVibeMap>,
@@ -188,62 +224,17 @@ struct VibeSchema {
 }
 
 lazy_static::lazy_static! {
+    /// Loads the vibe schema configuration from an external JSON file at runtime.
     static ref SCHEMA: VibeSchema = {
-        let json_str = r#"{
-            "genres": {
-                "Action": { "primary": "Visceral" },
-                "Adventure": { "primary": "Speculative", "secondary": "Visceral" },
-                "Comedy": { "primary": "Lighthearted" },
-                "Drama": { "primary": "Emotive", "secondary": "Cerebral" },
-                "Ecchi": { "primary": "Visceral", "secondary": "Lighthearted" },
-                "Fantasy": { "primary": "Speculative" },
-                "Hentai": { "primary": "Visceral", "secondary": "Interpersonal" },
-                "Horror": { "primary": "Visceral", "secondary": "Cerebral" },
-                "Mahou Shoujo": { "primary": "Speculative", "secondary": "Lighthearted" },
-                "Mecha": { "primary": "Speculative", "secondary": "Visceral" },
-                "Music": { "primary": "Visceral", "secondary": "Emotive" },
-                "Mystery": { "primary": "Cerebral" },
-                "Psychological": { "primary": "Cerebral", "secondary": "Emotive" },
-                "Romance": { "primary": "Interpersonal", "secondary": "Emotive" },
-                "Sci-Fi": { "primary": "Speculative", "secondary": "Cerebral" },
-                "Slice of Life": { "primary": "Lighthearted", "secondary": "Interpersonal" },
-                "Sports": { "primary": "Visceral", "secondary": "Interpersonal" },
-                "Supernatural": { "primary": "Speculative", "secondary": "Cerebral" },
-                "Thriller": { "primary": "Cerebral", "secondary": "Visceral" }
-            },
-            "tags": {
-                "Afterlife": { "p": "Speculative", "w": 2 }, "Alternate Universe": { "p": "Speculative", "w": 2 }, "Cyberspace": { "p": "Speculative", "w": 2 },
-                "Space": { "p": "Speculative", "w": 2 }, "Virtual World": { "p": "Speculative", "w": 2 }, "Post-Apocalyptic": { "p": "Speculative", "w": 2 }, "Underwater": { "p": "Speculative", "w": 2 },
-                "Achronological Order": { "p": "Cerebral", "w": 2 }, "Time Loop": { "p": "Cerebral", "w": 2 }, "Anachronism": { "p": "Cerebral", "w": 2 },
-                "War": { "p": "Visceral", "w": 1 }, "Historical": { "p": "Visceral", "w": 1 },
-                "Anti-Hero": { "p": "Cerebral", "w": 1 }, "Detective": { "p": "Cerebral", "w": 1 }, "God-Complex": { "p": "Cerebral", "w": 1 },
-                "Assassins": { "p": "Visceral", "w": 1 }, "Delinquents": { "p": "Visceral", "w": 1 }, "Merc mercenaries": { "p": "Visceral", "w": 1 }, "Zombie": { "p": "Visceral", "w": 1 },
-                "Orphan": { "p": "Emotive", "w": 1 }, "Hikikomori": { "p": "Emotive", "w": 1 }, "Twins": { "p": "Emotive", "w": 1 },
-                "Chibi": { "p": "Lighthearted", "w": 1 }, "Kemonomimi": { "p": "Lighthearted", "w": 1 }, "Ojou-sama": { "p": "Lighthearted", "w": 1 },
-                "Maid": { "p": "Interpersonal", "w": 1 }, "Butler": { "p": "Interpersonal", "w": 1 }, "Teacher": { "p": "Interpersonal", "w": 1 },
-                "Battle Royale": { "p": "Visceral", "w": 5 }, "Martial Arts": { "p": "Visceral", "w": 5 }, "Swordplay": { "p": "Visceral", "w": 5 }, "Gore": { "p": "Visceral", "w": 5 }, "Guns": { "p": "Visceral", "w": 5 }, "Tanks": { "p": "Visceral", "w": 5 }, "Archery": { "p": "Visceral", "w": 5 },
-                "Tragedy": { "p": "Emotive", "w": 5 }, "Grief": { "p": "Emotive", "w": 5 }, "Bullying": { "p": "Emotive", "w": 5 }, "Suicide": { "p": "Emotive", "w": 5 }, "Melancholy": { "p": "Emotive", "w": 5 }, "Rejection": { "p": "Emotive", "w": 5 },
-                "Conspiracy": { "p": "Cerebral", "w": 5 }, "Class Struggle": { "p": "Cerebral", "w": 5 }, "Memory Manipulation": { "p": "Cerebral", "w": 5 }, "Politics": { "p": "Cerebral", "w": 5 }, "Social Commentary": { "p": "Cerebral", "w": 5 },
-                "Alchemy": { "p": "Speculative", "w": 5 }, "Magic": { "p": "Speculative", "w": 5 }, "Mythology": { "p": "Speculative", "w": 5 }, "Isekai": { "p": "Speculative", "w": 5 }, "Cultivation": { "p": "Speculative", "w": 5 }, "Urban Fantasy": { "p": "Speculative", "w": 5 }, "Youkai": { "p": "Speculative", "w": 5 },
-                "High Stakes": { "p": "Visceral", "w": 5 }, "Gambling": { "p": "Visceral", "w": 5 }, "Death Game": { "p": "Visceral", "w": 5 }, "Survival": { "p": "Visceral", "w": 5 },
-                "Teamwork": { "p": "Interpersonal", "w": 5 }, "Rivalry": { "p": "Interpersonal", "w": 5 }, "E-Sports": { "p": "Interpersonal", "w": 5 },
-                "Philosophy": { "p": "Cerebral", "w": 5 }, "Satire": { "p": "Cerebral", "w": 5 }, "Denpa": { "p": "Cerebral", "w": 5 }, "Meta": { "p": "Cerebral", "w": 5 }, "Surreal": { "p": "Cerebral", "w": 5 },
-                "Mental Illness": { "p": "Emotive", "w": 5 }, "Loneliness": { "p": "Emotive", "w": 5 }, "Family Life": { "p": "Emotive", "w": 5 }, "Existential": { "p": "Emotive", "w": 5 },
-                "Slapstick": { "p": "Lighthearted", "w": 5 }, "Crossover": { "p": "Lighthearted", "w": 5 }, "Holidays": { "p": "Lighthearted", "w": 5 }, "Parody": { "p": "Lighthearted", "w": 5 },
-                "Cohabitation": { "p": "Interpersonal", "w": 5 }, "Marriage": { "p": "Interpersonal", "w": 5 }, "Fake Relationship": { "p": "Interpersonal", "w": 5 }, "Yuri": { "p": "Interpersonal", "w": 5 }, "Yaoi": { "p": "Interpersonal", "w": 5 }, "Childhood Friends": { "p": "Interpersonal", "w": 5 },
-                "Heartbreak": { "p": "Emotive", "w": 5 }, "Unrequited Love": { "p": "Emotive", "w": 5 }, "Love Triangle": { "p": "Emotive", "w": 5 },
-                "Cyberpunk": { "p": "Speculative", "w": 5 }, "Space Opera": { "p": "Speculative", "w": 5 }, "Time Travel": { "p": "Speculative", "w": 5 }, "Dystopian": { "p": "Speculative", "w": 5 }, "Steampunk": { "p": "Speculative", "w": 5 }, "Aliens": { "p": "Speculative", "w": 5 },
-                "Artificial Intelligence": { "p": "Cerebral", "w": 5 }, "Transhumanism": { "p": "Cerebral", "w": 5 },
-                "Iyashikei": { "p": "Lighthearted", "w": 5 }, "Cute Girls Doing Cute Things": { "p": "Lighthearted", "w": 5 }, "Surreal Comedy": { "p": "Lighthearted", "w": 5 },
-                "Friendship": { "p": "Interpersonal", "w": 5 }, "Work": { "p": "Interpersonal", "w": 5 }, "School": { "p": "Interpersonal", "w": 5 }, "Club": { "p": "Interpersonal", "w": 5 }, "Parenting": { "p": "Interpersonal", "w": 5 }
-            }
-        }"#;
+        let json_str = include_str!("vibe_schema.json");
         serde_json::from_str(json_str).expect("Failed to parse Vibe SCHEMA")
     };
 }
 
+/// Minimum rank required for a tag to contribute to vibe calculations.
 const TAG_RANK_FLOOR: i32 = 60;
 
+/// Calculates vibe scores based on genres and tags of a media item.
 fn get_vibes(media: &Media) -> VibeResult {
     let mut scores = VibeScore::default();
 
@@ -324,12 +315,14 @@ fn get_vibes(media: &Media) -> VibeResult {
     }
 }
 
+/// Intermediate structure for parsed search queries.
 struct ParsedQuery {
     genre: Option<String>,
     min_score: Option<f32>,
     free_query: String,
 }
 
+/// Parses a raw query string into a structured `ParsedQuery`.
 fn parse_query(query: &str) -> ParsedQuery {
     let parts = query.split_whitespace();
     let mut genre = None;
@@ -359,6 +352,7 @@ fn parse_query(query: &str) -> ParsedQuery {
     }
 }
 
+/// WASM binding to calculate vibes for a given media item.
 #[wasm_bindgen]
 pub fn get_vibes_wasm(media: JsValue) -> Result<JsValue, JsValue> {
     let media: Media = from_value(media)?;
@@ -369,23 +363,9 @@ pub fn get_vibes_wasm(media: JsValue) -> Result<JsValue, JsValue> {
         .map_err(|e| JsValue::from_str(&e.to_string()))
 }
 
-#[wasm_bindgen]
-pub fn get_profile_affinity_wasm(list: JsValue, metadata: JsValue) -> Result<JsValue, JsValue> {
-    let items: Vec<ListEntry> = from_value(list)?;
-    let metadata_map: HashMap<String, Media> = from_value(metadata)?;
-
-    // We can reuse the logic, but the current `get_profile_affinity` is on `ListEngine`.
-    // It's probably better to add a standalone function to Rust or just refactor.
-    // Let's create a standalone one for now.
-
-    // Actually, look at get_profile_affinity in lib.rs
-    // Wait, the one in lib.rs is inside `impl ListEngine`.
-    // I need a standalone function.
-
-    // Let's refactor the logic in ListEngine to call a helper.
-    // Or just copy the logic for now, it's safer.
-
-    let VIBE_CATEGORIES = [
+/// Helper to calculate vibe affinity across a set of items and metadata.
+fn calculate_affinity(items: &[ListEntry], metadata: &HashMap<i32, Media>) -> Vec<VibeAffinity> {
+    let vibe_categories = [
         VibeCategory::Speculative,
         VibeCategory::Visceral,
         VibeCategory::Cerebral,
@@ -396,8 +376,8 @@ pub fn get_profile_affinity_wasm(list: JsValue, metadata: JsValue) -> Result<JsV
     let mut category_totals: VibeScore = VibeScore::default();
     let mut grand_total_points = 0.0;
 
-    for entry in &items {
-        if let Some(meta) = metadata_map.get(&entry.media_id.to_string()) {
+    for entry in items {
+        if let Some(meta) = metadata.get(&entry.media_id) {
             let vibes = get_vibes(meta);
             let score_multiplier = entry.score.unwrap_or(3.0) / 10.0;
 
@@ -419,7 +399,7 @@ pub fn get_profile_affinity_wasm(list: JsValue, metadata: JsValue) -> Result<JsV
     }
 
     let mut raw_values = Vec::new();
-    for cat in VIBE_CATEGORIES.iter() {
+    for cat in vibe_categories.iter() {
         let name = format!("{:?}", cat);
         let val = if grand_total_points > 0.0 {
             (match cat {
@@ -441,7 +421,7 @@ pub fn get_profile_affinity_wasm(list: JsValue, metadata: JsValue) -> Result<JsV
     let min = vals.iter().cloned().fold(f32::INFINITY, f32::min);
     let max = vals.iter().cloned().fold(f32::NEG_INFINITY, f32::max);
 
-    let final_affinity: Vec<VibeAffinity> = raw_values
+    raw_values
         .into_iter()
         .map(|(name, val)| {
             let value = if max == min {
@@ -451,7 +431,23 @@ pub fn get_profile_affinity_wasm(list: JsValue, metadata: JsValue) -> Result<JsV
             };
             VibeAffinity { name, value }
         })
-        .collect();
+        .collect()
+}
+
+/// WASM binding to calculate profile affinity for a user list.
+#[wasm_bindgen]
+pub fn get_profile_affinity_wasm(list: JsValue, metadata: JsValue) -> Result<JsValue, JsValue> {
+    let items: Vec<ListEntry> = from_value(list)?;
+    let metadata_map: HashMap<String, Media> = from_value(metadata)?;
+
+    let mut processed_metadata = HashMap::new();
+    for (id_str, m) in metadata_map {
+        if let Ok(id) = id_str.parse::<i32>() {
+            processed_metadata.insert(id, m);
+        }
+    }
+
+    let final_affinity = calculate_affinity(&items, &processed_metadata);
 
     let serializer = Serializer::new().serialize_maps_as_objects(true);
     final_affinity
@@ -459,6 +455,7 @@ pub fn get_profile_affinity_wasm(list: JsValue, metadata: JsValue) -> Result<JsV
         .map_err(|e| JsValue::from_str(&e.to_string()))
 }
 
+/// Core engine for processing and searching list items.
 #[wasm_bindgen]
 pub struct ListEngine {
     items: Vec<ListEntry>,
@@ -468,6 +465,7 @@ pub struct ListEngine {
 
 #[wasm_bindgen]
 impl ListEngine {
+    /// Constructs a new `ListEngine` with items and metadata.
     #[wasm_bindgen(constructor)]
     pub fn new(items: JsValue, metadata: JsValue) -> Result<ListEngine, JsValue> {
         let items: Vec<ListEntry> = from_value(items)?;
@@ -487,6 +485,7 @@ impl ListEngine {
         })
     }
 
+    /// Filters and sorts list items based on a query, sort preference, and status.
     pub fn filter_and_sort(
         &self,
         query: &str,
@@ -604,6 +603,7 @@ impl ListEngine {
             .map_err(|e| JsValue::from_str(&e.to_string()))
     }
 
+    /// Calculates comprehensive statistics for the list items.
     pub fn calculate_stats(
         &self,
         media_type: &str,
@@ -772,74 +772,9 @@ impl ListEngine {
             .map_err(|e| JsValue::from_str(&e.to_string()))
     }
 
+    /// Calculates and returns the profile vibe affinity.
     pub fn get_profile_affinity(&self) -> Result<JsValue, JsValue> {
-        let vibe_categories = [
-            VibeCategory::Speculative,
-            VibeCategory::Visceral,
-            VibeCategory::Cerebral,
-            VibeCategory::Emotive,
-            VibeCategory::Interpersonal,
-            VibeCategory::Lighthearted,
-        ];
-        let mut category_totals: VibeScore = VibeScore::default();
-        let mut grand_total_points = 0.0;
-
-        for entry in &self.items {
-            if let Some(meta) = self.metadata.get(&entry.media_id) {
-                let vibes = get_vibes(meta);
-                let score_multiplier = entry.score.unwrap_or(3.0) / 10.0;
-
-                category_totals.speculative += vibes.scores.speculative * score_multiplier;
-                category_totals.visceral += vibes.scores.visceral * score_multiplier;
-                category_totals.cerebral += vibes.scores.cerebral * score_multiplier;
-                category_totals.emotive += vibes.scores.emotive * score_multiplier;
-                category_totals.interpersonal += vibes.scores.interpersonal * score_multiplier;
-                category_totals.lighthearted += vibes.scores.lighthearted * score_multiplier;
-
-                grand_total_points += (vibes.scores.speculative
-                    + vibes.scores.visceral
-                    + vibes.scores.cerebral
-                    + vibes.scores.emotive
-                    + vibes.scores.interpersonal
-                    + vibes.scores.lighthearted)
-                    * score_multiplier;
-            }
-        }
-
-        let mut raw_values = Vec::new();
-        for cat in vibe_categories.iter() {
-            let name = format!("{:?}", cat);
-            let val = if grand_total_points > 0.0 {
-                (match cat {
-                    VibeCategory::Speculative => category_totals.speculative,
-                    VibeCategory::Visceral => category_totals.visceral,
-                    VibeCategory::Cerebral => category_totals.cerebral,
-                    VibeCategory::Emotive => category_totals.emotive,
-                    VibeCategory::Interpersonal => category_totals.interpersonal,
-                    VibeCategory::Lighthearted => category_totals.lighthearted,
-                } / grand_total_points)
-                    * 100.0
-            } else {
-                0.0
-            };
-            raw_values.push((name, val));
-        }
-
-        let vals: Vec<f32> = raw_values.iter().map(|(_, v)| *v).collect();
-        let min = vals.iter().cloned().fold(f32::INFINITY, f32::min);
-        let max = vals.iter().cloned().fold(f32::NEG_INFINITY, f32::max);
-
-        let final_affinity: Vec<VibeAffinity> = raw_values
-            .into_iter()
-            .map(|(name, val)| {
-                let value = if max == min {
-                    50
-                } else {
-                    ((val - min) / (max - min) * 80.0 + 10.0).round() as i32
-                };
-                VibeAffinity { name, value }
-            })
-            .collect();
+        let final_affinity = calculate_affinity(&self.items, &self.metadata);
 
         let serializer = Serializer::new().serialize_maps_as_objects(true);
         final_affinity
@@ -848,6 +783,7 @@ impl ListEngine {
     }
 }
 
+/// Input structure for status group definitions.
 #[derive(Deserialize)]
 #[serde(rename_all = "camelCase")]
 struct StatusGroupInput {
@@ -856,6 +792,7 @@ struct StatusGroupInput {
     color: String,
 }
 
+/// Helper to get the preferred title based on the user's preference.
 fn get_display_title(title: &Title, preference: &str) -> String {
     let romaji = title.romaji.as_deref().unwrap_or("");
     match preference {
@@ -865,6 +802,7 @@ fn get_display_title(title: &Title, preference: &str) -> String {
     }
 }
 
+/// Helper to calculate the median of a slice of floats.
 fn get_median(scores: &mut [f32]) -> String {
     if scores.is_empty() {
         return String::from("0.0");

@@ -106,7 +106,7 @@
 
               return {
                 label: type.replace("_", " "),
-                data: affinities.map((a) => a.value),
+                data: affinities.map((a: any) => a.value),
                 backgroundColor: color + "33",
                 borderColor: color,
                 pointBackgroundColor: color,
