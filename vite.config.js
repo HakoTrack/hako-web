@@ -19,6 +19,9 @@ export default defineConfig({
       '$wasm': path.resolve(__dirname, './src-wasm/pkg/'),
     }
   },
+  build: {
+    target: 'esnext',
+  },
   plugins: [
     wasm(),
     topLevelAwait(),
