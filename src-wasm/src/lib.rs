@@ -122,6 +122,41 @@ pub struct TopTitle {
     pub score: f32,
 }
 
+struct ParsedQuery {
+    genre: Option<String>,
+    min_score: Option<f32>,
+    free_query: String,
+}
+
+fn parse_query(query: &str) -> ParsedQuery {
+    let parts = query.split_whitespace();
+    let mut genre = None;
+    let mut min_score = None;
+    let mut free_query_parts = Vec::new();
+
+    for part in parts {
+        if part.contains(':') {
+            let mut kv = part.splitn(2, ':');
+            let key = kv.next().unwrap_or("").to_lowercase();
+            let value = kv.next().unwrap_or("").to_lowercase();
+
+            match key.as_str() {
+                "genre" => genre = Some(value),
+                "score" => min_score = value.parse::<f32>().ok(),
+                _ => free_query_parts.push(part),
+            }
+        } else {
+            free_query_parts.push(part);
+        }
+    }
+
+    ParsedQuery {
+        genre,
+        min_score,
+        free_query: free_query_parts.join(" "),
+    }
+}
+
 #[wasm_bindgen]
 pub struct ListEngine {
     items: Vec<ListEntry>,
@@ -157,6 +192,8 @@ impl ListEngine {
         filter_status: &str,
         title_preference: &str,
     ) -> Result<JsValue, JsValue> {
+        let parsed = parse_query(query);
+
         let mut results: Vec<(i64, ProcessedItem)> = self
             .items
             .iter()
@@ -169,23 +206,46 @@ impl ListEngine {
             })
             .filter_map(|item| {
                 let meta = self.metadata.get(&item.media_id)?;
-                let display_title = get_display_title(&meta.title, title_preference);
 
+                // 1. Operator Filtering (Genre)
+                if let Some(ref target_genre) = parsed.genre {
+                    let matches = meta
+                        .genres
+                        .iter()
+                        .any(|g| g.to_lowercase().contains(target_genre));
+                    if !matches {
+                        return None;
+                    }
+                }
+
+                // 2. Operator Filtering (Score)
+                if let Some(min_s) = parsed.min_score {
+                    if item.score.unwrap_or(0.0) < min_s {
+                        return None;
+                    }
+                }
+
+                let display_title = get_display_title(&meta.title, title_preference);
                 let mut fuzzy_score = 0i64;
-                if !query.is_empty() {
+
+                // 3. Fuzzy Matching
+                if !parsed.free_query.is_empty() {
                     let romaji = meta.title.romaji.as_deref().unwrap_or("");
-                    let romaji_score = self.matcher.fuzzy_match(romaji, query).unwrap_or(0);
+                    let romaji_score = self
+                        .matcher
+                        .fuzzy_match(romaji, &parsed.free_query)
+                        .unwrap_or(0);
                     let english_score = meta
                         .title
                         .english
                         .as_ref()
-                        .and_then(|t| self.matcher.fuzzy_match(t, query))
+                        .and_then(|t| self.matcher.fuzzy_match(t, &parsed.free_query))
                         .unwrap_or(0);
                     let native_score = meta
                         .title
                         .native
                         .as_ref()
-                        .and_then(|t| self.matcher.fuzzy_match(t, query))
+                        .and_then(|t| self.matcher.fuzzy_match(t, &parsed.free_query))
                         .unwrap_or(0);
 
                     fuzzy_score = romaji_score.max(english_score).max(native_score);
@@ -211,7 +271,7 @@ impl ListEngine {
 
         // Sort
         results.sort_by(|a, b| {
-            if !query.is_empty() && a.0 != b.0 {
+            if !parsed.free_query.is_empty() && a.0 != b.0 {
                 return b.0.cmp(&a.0);
             }
 

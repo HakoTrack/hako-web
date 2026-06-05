@@ -2,7 +2,6 @@ import { defineConfig } from 'vite';
 import { svelte } from '@sveltejs/vite-plugin-svelte';
 import { VitePWA } from 'vite-plugin-pwa';
 import wasm from "vite-plugin-wasm";
-import topLevelAwait from "vite-plugin-top-level-await";
 import path from 'path';
 import { fileURLToPath } from 'url';
 
@@ -24,7 +23,6 @@ export default defineConfig({
   },
   plugins: [
     wasm(),
-    topLevelAwait(),
     svelte({
       onwarn: (warning, handler) => {
         // List of warning codes to ignore
