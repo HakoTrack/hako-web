@@ -18,6 +18,9 @@
       ],
       "$components": [
         "./src/shared/components/index.ts"
+      ],
+      "$wasm/*": [
+        "./src-wasm/pkg/*"
       ]
     },
     "allowJs": true,

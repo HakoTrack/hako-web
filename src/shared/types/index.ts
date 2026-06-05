@@ -14,6 +14,31 @@ export interface Profile {
   mediaLists: Record<string, any[]>;
 }
 
+// --- Vibe Interfaces ---
+export interface VibeScore {
+  speculative: number;
+  visceral: number;
+  cerebral: number;
+  emotive: number;
+  interpersonal: number;
+  lighthearted: number;
+}
+
+export interface VibePillar {
+  name: string;
+  score: number;
+}
+
+export interface VibeResult {
+  scores: VibeScore;
+  sorted: VibePillar[];
+}
+
+export interface VibeAffinity {
+  name: string;
+  value: number;
+}
+
 // --- Media & List Interfaces ---
 export interface Media {
   media_id: number;

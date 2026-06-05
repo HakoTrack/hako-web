@@ -104,7 +104,7 @@
   </div>
 
   <div
-    class="absolute top-0 -z-10 w-screen left-[50%] translate-x-[-50%] h-full"
+    class="absolute top-0 -z-10 w-full h-full"
     style="background: linear-gradient(to bottom, transparent 350px, var(--hako-bg) 400px);"
   ></div>
 
@@ -174,7 +174,6 @@
         <MediaList
           type={listType}
           profileId={profileData?.id || ""}
-          isActive={["anime", "manga", "lightnovel"].includes(currentActiveTab)}
           initialListData={profileData?.mediaLists?.[listType] || []}
           initialMetadata={metadataCache[listType] || {}}
         />
