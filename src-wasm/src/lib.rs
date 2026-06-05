@@ -4,7 +4,6 @@ use serde::{Deserialize, Serialize};
 use serde_wasm_bindgen::{Serializer, from_value};
 use std::collections::HashMap;
 use wasm_bindgen::prelude::*;
-use web_sys::console;
 
 #[derive(Serialize, Deserialize, Clone, Default, Debug)]
 pub struct Title {
@@ -144,15 +143,6 @@ impl ListEngine {
             }
         }
 
-        console::log_1(
-            &format!(
-                "WASM: ListEngine initialized with {} items and {} metadata entries",
-                items.len(),
-                processed_metadata.len()
-            )
-            .into(),
-        );
-
         Ok(ListEngine {
             items,
             metadata: processed_metadata,
@@ -270,14 +260,11 @@ impl ListEngine {
         let mut genre_stats: HashMap<String, GenreStat> = HashMap::new();
         let mut counts: HashMap<String, i32> = HashMap::new();
 
-        let mut matched_metadata_count = 0;
-
         for entry in &self.items {
             let status = entry.status.as_deref().unwrap_or("").to_lowercase();
             *counts.entry(status.clone()).or_insert(0) += 1;
 
             if let Some(meta) = self.metadata.get(&entry.media_id) {
-                matched_metadata_count += 1;
                 let year = meta
                     .start_date
                     .as_ref()
@@ -354,17 +341,6 @@ impl ListEngine {
                 }
             }
         }
-
-        console::log_1(
-            &format!(
-                "WASM: calculate_stats for {}: matched {}/{} entries to metadata. Found {} genres.",
-                media_type,
-                matched_metadata_count,
-                self.items.len(),
-                genre_stats.len()
-            )
-            .into(),
-        );
 
         // Finalize genre stats
         for stat in genre_stats.values_mut() {

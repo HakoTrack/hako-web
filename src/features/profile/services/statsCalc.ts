@@ -23,32 +23,17 @@ export function calculateAllStats(
   const result: Record<string, StatsResult> = {};
   const types = ['anime', 'manga', 'light_novel'];
 
-  console.log("DEBUG: calculateAllStats input", {
-    listTypes: Object.keys(mediaLists),
-    metadataSize: Object.keys(metadata).length,
-    firstMetadataKey: Object.keys(metadata)[0]
-  });
-
   try {
     // Try Wasm first
     for (const type of types) {
       const list = mediaLists[type] || [];
-      console.log(`DEBUG: Processing ${type}, list size: ${list.length}`);
-
       const engine = new ListEngine(list, metadata);
       const statusGroups = getStatusGroups(type).map(g => ({ id: g.id, label: g.label, color: g.color }));
-
-      const stats = engine.calculate_stats(type, statusGroups);
-      console.log(`DEBUG: ${type} stats result`, {
-        total: stats.total,
-        genreStatsCount: Object.keys(stats.genreStats).length,
-        yearStatsCount: Object.keys(stats.yearStats).length
-      });
-
-      result[type] = stats;
+      result[type] = engine.calculate_stats(type, statusGroups);
     }
     return result;
   } catch (e) {
+
     console.warn("Wasm stats calculation failed or not initialized, falling back to JS", e);
     for (const type of types) {
       const list = mediaLists[type] || [];
