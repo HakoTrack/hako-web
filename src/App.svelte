@@ -61,22 +61,27 @@
 
   // Updated routing logic to handle /user/ paths
   function handleRouting() {
+    const lastPath = currentPath;
     currentPath = window.location.pathname;
     const pathParts = currentPath.split("/").filter((p) => p);
+    const lastPathParts = lastPath.split("/").filter((p) => p);
 
     if (pathParts[0] === "user") {
       const targetUsername = pathParts[1];
+      const lastUsername =
+        lastPathParts[0] === "user" ? lastPathParts[1] : null;
 
-      // Clear data to prevent stale content while fetching
-      targetProfileData = null;
+      // Only clear and re-fetch if we've switched users
+      if (targetUsername !== lastUsername) {
+        targetProfileData = null;
 
-      // Eager fetch / cached return
-      if (profile && profile.username === targetUsername) {
-        targetProfileData = profile;
-      } else {
-        ProfileService.getProfileByUsername(targetUsername).then((res) => {
-          if (res.success) targetProfileData = res.data;
-        });
+        if (profile && profile.username === targetUsername) {
+          targetProfileData = profile;
+        } else {
+          ProfileService.getProfileByUsername(targetUsername).then((res) => {
+            if (res.success) targetProfileData = res.data;
+          });
+        }
       }
 
       activeTab = pathParts[2] || "overview";

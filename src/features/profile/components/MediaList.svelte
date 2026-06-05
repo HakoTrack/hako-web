@@ -36,6 +36,7 @@
   let searchQuery = $state("");
   let isLoading = $state(true);
   let wasmEngine: ListEngine | null = $state(null);
+  let isWasmReady = $state(false);
 
   // Sync state if props change (deferred in effect below)
   $effect(() => {
@@ -49,14 +50,18 @@
 
   // Re-instantiate engine when raw data changes
   $effect(() => {
-    if (
-      !isLoading &&
-      listDataEntries.length > 0 &&
-      Object.keys(metadata).length > 0
-    ) {
-      wasmEngine = new ListEngine(listDataEntries, metadata);
+    if (listDataEntries.length > 0 && Object.keys(metadata).length > 0) {
+      // Defer instantiation to a new task to avoid blocking the click handler/main thread
+      const timer = setTimeout(() => {
+        wasmEngine = new ListEngine(listDataEntries, metadata);
+        isWasmReady = true;
+      }, 0);
+      return () => clearTimeout(timer);
     }
   });
+
+  // Unified loading state: either fetching from DB or processing in Wasm
+  const isReallyLoading = $derived(isLoading || !isWasmReady);
 
   // Progressive rendering limit to avoid blocking the main thread
   let displayLimit = $state(50);
@@ -70,32 +75,32 @@
     return t.charAt(0).toUpperCase() + t.slice(1) + "s";
   }
 
-  // Sync state whenever the profileId or type arrives/changes
+  // Sync state whenever the profileId, type, or initial data arrives/changes
   let lastType = "";
   $effect(() => {
     const supportedTypes = ["anime", "manga", "light_novel", "visual_novels"];
     if (profileId && type && supportedTypes.includes(type)) {
-      if (type !== lastType) {
-        lastType = type;
+      const typeChanged = type !== lastType;
 
-        // 1. Immediately clear list and show loading
+      if (typeChanged) {
+        lastType = type;
+        wasmEngine = null;
+        isWasmReady = false;
+      }
+
+      const hasData = initialListData && initialListData.length > 0;
+
+      if (hasData) {
+        listDataEntries = initialListData;
+        if (typeChanged) displayLimit = 50;
+        isLoading = false;
+        // metadata might still be loading or needs refresh
+        loadData();
+      } else if (typeChanged) {
         listDataEntries = [];
         displayLimit = 50;
         isLoading = true;
-        wasmEngine = null;
-
-        // 2. Defer heavy rendering
-        setTimeout(() => {
-          const cachedData = initialListData.length > 0 ? initialListData : [];
-
-          if (cachedData.length > 0) {
-            listDataEntries = cachedData;
-            isLoading = false;
-            loadData();
-          } else {
-            loadData();
-          }
-        }, 10);
+        loadData();
       }
     } else {
       isLoading = false;
@@ -122,7 +127,7 @@
 
   // Gradually increase display limit
   $effect(() => {
-    if (!isLoading && displayLimit < listDataEntries.length) {
+    if (!isReallyLoading && displayLimit < listDataEntries.length) {
       const timer = setTimeout(() => {
         displayLimit += 100; // Can be larger with Wasm performance
       }, 50);
@@ -142,7 +147,6 @@
       isLoading = false;
     }
   }
-
   function getScoreColor(score: number | null): string {
     if (!score) return "text-(--c8)";
     if (score >= 9) return "text-(--c2)";
@@ -330,7 +334,7 @@
     </div>
   </aside>
   <main class="lg:w-[80%] order-1 lg:order-2 space-y-10 min-h-100">
-    {#if isLoading}
+    {#if isReallyLoading}
       <div class="space-y-4">
         <div class="flex items-center space-x-3 mb-6">
           <div
