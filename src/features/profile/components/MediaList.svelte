@@ -1,11 +1,9 @@
 <script lang="ts">
-  import Fuse from "fuse.js";
   import { openQuickEditor } from "../../../core/ui.svelte";
   import { getDisplayTitle, settings } from "../../../core/settings.svelte";
   import { ListService } from "../services/listService";
   import { MetadataService } from "../../../features/media/services/metadataService";
   import { fetchMediaById } from "../../../shared/utils/mediaData";
-  import { parseQuery } from "../../../shared/utils/search";
   import type { Media, ListEntry } from "../../../shared/types/index";
   import {
     STATUS_COLORS,
