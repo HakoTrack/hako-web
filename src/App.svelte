@@ -10,6 +10,7 @@
   import { openModal } from "./core/ui.svelte.ts";
   import { routes } from "./routes";
   import { Toasts } from "./shared/components";
+  import init from "$wasm/hako_wasm";
 
   let user = $state(null);
   let profile = $state(null);
@@ -84,6 +85,7 @@
   }
 
   onMount(async () => {
+    init().catch(console.error);
     user = await AuthService.getCurrentUser();
     authInitialized = true;
 

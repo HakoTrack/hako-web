@@ -1,5 +1,6 @@
 import type { ListEntry, Media } from '../../../shared/types/index';
 import { getStatusGroups } from '../../../shared/utils/constants';
+import { ListEngine } from "$wasm/hako_wasm";
 
 export interface StatsResult {
   total: number;
@@ -10,7 +11,7 @@ export interface StatsResult {
   totalProgress: number;
   daysPlanned: string;
   scoreDistribution: number[];
-  statusDistribution: { id: string; label: string; color: string; count: number; percent: number }[];
+  statusDistribution: { id: string; label: string; count: number; percent: number }[];
   yearStats: Record<number, { count: number; minutes: number; scores: number[] }>;
   genreStats: Record<string, { completed: number; totalMinutes: number; scores: number[]; topTitles: { id: number; score: number }[] }>;
 }
@@ -22,15 +23,42 @@ export function calculateAllStats(
   const result: Record<string, StatsResult> = {};
   const types = ['anime', 'manga', 'light_novel'];
 
-  for (const type of types) {
-    const list = mediaLists[type] || [];
-    result[type] = calculateStatsForType(list, metadata, type);
-  }
+  console.log("DEBUG: calculateAllStats input", {
+    listTypes: Object.keys(mediaLists),
+    metadataSize: Object.keys(metadata).length,
+    firstMetadataKey: Object.keys(metadata)[0]
+  });
 
-  return result;
+  try {
+    // Try Wasm first
+    for (const type of types) {
+      const list = mediaLists[type] || [];
+      console.log(`DEBUG: Processing ${type}, list size: ${list.length}`);
+
+      const engine = new ListEngine(list, metadata);
+      const statusGroups = getStatusGroups(type).map(g => ({ id: g.id, label: g.label, color: g.color }));
+
+      const stats = engine.calculate_stats(type, statusGroups);
+      console.log(`DEBUG: ${type} stats result`, {
+        total: stats.total,
+        genreStatsCount: Object.keys(stats.genreStats).length,
+        yearStatsCount: Object.keys(stats.yearStats).length
+      });
+
+      result[type] = stats;
+    }
+    return result;
+  } catch (e) {
+    console.warn("Wasm stats calculation failed or not initialized, falling back to JS", e);
+    for (const type of types) {
+      const list = mediaLists[type] || [];
+      result[type] = calculateStatsForTypeJS(list, metadata, type);
+    }
+    return result;
+  }
 }
 
-function calculateStatsForType(list: ListEntry[], metadata: Record<string, Media>, type: string): StatsResult {
+function calculateStatsForTypeJS(list: ListEntry[], metadata: Record<string, Media>, type: string): StatsResult {
   const total = list.length;
   let totalMinutes = 0;
   let totalMinutesPlanned = 0;

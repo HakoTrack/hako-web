@@ -1,6 +1,8 @@
 import { defineConfig } from 'vite';
 import { svelte } from '@sveltejs/vite-plugin-svelte';
 import { VitePWA } from 'vite-plugin-pwa';
+import wasm from "vite-plugin-wasm";
+import topLevelAwait from "vite-plugin-top-level-await";
 import path from 'path';
 import { fileURLToPath } from 'url';
 
@@ -14,9 +16,12 @@ export default defineConfig({
       '$utils': path.resolve(__dirname, './src/shared/utils/'),
       '$features': path.resolve(__dirname, './src/features/'),
       '$components': path.resolve(__dirname, './src/shared/components/'),
+      '$wasm': path.resolve(__dirname, './src-wasm/pkg/'),
     }
   },
   plugins: [
+    wasm(),
+    topLevelAwait(),
     svelte({
       onwarn: (warning, handler) => {
         // List of warning codes to ignore

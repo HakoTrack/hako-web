@@ -16,6 +16,7 @@
   import SearchInput from "../../../shared/components/SearchInput.svelte";
   import Badge from "../../../shared/components/Badge.svelte";
   import SegmentedControl from "../../../shared/components/SegmentedControl.svelte";
+  import init, { ListEngine } from "$wasm/hako_wasm";
 
   let {
     type = "anime",
@@ -36,10 +37,27 @@
   let filterStatus = $state("all");
   let searchQuery = $state("");
   let isLoading = $state(true);
+  let wasmEngine: ListEngine | null = $state(null);
 
   // Sync state if props change (deferred in effect below)
   $effect(() => {
     if (Object.keys(initialMetadata).length > 0) metadata = initialMetadata;
+  });
+
+  // Initialize Wasm
+  $effect(() => {
+    init().catch(console.error);
+  });
+
+  // Re-instantiate engine when raw data changes
+  $effect(() => {
+    if (
+      !isLoading &&
+      listDataEntries.length > 0 &&
+      Object.keys(metadata).length > 0
+    ) {
+      wasmEngine = new ListEngine(listDataEntries, metadata);
+    }
   });
 
   // Progressive rendering limit to avoid blocking the main thread
@@ -62,13 +80,13 @@
       if (type !== lastType) {
         lastType = type;
 
-        // 1. Immediately clear list and show loading to break the synchronous chain.
-        // This allows the click handler to return and the UI to respond instantly.
+        // 1. Immediately clear list and show loading
         listDataEntries = [];
         displayLimit = 50;
         isLoading = true;
+        wasmEngine = null;
 
-        // 2. Defer heavy rendering to a new task
+        // 2. Defer heavy rendering
         setTimeout(() => {
           const cachedData = initialListData.length > 0 ? initialListData : [];
 
@@ -104,11 +122,11 @@
     searchQuery = target?.value || "";
   }
 
-  // Gradually increase display limit to render more items without hanging
+  // Gradually increase display limit
   $effect(() => {
     if (!isLoading && displayLimit < listDataEntries.length) {
       const timer = setTimeout(() => {
-        displayLimit += 50;
+        displayLimit += 100; // Can be larger with Wasm performance
       }, 50);
       return () => clearTimeout(timer);
     }
@@ -141,66 +159,27 @@
     if (media) openQuickEditor(media, type);
   }
 
-  // Optimized derived data processing
-  const processedItems = $derived(
-    listDataEntries.map((item) => {
-      const meta = metadata[item.media_id?.toString()] || {};
-      const titleObj = (meta as any).title || {};
-
-      const displayTitle =
-        getDisplayTitle(titleObj, settings.titlePreference) ||
-        (item as any).title ||
-        "";
-
-      return {
-        ...item,
-        meta,
-        title: titleObj, // Include full title object for searching
-        displayTitle,
-      };
-    }),
-  );
-
-  // 1. First, search and filter by genre/score
-  const filteredItems = $derived.by(() => {
-    const { operators, freeQuery } = parseQuery(searchQuery);
-
-    let items = processedItems.filter((item) => {
-      let matches = true;
-      if (operators.genre) {
-        const genres = (item.meta as any).genres || [];
-        matches =
-          matches &&
-          genres.some((g: string) => g.toLowerCase().includes(operators.genre));
-      }
-      if (operators.score) {
-        matches = matches && (item.score || 0) >= parseFloat(operators.score);
-      }
-      return matches;
-    });
-
-    if (freeQuery.length > 0) {
-      const fuse = new Fuse(items, {
-        keys: ["title.romaji", "title.english", "title.native"],
-        threshold: 0.3,
-      });
-      items = fuse.search(freeQuery).map((r: any) => r.item);
-    }
-    return items;
-  });
-
-  // 2. Sort the filtered result (only happens when search or sort criteria change)
+  // Wasm-powered sorting and filtering
   const sortedItems = $derived.by(() => {
-    return [...filteredItems].sort((a, b) => {
-      if (sortBy === "Title")
-        return a.displayTitle.localeCompare(b.displayTitle);
-      if (sortBy === "Score") return (b.score || 0) - (a.score || 0);
-      if (sortBy === "Progress") return (b.progress || 0) - (a.progress || 0);
-      return new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime();
-    });
+    if (!wasmEngine) return [];
+
+    // Dependencies
+    listDataEntries;
+    metadata;
+    searchQuery;
+    sortBy;
+    filterStatus;
+    settings.titlePreference;
+
+    return wasmEngine.filter_and_sort(
+      searchQuery,
+      sortBy,
+      filterStatus,
+      settings.titlePreference,
+    );
   });
 
-  // 3. Group the sorted items (O(N) instead of O(N*G))
+  // Group the sorted items (O(N) instead of O(N*G))
   const groupedItems = $derived.by(() => {
     const groups: Record<string, any[]> = {};
     for (const item of sortedItems) {
