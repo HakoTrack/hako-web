@@ -19,7 +19,7 @@
       ]
     },
     {
-      "source": "/favicon.ico",
+      "source": "/(android-chrome|apple-touch-icon|favicon)(.*)\\.(ico|png|webmanifest)",
       "headers": [
         {
           "key": "Cache-Control",
@@ -29,6 +29,15 @@
     },
     {
       "source": "/assets/(.*)",
+      "headers": [
+        {
+          "key": "Cache-Control",
+          "value": "public, max-age=31536000, immutable"
+        }
+      ]
+    },
+    {
+      "source": "/webfonts/(.*)",
       "headers": [
         {
           "key": "Cache-Control",
