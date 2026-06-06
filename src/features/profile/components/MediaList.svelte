@@ -244,7 +244,7 @@
 <div
   id="media-list-wrapper"
   data-type={type}
-  class="flex flex-col lg:flex-row gap-8 mb-12 animate-in fade-in duration-300"
+  class="flex flex-col lg:flex-row gap-8 mb-12"
 >
   <aside class="lg:w-[20%] order-2 lg:order-1">
     <div class="sticky top-24 space-y-6">
