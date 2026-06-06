@@ -20,9 +20,14 @@
   let mediaType = $state("anime");
   let authInitialized = $state(false);
   let authSubscription = null;
+  let scrollY = $state(0);
 
   let isLanding = $derived(authInitialized && currentPath === "/" && !user);
   let isSignup = $derived(currentPath === "/signup");
+
+  function handleScroll() {
+    scrollY = window.scrollY;
+  }
 
   $effect(() => {
     // Auth Guard: Redirect to landing if not logged in and not already on landing
@@ -93,6 +98,7 @@
     init().catch(console.error);
     user = await AuthService.getCurrentUser();
     authInitialized = true;
+    window.addEventListener("scroll", handleScroll);
 
     const { data } = supabase.auth.onAuthStateChange((_event, session) => {
       user = session?.user ?? null;
@@ -106,6 +112,7 @@
 
   onDestroy(() => {
     window.removeEventListener("popstate", handleRouting);
+    window.removeEventListener("scroll", handleScroll);
     authSubscription?.unsubscribe();
   });
 
@@ -128,26 +135,36 @@
     </div>
   {/if}
 
-  <main id="app-view" class="grow min-h-screen">
-    {#if currentPath === "/"}
-      <Landing />
-    {:else if activeRoute}
-      {@const Component = activeRoute.component}
-      <Component
-        {...activeRoute.props(
-          currentPath,
-          user,
-          targetProfileData,
-          activeTab,
-          mediaType,
-        )}
-      />
-    {:else}
-      <div class="text-(--hako-fg) p-10">404 - Not Found</div>
-    {/if}
+  <main
+    id="app-view"
+    class="grow flex flex-col relative z-10 bg-(--hako-bg)"
+    style="margin-bottom: {scrollY > 0
+      ? '160px'
+      : '0px'}; transition: margin-bottom 0.1s ease-out;"
+  >
+    <div class="grow">
+      {#if currentPath === "/"}
+        <Landing />
+      {:else if activeRoute}
+        {@const Component = activeRoute.component}
+        <Component
+          {...activeRoute.props(
+            currentPath,
+            user,
+            targetProfileData,
+            activeTab,
+            mediaType,
+          )}
+        />
+      {:else}
+        <div class="text-(--hako-fg) p-10">404 - Not Found</div>
+      {/if}
+    </div>
   </main>
 
   {#if !isLanding && !isSignup}
-    <Footer />
+    <div class="fixed bottom-0 left-0 w-full z-0">
+      <Footer />
+    </div>
   {/if}
 </div>

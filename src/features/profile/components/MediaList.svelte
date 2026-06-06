@@ -482,72 +482,129 @@
                   </tr>
                 </thead>
                 <tbody>
-                  {#each group.items as item}
-                    {@const meta = item.meta || {}}
-                    {@const total =
-                      type === "manga" ||
-                      type === "light_novel" ||
-                      type === "lightnovel"
-                        ? meta.chapters || item.total || "?"
-                        : meta.episodes || item.total || "?"}
-                    {@const displayTitle = item.displayTitle}
-                    <tr
-                      class="group hover:bg-(--surface-elevated)/30 last:border-0"
-                    >
-                      <td
-                        class="p-2 border-b border-(--surface-elevated) group-last:border-0"
+                  {#if isReallyLoading}
+                    {#each Array(8) as _}
+                      <tr
+                        class="group hover:bg-(--surface-elevated)/30 last:border-0"
                       >
-                        <MediaCover
-                          mediaId={item.media_id}
-                          {type}
-                          size="small"
-                          alt={displayTitle}
-                          class="mx-auto group-hover:scale-105 transition-transform"
-                          showTooltip={false}
-                        />
-                      </td>
-                      <td
-                        class="p-4 cursor-pointer border-b border-(--surface-elevated) group-last:border-0"
-                        onclick={() => handleOpenEditor(item.media_id)}
-                      >
-                        <div
-                          class="text-sm font-bold text-(--hako-fg) truncate sm:whitespace-normal"
+                        <td
+                          class="p-2 border-b border-(--surface-elevated) group-last:border-0"
                         >
-                          {displayTitle}
-                        </div>
-                        <div class="flex flex-wrap gap-1 mt-1.5 hidden sm:flex">
-                          {#each (meta as any).genres?.slice(0, 5) as genre}
-                            <Badge label={genre} variant="genre" />
-                          {/each}
-                        </div>
-                      </td>
-                      <td
-                        class="p-4 text-center text-sm font-mono {getScoreColor(
-                          item.score,
-                        )} border-b border-(--surface-elevated) group-last:border-0"
-                        >{item.score?.toFixed(1) || "—"}</td
-                      >
-                      <td
-                        class="p-4 text-center text-sm font-mono text-(--hako-fg) border-b border-(--surface-elevated) group-last:border-0"
-                      >
-                        <span class="text-(--hako-fg)">{item.progress}</span
-                        ><span class="text-(--c8) mx-1">/</span><span
-                          class="text-(--c8) text-xs">{total}</span
+                          <div
+                            class="w-12 aspect-17/23 bg-(--surface-elevated) animate-pulse rounded mx-auto"
+                          ></div>
+                        </td>
+                        <td
+                          class="p-4 cursor-pointer border-b border-(--surface-elevated) group-last:border-0"
                         >
-                      </td>
-                      <td
-                        class="p-4 text-center border-b border-(--surface-elevated) group-last:border-0 hidden sm:table-cell"
-                      >
-                        <span
-                          class="text-[10px] font-bold bg-(--surface-dim) px-2 py-1 rounded text-slate-400 border border-(--surface-elevated)"
-                          >{(meta.format || item.type || "TV").replace(
-                            /_/g,
-                            " ",
-                          )}</span
+                          <div
+                            class="text-sm font-bold bg-(--surface-elevated) animate-pulse rounded text-transparent w-2/3"
+                          >
+                            Placeholder
+                          </div>
+                          <div class="flex flex-wrap gap-1 mt-1.5">
+                            <span
+                              class="text-[10px] px-3 py-1 rounded-full bg-(--surface-elevated)/50 animate-pulse text-transparent font-bold uppercase tracking-wider"
+                              >Badge</span
+                            >
+                          </div>
+                        </td>
+                        <td
+                          class="p-4 text-center text-sm font-mono border-b border-(--surface-elevated) group-last:border-0 hidden sm:table-cell"
                         >
-                      </td>
-                    </tr>
-                  {/each}
+                          <span
+                            class="bg-(--surface-elevated) animate-pulse rounded text-transparent"
+                            >0.0</span
+                          >
+                        </td>
+                        <td
+                          class="p-4 text-center text-sm font-mono border-b border-(--surface-elevated) group-last:border-0 hidden sm:table-cell"
+                        >
+                          <span
+                            class="bg-(--surface-elevated) animate-pulse rounded text-transparent"
+                            >00/00</span
+                          >
+                        </td>
+                        <td
+                          class="p-4 text-center border-b border-(--surface-elevated) group-last:border-0 hidden sm:table-cell"
+                        >
+                          <span
+                            class="text-[10px] font-bold bg-(--surface-elevated) animate-pulse px-2 py-1 rounded text-transparent border border-transparent"
+                            >TV</span
+                          >
+                        </td>
+                      </tr>
+                    {/each}
+                  {:else}
+                    {#each group.items as item}
+                      {@const meta = item.meta || {}}
+                      {@const total =
+                        type === "manga" ||
+                        type === "light_novel" ||
+                        type === "lightnovel"
+                          ? meta.chapters || item.total || "?"
+                          : meta.episodes || item.total || "?"}
+                      {@const displayTitle = item.displayTitle}
+                      <tr
+                        class="group hover:bg-(--surface-elevated)/30 last:border-0"
+                      >
+                        <td
+                          class="p-2 border-b border-(--surface-elevated) group-last:border-0"
+                        >
+                          <MediaCover
+                            mediaId={item.media_id}
+                            {type}
+                            size="small"
+                            alt={displayTitle}
+                            class="mx-auto group-hover:scale-105 transition-transform"
+                            showTooltip={false}
+                          />
+                        </td>
+                        <td
+                          class="p-4 cursor-pointer border-b border-(--surface-elevated) group-last:border-0"
+                          onclick={() => handleOpenEditor(item.media_id)}
+                        >
+                          <div
+                            class="text-sm font-bold text-(--hako-fg) truncate sm:whitespace-normal"
+                          >
+                            {displayTitle}
+                          </div>
+                          <div
+                            class="flex flex-wrap gap-1 mt-1.5 hidden sm:flex"
+                          >
+                            {#each (meta as any).genres?.slice(0, 5) as genre}
+                              <Badge label={genre} variant="genre" />
+                            {/each}
+                          </div>
+                        </td>
+                        <td
+                          class="p-4 text-center text-sm font-mono {getScoreColor(
+                            item.score,
+                          )} border-b border-(--surface-elevated) group-last:border-0"
+                          >{item.score?.toFixed(1) || "—"}</td
+                        >
+                        <td
+                          class="p-4 text-center text-sm font-mono text-(--hako-fg) border-b border-(--surface-elevated) group-last:border-0"
+                        >
+                          <span class="text-(--hako-fg)">{item.progress}</span
+                          ><span class="text-(--c8) mx-1">/</span><span
+                            class="text-(--c8) text-xs">{total}</span
+                          >
+                        </td>
+                        <td
+                          class="p-4 text-center border-b border-(--surface-elevated) group-last:border-0 hidden sm:table-cell"
+                        >
+                          <span
+                            class="text-[10px] font-bold bg-(--surface-dim) px-2 py-1 rounded text-slate-400 border border-(--surface-elevated)"
+                            >{(meta.format || item.type || "TV").replace(
+                              /_/g,
+                              " ",
+                            )}</span
+                          >
+                        </td>
+                      </tr>
+                    {/each}
+                  {/if}
                 </tbody>
               </table>
             </div>
