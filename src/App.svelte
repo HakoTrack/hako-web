@@ -65,9 +65,11 @@
   });
 
   // Updated routing logic to handle /user/ paths
-  function handleRouting() {
+  async function handleRouting() {
     const lastPath = currentPath;
     currentPath = window.location.pathname;
+
+    // We don't need to await here, let the UI handle the loading state
     const pathParts = currentPath.split("/").filter((p) => p);
     const lastPathParts = lastPath.split("/").filter((p) => p);
 
@@ -76,15 +78,18 @@
       const lastUsername =
         lastPathParts[0] === "user" ? lastPathParts[1] : null;
 
-      // Only clear and re-fetch if we've switched users
+      // Only re-fetch if we've switched users
       if (targetUsername !== lastUsername) {
-        targetProfileData = null;
-
+        // Optimistic check: is this the current logged in user?
         if (profile && profile.username === targetUsername) {
           targetProfileData = profile;
         } else {
+          // Fetch, but ensure we aren't creating race conditions by tracking the active request
+          targetProfileData = null; // Indicate loading
           ProfileService.getProfileByUsername(targetUsername).then((res) => {
-            if (res.success) targetProfileData = res.data;
+            if (res.success && currentPath.includes(targetUsername)) {
+              targetProfileData = res.data;
+            }
           });
         }
       }
@@ -119,6 +124,21 @@
   let activeRoute = $derived(
     routes.find((r) => currentPath.startsWith(r.path)),
   );
+
+  // Use a state to store the lazily-loaded component
+  let Component = $state(null);
+
+  $effect(() => {
+    if (activeRoute) {
+      // Defer loading to prevent blocking the UI
+      Component = null;
+      setTimeout(() => {
+        Component = activeRoute.component;
+      }, 50);
+    } else {
+      Component = null;
+    }
+  });
 </script>
 
 <svelte:window on:show-login={() => openModal("login")} />
@@ -145,8 +165,7 @@
     <div class="grow">
       {#if currentPath === "/"}
         <Landing />
-      {:else if activeRoute}
-        {@const Component = activeRoute.component}
+      {:else if Component}
         <Component
           {...activeRoute.props(
             currentPath,
@@ -156,6 +175,9 @@
             mediaType,
           )}
         />
+      {:else if activeRoute}
+        <!-- Loading state -->
+        <div class="p-10 text-(--hako-fg)">Loading...</div>
       {:else}
         <div class="text-(--hako-fg) p-10">404 - Not Found</div>
       {/if}

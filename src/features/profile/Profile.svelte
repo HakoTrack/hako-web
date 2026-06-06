@@ -15,7 +15,7 @@
     profileData: propProfileData,
   } = $props();
 
-  let username = $derived(currentPath.split("/")[2]);
+  let username = $derived(currentPath?.split("/")[2] || "");
   let profileData: Profile | null = $state(propProfileData);
   let metadataCache: Record<string, Record<string, any>> = $state({});
   let currentActiveTab = $state(activeTab);

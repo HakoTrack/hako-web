@@ -45,9 +45,16 @@
     isFavorited = ui.favoriteIds.has(entry.id);
   });
 
+  let lastCheckedEntryId = $state(""); // Track the last checked ID
+
   $effect(() => {
     // 4. Async favorite check (only once per entry load)
-    if (entry?.id && !ui.favoriteIds.has(entry.id)) {
+    if (
+      entry?.id &&
+      !ui.favoriteIds.has(entry.id) &&
+      entry.id !== lastCheckedEntryId
+    ) {
+      lastCheckedEntryId = entry.id; // Update tracked ID immediately
       supabase
         .from("profile_favorites")
         .select("media_id")
