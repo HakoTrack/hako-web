@@ -134,8 +134,7 @@
     window.dispatchEvent(new PopStateEvent("popstate"));
 
     if (shouldSnap) {
-      // Delay to allow the page component to load/render before snapping
-      setTimeout(() => {
+      requestAnimationFrame(() => {
         const tabsWrapper = document.getElementById("tabs-wrapper");
         if (tabsWrapper) {
           const navbarHeight = 60;
@@ -148,7 +147,7 @@
             behavior: "smooth",
           });
         }
-      }, 100);
+      });
     }
   }
 </script>

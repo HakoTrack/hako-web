@@ -51,12 +51,12 @@
   // Re-instantiate engine when raw data changes
   $effect(() => {
     if (listDataEntries.length > 0 && Object.keys(metadata).length > 0) {
-      // Use requestIdleCallback to defer instantiation until the browser is idle
-      const handle = (window.requestIdleCallback || setTimeout)(() => {
+      // Defer instantiation to a new task to avoid blocking the click handler/main thread
+      const timer = setTimeout(() => {
         wasmEngine = new ListEngine(listDataEntries, metadata);
         isWasmReady = true;
-      });
-      return () => (window.cancelIdleCallback || clearTimeout)(handle);
+      }, 0);
+      return () => clearTimeout(timer);
     }
   });
 
