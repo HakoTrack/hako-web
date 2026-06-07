@@ -1,6 +1,6 @@
 <script lang="ts">
   import { HakoImage } from "../utils/images";
-  import { fetchMediaById } from "../utils/mediaData";
+  import { fetchMediaSummaries } from "../utils/mediaData";
   import { openQuickEditor } from "../../core/ui.svelte";
   import { getDisplayTitle, settings } from "../../core/settings.svelte";
   import Tooltip from "./Tooltip.svelte";
@@ -15,6 +15,7 @@
     onmouseover?: () => void;
     tooltip?: import("svelte").Snippet;
     showTooltip?: boolean;
+    prefetchedMedia?: Media | null;
   }
 
   let {
@@ -26,6 +27,7 @@
     onmouseover,
     tooltip,
     showTooltip = true,
+    prefetchedMedia = null,
   }: Props = $props();
 
   const sizeClasses = {
@@ -35,19 +37,20 @@
   };
 
   let loaded = $state(false);
-  let mediaInfo = $state<Media | null>(null);
+  // Keep mediaInfo for tooltip title if prefetched
+  let mediaInfo = $state<Media | null>(prefetchedMedia);
   let isHovered = $state(false);
 
   async function handleOpenEditor() {
-    const media = mediaInfo || (await fetchMediaById(Number(mediaId)));
-    if (media) openQuickEditor(media, type);
+    openQuickEditor(Number(mediaId), type);
   }
 
   async function handleHover() {
     isHovered = true;
     if (onmouseover) onmouseover();
     if (showTooltip && !mediaInfo) {
-      mediaInfo = await fetchMediaById(Number(mediaId));
+      const mediaMap = await fetchMediaSummaries([Number(mediaId)]);
+      mediaInfo = mediaMap[mediaId] as any;
     }
   }
 </script>

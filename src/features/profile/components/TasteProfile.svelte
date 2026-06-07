@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { onDestroy } from "svelte";
   import Chart from "chart.js/auto";
   import { get_profile_affinity_wasm } from "$wasm/hako_wasm";
   import type {
@@ -13,6 +14,7 @@
     VIBE_LABELS_TO_ICONS,
     VIBE_LABELS_TO_NAMES,
   } from "../../../shared/utils/constants";
+  import { Skeleton } from "$components";
 
   let { profileData, metadata, vibes } = $props<{
     profileData?: Profile | null;
@@ -20,178 +22,180 @@
     vibes?: VibeResult;
   }>();
 
-  let radarChart: any = $state(null);
-  let chartCanvas: any = $state(null);
-  let hasInitializedChart = $state(false);
-
-  // Custom Tooltip State
-  let tooltip = $state<{
-    opacity: number;
+  let chartInstance: Chart | null = null;
+  let chartCanvas: HTMLCanvasElement;
+  let tooltip: {
     top: number;
     left: number;
     datasetLabel: string;
     label: string;
     value: number;
     color: string;
-  } | null>(null);
+  } | null = $state(null);
+
+  let dataReady = $derived(
+    !!vibes ||
+      (!!metadata &&
+        Object.keys(metadata).length > 0 &&
+        !!profileData?.mediaLists),
+  );
+
+  let showChart = $derived(dataReady);
 
   $effect(() => {
-    if (chartCanvas && !hasInitializedChart) {
-      if (
-        vibes ||
-        (metadata &&
-          Object.keys(metadata).length > 0 &&
-          profileData?.mediaLists)
-      ) {
-        hasInitializedChart = true;
-        const getComputedColor = (varName: string) => {
-          return getComputedStyle(document.documentElement)
-            .getPropertyValue(varName)
-            .trim();
-        };
+    // Establishing deep dependencies
+    metadata;
+    profileData?.mediaLists;
+    vibes;
 
-        const COLORS: Record<string, string> = {
-          anime: getComputedColor("--c4"),
-          manga: getComputedColor("--c1"),
-          light_novel: getComputedColor("--c10"),
-          visual_novels: getComputedColor("--c5"),
-          media: getComputedColor("--c4"), // Default color for single media
-        };
+    if (!dataReady || !chartCanvas) return;
 
-        let datasets: any[] = [];
-        if (vibes) {
-          // Single media vibe data
-          const rawScores = Object.keys(VIBE_LABELS).map((label) => {
-            return vibes.scores[label as keyof typeof vibes.scores] || 0;
-          });
-          const min = Math.min(...rawScores);
-          const max = Math.max(...rawScores);
-          const normalizedData = rawScores.map((score) =>
-            max === min
-              ? 50
-              : Math.round(((score - min) / (max - min)) * 80 + 10),
+    const getComputedColor = (varName: string) => {
+      return getComputedStyle(document.documentElement)
+        .getPropertyValue(varName)
+        .trim();
+    };
+
+    const COLORS: Record<string, string> = {
+      anime: getComputedColor("--c4"),
+      manga: getComputedColor("--c1"),
+      light_novel: getComputedColor("--c10"),
+      visual_novels: getComputedColor("--c5"),
+      media: getComputedColor("--c4"),
+    };
+
+    let datasets: any[] = [];
+    if (vibes) {
+      const rawScores = Object.keys(VIBE_LABELS).map((label) => {
+        return vibes.scores[label as keyof typeof vibes.scores] || 0;
+      });
+      const min = Math.min(...rawScores);
+      const max = Math.max(...rawScores);
+      const normalizedData = rawScores.map((score) =>
+        max === min ? 50 : Math.round(((score - min) / (max - min)) * 80 + 10),
+      );
+
+      datasets = [
+        {
+          label: "Vibes",
+          data: normalizedData,
+          backgroundColor: COLORS.media + "33",
+          borderColor: COLORS.media,
+          pointBackgroundColor: COLORS.media,
+          pointRadius: 0,
+          borderWidth: 1,
+        },
+      ];
+    } else if (profileData && metadata) {
+      datasets = Object.keys(profileData.mediaLists)
+        .filter((type) => type !== "visual_novels")
+        .map((type) => {
+          const activeEntries = (
+            profileData!.mediaLists[type] as ListEntry[]
+          ).filter((entry) =>
+            ["completed", "current", "dropped"].includes(
+              entry.status?.toLowerCase() || "",
+            ),
           );
 
-          datasets = [
-            {
-              label: "Vibes",
-              data: normalizedData,
-              backgroundColor: COLORS.media + "33",
-              borderColor: COLORS.media,
-              pointBackgroundColor: COLORS.media,
-              pointRadius: 0,
-              borderWidth: 1,
-            },
-          ];
-        } else if (profileData && metadata) {
-          // Existing profile logic
-          datasets = Object.keys(profileData.mediaLists)
-            .filter((type) => type !== "visual_novels")
-            .map((type) => {
-              const activeEntries = (
-                profileData!.mediaLists[type] as ListEntry[]
-              ).filter((entry) =>
-                ["completed", "current", "dropped"].includes(
-                  entry.status?.toLowerCase() || "",
-                ),
-              );
+          if (activeEntries.length === 0) return null;
 
-              if (activeEntries.length === 0) return null;
+          const affinities = get_profile_affinity_wasm(activeEntries, metadata);
+          const color = COLORS[type] || "#ffffff";
 
-              const affinities = get_profile_affinity_wasm(
-                activeEntries,
-                metadata,
-              );
-              const color = COLORS[type] || "#ffffff";
+          return {
+            label: type.replace("_", " "),
+            data: affinities.map((a: any) => a.value),
+            backgroundColor: color + "33",
+            borderColor: color,
+            pointBackgroundColor: color,
+            pointRadius: 0,
+            borderWidth: 1,
+          };
+        })
+        .filter((d) => d !== null) as any[];
+    }
 
-              return {
-                label: type.replace("_", " "),
-                data: affinities.map((a: any) => a.value),
-                backgroundColor: color + "33",
-                borderColor: color,
-                pointBackgroundColor: color,
-                pointRadius: 0,
-                borderWidth: 1,
-              };
-            })
-            .filter((d) => d !== null) as any[];
-        }
-
-        if (radarChart) {
-          radarChart.data.datasets = datasets as any[];
-          radarChart.update();
-        } else {
-          radarChart = new Chart(chartCanvas, {
-            type: "radar",
-            data: {
-              labels: Object.values(VIBE_LABELS),
-              datasets: datasets as any[],
-            },
-            options: {
-              responsive: true,
-              maintainAspectRatio: false,
-              animation: false, // Disable initial animation
-              events: ["mousemove", "mouseout", "touchstart", "touchmove"],
-              interaction: {
-                mode: "nearest",
-                intersect: true,
-              },
-              plugins: {
-                legend: { display: false },
-                tooltip: {
-                  enabled: false,
-                  external: (context: any) => {
-                    const { chart, tooltip: tooltipModel } = context;
-                    if (
-                      tooltipModel.opacity === 0 ||
-                      !tooltipModel.dataPoints?.length
-                    ) {
-                      tooltip = null;
-                      return;
-                    }
-                    const closestPoint = tooltipModel.dataPoints[0];
-                    const position = chart.canvas.getBoundingClientRect();
-                    tooltip = {
-                      opacity: 1,
-                      top: position.top + closestPoint.element.y,
-                      left: position.left + closestPoint.element.x,
-                      datasetLabel: closestPoint.dataset.label,
-                      label: closestPoint.label,
-                      value: closestPoint.raw,
-                      color: closestPoint.dataset.borderColor,
-                    };
-                  },
-                },
-              },
-              elements: {
-                point: {
-                  radius: 4,
-                  hitRadius: 25,
-                },
-              },
-              scales: {
-                r: {
-                  min: 0,
-                  max: 100,
-                  beginAtZero: true,
-                  angleLines: { color: "#2b2d42" },
-                  grid: { color: "#2b2d42" },
-                  pointLabels: {
-                    font: {
-                      family: "'Font Awesome 6 Free', sans-serif",
-                      size: 16,
-                      weight: 900,
-                    },
-                    color: "#9fadbd",
-                    padding: 10,
-                  },
-                  ticks: { display: false, stepSize: 20 },
-                },
+    if (chartInstance) {
+      chartInstance.data.datasets = datasets;
+      chartInstance.update("none"); // Update without animation for snappiness
+    } else {
+      chartInstance = new Chart(chartCanvas, {
+        type: "radar",
+        data: {
+          labels: Object.values(VIBE_LABELS),
+          datasets,
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          animation: false,
+          events: ["mousemove", "mouseout", "touchstart", "touchmove"],
+          interaction: {
+            mode: "nearest",
+            intersect: true,
+          },
+          plugins: {
+            legend: { display: false },
+            tooltip: {
+              enabled: false,
+              external: (context: any) => {
+                const { chart, tooltip: tooltipModel } = context;
+                if (
+                  tooltipModel.opacity === 0 ||
+                  !tooltipModel.dataPoints?.length
+                ) {
+                  tooltip = null;
+                  return;
+                }
+                const closestPoint = tooltipModel.dataPoints[0];
+                const position = chart.canvas.getBoundingClientRect();
+                tooltip = {
+                  opacity: 1,
+                  top: position.top + closestPoint.element.y,
+                  left: position.left + closestPoint.element.x,
+                  datasetLabel: closestPoint.dataset.label,
+                  label: closestPoint.label,
+                  value: closestPoint.raw,
+                  color: closestPoint.dataset.borderColor,
+                };
               },
             },
-          });
-        }
-      }
+          },
+          elements: {
+            point: {
+              radius: 4,
+              hitRadius: 25,
+            },
+          },
+          scales: {
+            r: {
+              min: 0,
+              max: 100,
+              beginAtZero: true,
+              angleLines: { color: "#2b2d42" },
+              grid: { color: "#2b2d42" },
+              pointLabels: {
+                font: {
+                  family: "'Font Awesome 6 Free', sans-serif",
+                  size: 16,
+                  weight: 900,
+                },
+                color: "#9fadbd",
+                padding: 10,
+              },
+              ticks: { display: false, stepSize: 20 },
+            },
+          },
+        },
+      });
+    }
+  });
+
+  onDestroy(() => {
+    if (chartInstance) {
+      chartInstance.destroy();
+      chartInstance = null;
     }
   });
 </script>
@@ -201,8 +205,19 @@
     <i class="fa-solid fa-brain text-accent mr-2"></i> Taste Profile
   </h3>
   <div class="pt-2">
-    <div class="h-50 w-full flex justify-center">
-      <canvas bind:this={chartCanvas} id="genreChart"></canvas>
+    <div class="h-50 w-full flex justify-center relative">
+      {#if !showChart}
+        <div class="absolute inset-0 flex items-center justify-center">
+          <Skeleton class="w-full h-full" />
+        </div>
+      {/if}
+      <canvas
+        bind:this={chartCanvas}
+        id="genreChart"
+        class:opacity-0={!showChart}
+        class:opacity-100={showChart}
+        class="transition-opacity duration-500 ease-in-out"
+      ></canvas>
     </div>
   </div>
 

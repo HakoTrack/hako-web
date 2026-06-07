@@ -1,6 +1,6 @@
 <script lang="ts">
   import { ProfileService } from "./services/profileService";
-  import { MetadataService } from "../media/services/metadataService";
+  import { fetchMediaSummaryWithGenres } from "../../shared/utils/mediaData";
   import type { Profile } from "../../shared/types";
   import { HakoImage } from "../../shared/utils/images";
   import MediaList from "./components/MediaList.svelte";
@@ -19,7 +19,6 @@
   let profileData: Profile | null = $state(propProfileData);
   let metadataCache: Record<string, Record<string, any>> = $state({});
   let currentActiveTab = $state(activeTab);
-  let isFetchingLists = $state(false);
 
   $effect(() => {
     currentActiveTab = activeTab;
@@ -29,29 +28,51 @@
     currentActiveTab === "lightnovel" ? "light_novel" : currentActiveTab,
   );
 
-  $effect(() => {
-    if (propProfileData) {
-      profileData = propProfileData;
-    }
-  });
+  let isFetchingLists = $state(false);
+  let isMetadataLoading = $state(false);
+  let lastFetchedId = $state<string | null>(null);
 
   $effect(() => {
-    if (profileData?.id && !isFetchingLists) {
-      const hasLists =
-        profileData.mediaLists &&
-        Object.keys(profileData.mediaLists).length > 0;
+    if (
+      propProfileData &&
+      propProfileData.id !== lastFetchedId &&
+      !isFetchingLists
+    ) {
+      profileData = propProfileData;
+
+      const hasLists = Object.keys(profileData.mediaLists || {}).length > 0;
+
       if (!hasLists) {
         isFetchingLists = true;
+        isMetadataLoading = true;
+        lastFetchedId = profileData.id;
         ProfileService.getMediaLists(profileData.id).then((lists) => {
           if (profileData) {
             profileData = { ...profileData, mediaLists: lists };
 
+            const types = Object.keys(lists);
+            const totalTypes = types.length;
+            let loadedTypes = 0;
+
+            if (totalTypes === 0) {
+              isMetadataLoading = false;
+            }
+
             Object.entries(lists).forEach(([type, items]) => {
-              const ids = items.map((i: any) => i.media_id);
+              const ids = (items as any[]).map((i: any) => i.media_id);
               if (ids.length > 0) {
-                MetadataService.getMetadata(ids, type).then((m) => {
+                fetchMediaSummaryWithGenres(ids).then((m) => {
                   metadataCache[type] = m;
+                  loadedTypes++;
+                  if (loadedTypes === totalTypes) {
+                    isMetadataLoading = false;
+                  }
                 });
+              } else {
+                loadedTypes++;
+                if (loadedTypes === totalTypes) {
+                  isMetadataLoading = false;
+                }
               }
             });
           }
@@ -162,7 +183,11 @@
     <div class="py-8 min-h-screen">
       <div class:hidden={currentActiveTab !== "overview"}>
         {#if profileData}
-          <Overview {profileData} />
+          <Overview
+            {profileData}
+            metadata={metadataCache}
+            {isMetadataLoading}
+          />
         {/if}
       </div>
 
@@ -187,7 +212,17 @@
 
       <div class:hidden={currentActiveTab !== "stats"}>
         {#if profileData}
-          <Stats {profileData} />
+          <Stats
+            {profileData}
+            metadata={Object.values(metadataCache).reduce(
+              (acc: Record<string, any>, curr: any) => ({
+                ...acc,
+                ...(curr || {}),
+              }),
+              {} as Record<string, any>,
+            )}
+            mediaLists={profileData.mediaLists || {}}
+          />
         {/if}
       </div>
     </div>

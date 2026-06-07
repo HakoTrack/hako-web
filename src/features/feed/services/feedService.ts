@@ -16,7 +16,7 @@ export const FeedService = {
     const { data, error } = await supabase
       .from('posts')
       .select(`
-        *,
+        id, author_id, target_profile_id, post_type, metadata, content, created_at,
         author:profiles!posts_author_id_fkey(username, avatar_url),
         likes:post_likes(user_id),
         likes_count,
@@ -50,7 +50,7 @@ export const FeedService = {
     const { data, error } = await supabase
       .from('posts')
       .select(`
-        *,
+        id, author_id, target_profile_id, post_type, metadata, content, created_at,
         author:profiles!posts_author_id_fkey(username, avatar_url),
         likes:post_likes(user_id),
         likes_count,
@@ -94,7 +94,7 @@ export const FeedService = {
     const { data, error } = await supabase
       .from('posts')
       .select(`
-        *,
+        id, author_id, target_profile_id, post_type, metadata, content, created_at,
         author:profiles!posts_author_id_fkey(username, avatar_url),
         likes:post_likes(user_id),
         likes_count,

@@ -1,9 +1,10 @@
 import { AuthService } from '../core/auth';
-import { fetchUserListEntry } from '../shared/utils/mediaData';
+import { fetchUserListEntry, fetchMediaSummaryWithDescription } from '../shared/utils/mediaData';
 
 export interface ModalData {
   entry?: any;
   profile?: any;
+  profileId?: string;
   isFetching?: boolean;
 }
 
@@ -46,36 +47,40 @@ export function closeModal() {
   ui.modalData = null;
 }
 
-export async function openQuickEditor(media: any, type: string = 'anime') {
-  // Determine total count based on media type
-  let total = media.episodes;
-  if (type === 'manga' || type === 'light_novel') total = media.chapters;
+export async function openQuickEditor(mediaId: number, type: string = 'anime') {
+  openModal('quick-editor', { isFetching: true });
 
-  // Construct a standard entry object
-  let entry = {
+  const [media, user] = await Promise.all([
+    fetchMediaSummaryWithDescription(mediaId),
+    AuthService.getCurrentUser()
+  ]);
+
+  let listEntry = null;
+  if (user && media) {
+    listEntry = await fetchUserListEntry(user.id, media.media_id, type);
+  }
+
+  const entry = media ? {
     ...media,
-    id: media.media_id || media.id,
+    id: media.media_id,
     type: type,
     title: media.title?.romaji || media.title,
-    total: total,
-    totalChapters: media.chapters,
-    totalVolumes: media.volumes,
+    // Add missing properties expected by QuickEditorModal
+    total: type === 'anime' ? (media as any).episodes : (media as any).chapters,
+    totalChapters: (media as any).chapters,
+    totalVolumes: (media as any).volumes,
+    status: listEntry?.status || 'planning',
+    score: listEntry?.score || 0,
+    progress: listEntry?.progress || 0,
+    progress_volumes: listEntry?.progress_volumes || 0,
+    startedAt: listEntry?.startedAt,
+    completedAt: listEntry?.completedAt,
     rawMetadata: media
+  } : null;
+
+  ui.modalData = {
+    entry: entry ? { ...entry, ...listEntry } : null,
+    profileId: user?.id,
+    isFetching: false
   };
-
-  // Open modal immediately with fetching state true
-  openModal('quick-editor', { entry, isFetching: true });
-
-  // Fetch list details in the background
-  const user = await AuthService.getCurrentUser();
-  if (user) {
-    const listEntry = await fetchUserListEntry(user.id, entry.id, type);
-    if (listEntry) {
-      ui.modalData = { entry: { ...entry, ...listEntry }, isFetching: false };
-    } else {
-      ui.modalData = { entry, isFetching: false };
-    }
-  } else {
-    ui.modalData = { entry, isFetching: false };
-  }
 }

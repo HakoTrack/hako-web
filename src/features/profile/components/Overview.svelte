@@ -6,35 +6,42 @@
   import TasteProfile from "./TasteProfile.svelte";
   import ListStats from "./ListStats.svelte";
   import { calculateAllStats } from "../services/statsCalc";
-  import { MetadataService } from "../../../features/media/services/metadataService";
-  import type { Profile, Media, ListEntry } from "../../../shared/types";
+  import type { Profile, Media } from "../../../shared/types";
   import SegmentedControl from "../../../shared/components/SegmentedControl.svelte";
 
-  let { profileData } = $props<{
+  let {
+    profileData,
+    metadata = {},
+    isMetadataLoading = false,
+  } = $props<{
     profileData: Profile | null;
+    metadata?: Record<string, Media>;
+    isMetadataLoading?: boolean;
   }>();
 
-  let metadata: Record<string, Media> = $state({});
   let feedFilter = $state("all");
 
-  // Fetch metadata locally for the overview page
-  $effect(() => {
-    if (profileData?.mediaLists) {
-      const allLists = Object.values(
-        profileData.mediaLists,
-      ).flat() as ListEntry[];
-      if (allLists.length > 0) {
-        const ids = [...new Set(allLists.map((a) => a.media_id))];
-        MetadataService.getMetadata(ids).then((data) => {
-          metadata = data;
-        });
-      }
+  // Stats calculation (shared by multiple sub-components if needed)
+  const flatMetadata = $derived.by(() => {
+    // Flatten metadata if it's currently nested by type
+    if (
+      Object.keys(metadata).some((k) =>
+        ["anime", "manga", "light_novel"].includes(k),
+      )
+    ) {
+      return Object.values(metadata).reduce(
+        (acc: Record<string, any>, curr: any) => ({
+          ...acc,
+          ...(curr || {}),
+        }),
+        {} as Record<string, any>,
+      );
     }
+    return metadata;
   });
 
-  // Stats calculation (shared by multiple sub-components if needed)
   let allStats = $derived(
-    calculateAllStats(profileData?.mediaLists || {}, metadata),
+    calculateAllStats(profileData?.mediaLists || {}, flatMetadata),
   );
 </script>
 
@@ -74,6 +81,9 @@
   <div class="lg:col-span-3 space-y-8">
     <ListStats {allStats} />
 
-    <TasteProfile {profileData} {metadata} />
+    <TasteProfile
+      {profileData}
+      metadata={isMetadataLoading ? {} : flatMetadata}
+    />
   </div>
 </div>

@@ -1,27 +1,19 @@
 import { supabase } from '../../core/supabase';
+import { CacheService } from '../../core/cache';
 import type { Media, ListEntry } from '../types/index';
 
-/**
- * Text processing utilities
- */
+// --- Utilities ---
 
 export function formatDescription(description: string | null | undefined): string {
   if (!description) return "";
 
-  // If the description already contains HTML-style line breaks,
-  // assume it's already formatted and just strip the raw newlines
-  // to avoid double-processing.
   if (description.includes('<br')) {
     return description.replace(/\n/g, '');
   }
 
-  // Otherwise, treat as plain text and convert newlines to <br />
   return description.replace(/\n\n/g, '<br /><br />').replace(/\n/g, '<br />');
 }
 
-/**
- * Maps Supabase relational media data to the legacy JSON-like format
- */
 export function mapSupabaseMedia(media: any): Media | null {
   if (!media) return null;
 
@@ -32,16 +24,16 @@ export function mapSupabaseMedia(media: any): Media | null {
       english: media.title_english,
       native: media.title_native
     },
-    description: media.description,
-    format: media.format,
-    source: media.source,
-    status: media.status,
-    episodes: media.episodes,
-    chapters: media.chapters,
-    volumes: media.volumes,
-    duration: media.duration,
-    season: media.season,
-    seasonYear: media.season_year,
+    description: media.description || "",
+    format: media.format || "TV",
+    source: media.source || null,
+    status: media.status || "FINISHED",
+    episodes: media.episodes || null,
+    chapters: media.chapters || null,
+    volumes: media.volumes || null,
+    duration: media.duration || null,
+    season: media.season || null,
+    seasonYear: media.season_year || null,
     genres: media.genres?.map((g: any) => g.genre) || [],
     tags: media.tags?.map((t: any) => ({ name: t.tag, rank: t.rank })) || [],
     startDate: { year: media.start_year, month: media.start_month, day: media.start_day },
@@ -59,9 +51,6 @@ function parseDate(dateString: string | null) {
   };
 }
 
-/**
- * Maps Supabase profile_list data to a normalized format.
- */
 export function mapSupabaseListEntry(entry: any): ListEntry | null {
   if (!entry) return null;
 
@@ -79,9 +68,6 @@ export function mapSupabaseListEntry(entry: any): ListEntry | null {
   };
 }
 
-/**
- * Fetches a single user list entry.
- */
 export async function fetchUserListEntry(profileId: string, mediaId: number, type: string): Promise<ListEntry | null> {
   const { data, error } = await supabase
     .from('profile_list')
@@ -100,62 +86,168 @@ export async function fetchUserListEntry(profileId: string, mediaId: number, typ
   return mapSupabaseListEntry(data);
 }
 
+// --- Optimized Fetchers ---
+
 /**
- * Fetches multiple media by IDs from Supabase.
- * If type is provided, filters by it. Otherwise, fetches all.
+ * Optimized fetch for LISTS/COVERS.
+ * Returns only ID and Titles to minimize payload.
  */
-export async function fetchMediaByIds(ids: number[], type?: string): Promise<Record<string, Media>> {
+export async function fetchMediaSummaries(ids: number[]): Promise<Record<string, Media>> {
   if (!ids || ids.length === 0) return {};
 
-  const CHUNK_SIZE = 200;
-  const chunks = [];
-  for (let i = 0; i < ids.length; i += CHUNK_SIZE) {
-    chunks.push(ids.slice(i, i + CHUNK_SIZE));
+  const result: Record<string, any> = {};
+  const uncachedIds: number[] = [];
+
+  for (const id of ids) {
+    const cached = await CacheService.getMedia(id.toString());
+    if (cached) {
+      result[id.toString()] = cached;
+    } else {
+      uncachedIds.push(id);
+    }
   }
 
-  const results = await Promise.all(
-    chunks.map(async (chunk) => {
-      let query = supabase.from('media').select(`
-          *,
-          genres (genre),
-          tags (tag, rank)
-        `).in('id', chunk);
+  if (uncachedIds.length > 0) {
+    const CHUNK_SIZE = 200;
+    for (let i = 0; i < uncachedIds.length; i += CHUNK_SIZE) {
+      const chunk = uncachedIds.slice(i, i + CHUNK_SIZE);
+      const { data } = await supabase
+        .from('media')
+        .select('id, title_romaji, title_english, title_native')
+        .in('id', chunk);
 
-      if (type) {
-        query = query.eq('media_type', type);
+      if (data) {
+        for (const item of data) {
+          const summary = {
+            media_id: item.id,
+            title: { romaji: item.title_romaji, english: item.title_english, native: item.title_native }
+          };
+          result[item.id.toString()] = summary;
+          await CacheService.setMedia(item.id.toString(), summary);
+        }
       }
+    }
+  }
 
-      const { data, error } = await query;
-      if (error) {
-        return [];
-      }
-      return data || [];
-    })
-  );
-
-  return results.flat().reduce((acc: Record<string, Media>, item: any) => {
-    const mapped = mapSupabaseMedia(item);
-    if (mapped) acc[item.id.toString()] = mapped;
-    return acc;
-  }, {});
+  return result as Record<string, Media>;
 }
 
 /**
- * Fetches a single media by ID.
+ * Optimized fetch for LISTS needing GENRES and AFFINITY calculation.
+ * Returns Media object with calculation fields populated.
  */
-export async function fetchMediaById(id: number): Promise<Media | null> {
+export async function fetchMediaSummaryWithGenres(ids: number[]): Promise<Record<string, Media>> {
+  if (!ids || ids.length === 0) return {};
+
+  const result: Record<string, any> = {};
+  const uncachedIds: number[] = [];
+
+  for (const id of ids) {
+    const cached = await CacheService.getMedia(id.toString());
+    // Only re-fetch if we are missing critical fields that SHOULD be there if it was a summary-with-genres fetch
+    const isGenresSummary = cached && 'genres' in cached && 'episodes' in cached;
+
+    if (isGenresSummary) {
+      result[id.toString()] = cached;
+    } else {
+      uncachedIds.push(id);
+    }
+  }
+  if (uncachedIds.length > 0) {
+    const CHUNK_SIZE = 200;
+    for (let i = 0; i < uncachedIds.length; i += CHUNK_SIZE) {
+      const chunk = uncachedIds.slice(i, i + CHUNK_SIZE);
+      const { data } = await supabase
+        .from('media')
+        .select('id, title_romaji, title_english, title_native, genres (genre), tags (tag, rank), episodes, chapters, volumes, format, duration, start_year, start_month, start_day')
+        .in('id', chunk);
+
+      if (data) {
+        for (const item of data) {
+          const summary = {
+            media_id: item.id,
+            title: { romaji: item.title_romaji, english: item.title_english, native: item.title_native },
+            genres: item.genres?.map((g: any) => g.genre) || [],
+            tags: item.tags?.map((t: any) => ({ name: t.tag, rank: t.rank })) || [],
+            episodes: item.episodes,
+            chapters: item.chapters,
+            volumes: item.volumes,
+            format: item.format,
+            duration: item.duration,
+            startDate: { year: item.start_year, month: item.start_month, day: item.start_day },
+            seasonYear: item.start_year
+          };
+          result[item.id.toString()] = summary;
+          await CacheService.setMedia(item.id.toString(), summary);
+        }
+      }
+    }
+  }
+
+  return result as Record<string, Media>;
+}
+
+/**
+ * Optimized fetch for QUICK EDITOR.
+ */
+export async function fetchMediaSummaryWithDescription(id: number): Promise<Media | null> {
   const { data, error } = await supabase
     .from('media')
     .select(`
-      *,
+      id,
+      title_romaji,
+      title_english,
+      title_native,
+      description,
       genres (genre),
-      tags (tag, rank)
+      episodes,
+      chapters,
+      volumes
     `)
     .eq('id', id)
     .single();
 
-  if (error) {
-    return null;
-  }
-  return mapSupabaseMedia(data);
+  if (error || !data) return null;
+
+  return {
+    media_id: data.id,
+    title: {
+      romaji: data.title_romaji,
+      english: data.title_english,
+      native: data.title_native
+    },
+    description: data.description,
+    genres: data.genres?.map((g: any) => g.genre) || [],
+    episodes: data.episodes,
+    chapters: data.chapters,
+    volumes: data.volumes
+  } as Media;
+}
+
+/**
+ * Optimized fetch for DETAIL PAGES.
+ */
+export async function fetchMediaDetails(id: number): Promise<Media | null> {
+  const cached = await CacheService.getMedia(id.toString());
+  // Ensure description is actual content, not the poisoned empty string ""
+  if (cached && 'description' in cached && cached.description !== "" && 'tags' in cached && cached.tags.length > 0) return cached;
+
+  const { data } = await supabase
+    .from('media')
+    .select(`
+      id, title_romaji, title_english, title_native, description, format, source, status,
+      episodes, chapters, volumes, duration, season, season_year,
+      genres (genre),
+      tags (tag, rank),
+      start_year, start_month, start_day,
+      end_year, end_month, end_day
+    `)
+    .eq('id', id)
+    .single();
+
+  if (!data) return null;
+
+  const media = mapSupabaseMedia(data);
+  if (media) await CacheService.setMedia(id.toString(), media);
+  return media;
 }

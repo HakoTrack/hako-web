@@ -45,12 +45,15 @@
   $effect(() => {
     if (user) {
       ProfileService.getProfileById(user.id).then((result) => {
-        if (result.success) {
+        if (result.success && result.data) {
           profile = result.data;
           // Eagerly set targetProfileData if on own profile
           const pathParts = currentPath.split("/").filter((p) => p);
-          if (pathParts[0] === "user" && pathParts[1] === profile.username) {
-            targetProfileData = profile;
+          if (
+            pathParts[0] === "user" &&
+            pathParts[1] === result.data.username
+          ) {
+            targetProfileData = result.data;
           }
         } else {
           console.error(

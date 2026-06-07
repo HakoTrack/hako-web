@@ -33,31 +33,36 @@
     }
   });
 
-  const mediaType = $derived(entry.type);
-  let vibes = $derived(get_vibes_wasm(entry?.rawMetadata));
+  const mediaType = $derived(entry?.type || "anime");
+  let vibes = $derived(
+    entry?.rawMetadata ? get_vibes_wasm(entry.rawMetadata) : null,
+  );
+
   // Reactive favorite status
   let isFavorited = $state(false);
   let isSaving = $state(false);
   let isLoaded = $state(false);
   let bannerError = $state(false);
+  let favoritesSyncedForEntry = $state<number | null>(null);
 
   $effect(() => {
-    isFavorited = ui.favoriteIds.has(entry.id);
+    if (entry) {
+      isFavorited = ui.favoriteIds.has(entry.id);
+    }
   });
 
   $effect(() => {
     // 4. Async favorite check (only once per entry load)
-    if (entry?.id && !ui.favoriteIds.has(entry.id)) {
-      supabase
-        .from("profile_favorites")
-        .select("media_id")
-        .eq("media_id", entry.id)
-        .then(({ data }) => {
-          if (data && data.length > 0) {
-            ui.addFavorite(entry.id);
-            isFavorited = true;
-          }
-        });
+    if (
+      entry?.id &&
+      favoritesSyncedForEntry !== entry.id &&
+      !ui.favoriteIds.has(entry.id)
+    ) {
+      favoritesSyncedForEntry = entry.id;
+      FavoritesService.syncFavorites(
+        ui.modalData?.profileId || entry.profileId,
+        mediaType,
+      );
     }
   });
 
@@ -75,17 +80,20 @@
   $effect(() => {
     entry = ui.modalData?.entry || initialEntry;
     isLoaded = ui.modalData ? !ui.modalData.isFetching : true;
-    status = entry.status || "planning";
-    score = entry.score || 0;
-    progress = entry.progress || 0;
-    progressVolumes = entry.progress_volumes || 0;
 
-    startDate = entry.startedAt?.year
-      ? `${entry.startedAt.year}-${String(entry.startedAt.month).padStart(2, "0")}-${String(entry.startedAt.day).padStart(2, "0")}`
-      : "";
-    finishDate = entry.completedAt?.year
-      ? `${entry.completedAt.year}-${String(entry.completedAt.month).padStart(2, "0")}-${String(entry.completedAt.day).padStart(2, "0")}`
-      : "";
+    if (entry) {
+      status = entry.status || "planning";
+      score = entry.score || 0;
+      progress = entry.progress || 0;
+      progressVolumes = entry.progress_volumes || 0;
+
+      startDate = entry.startedAt?.year
+        ? `${entry.startedAt.year}-${String(entry.startedAt.month).padStart(2, "0")}-${String(entry.startedAt.day).padStart(2, "0")}`
+        : "";
+      finishDate = entry.completedAt?.year
+        ? `${entry.completedAt.year}-${String(entry.completedAt.month).padStart(2, "0")}-${String(entry.completedAt.day).padStart(2, "0")}`
+        : "";
+    }
   });
 
   async function toggleFavorite() {
@@ -96,7 +104,12 @@
     isFavorited = !isFavorited;
 
     try {
-      await FavoritesService.toggle(user.id, entry.id, previousState);
+      await FavoritesService.toggle(
+        user.id,
+        entry.id,
+        mediaType,
+        previousState,
+      );
     } catch {
       isFavorited = previousState;
     }
@@ -144,7 +157,9 @@
 >
   <!-- Header with Banner -->
   <div class="relative h-40 shrink-0 bg-(--surface)">
-    {#if bannerError}
+    {#if !entry}
+      <div class="absolute inset-0 bg-(--surface-elevated) animate-pulse"></div>
+    {:else if bannerError}
       <div
         class="absolute inset-0"
         style="
@@ -176,14 +191,16 @@
       <i class="fa-solid fa-xmark text-xl"></i>
     </button>
     <div class="absolute -bottom-6 left-6 flex items-end gap-4">
-      <img
-        src={HakoImage.getCover(entry.id, "medium")}
-        class="w-24 h-32 object-cover rounded-lg shadow-lg border-2 border-(--surface)"
-        alt="cover"
-      />
-      <h2 class="text-2xl font-bold text-(--hako-fg) drop-shadow-md pb-2">
-        {displayTitle}
-      </h2>
+      {#if entry}
+        <img
+          src={HakoImage.getCover(entry.id, "medium")}
+          class="w-24 h-32 object-cover rounded-lg shadow-lg border-2 border-(--surface)"
+          alt="cover"
+        />
+        <h2 class="text-2xl font-bold text-(--hako-fg) drop-shadow-md pb-2">
+          {displayTitle}
+        </h2>
+      {/if}
     </div>
   </div>
 
@@ -246,7 +263,7 @@
             Chapters
           {/if}
         </label>
-        {#if !isLoaded}
+        {#if !isLoaded || !entry}
           <Skeleton />
         {:else}
           <NumberStepper
@@ -291,7 +308,7 @@
             class="text-xs font-bold text-slate-400 uppercase tracking-wider mb-1.5 block"
             >Volumes</label
           >
-          {#if !isLoaded}
+          {#if !isLoaded || !entry}
             <Skeleton />
           {:else}
             <NumberStepper
@@ -317,7 +334,9 @@
         <div
           class="text-sm text-slate-300 bg-(--surface-dim) p-4 rounded-xl border border-(--surface-elevated) overflow-y-auto scrollbar-thin flex-1 min-h-25"
         >
-          {@html formatDescription(entry.description)}
+          {#if entry}
+            {@html formatDescription(entry.description)}
+          {/if}
         </div>
       </div>
 
@@ -327,9 +346,11 @@
           >Genres</label
         >
         <div class="flex flex-wrap gap-2">
-          {#each entry.genres as genre}
-            <Badge label={genre} variant="genre" />
-          {/each}
+          {#if entry}
+            {#each entry.genres as genre}
+              <Badge label={genre} variant="genre" />
+            {/each}
+          {/if}
         </div>
       </div>
 

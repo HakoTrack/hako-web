@@ -1,7 +1,9 @@
 <script lang="ts">
   import { onMount } from "svelte";
   import { FavoritesService } from "../services/favoritesService";
+  import { fetchMediaSummaries } from "../../../shared/utils/mediaData";
   import MediaCover from "../../../shared/components/MediaCover.svelte";
+  import type { Media } from "../../../shared/types";
 
   let { profileId } = $props();
 
@@ -10,6 +12,7 @@
     manga: [],
     light_novel: [],
   });
+  let metadata: Record<string, any> = $state({});
   let isLoading = $state(true);
 
   onMount(async () => {
@@ -25,6 +28,11 @@
       results.forEach((r) => {
         mediaData[r.type] = r.ids;
       });
+
+      const allIds = Object.values(mediaData).flat();
+      if (allIds.length > 0) {
+        metadata = await fetchMediaSummaries(allIds);
+      }
     } catch (e) {
       console.error("Error loading favorites:", e);
     } finally {
@@ -64,6 +72,7 @@
                   {type}
                   size="medium"
                   alt="{type} {id}"
+                  prefetchedMedia={metadata[id]}
                 />
               {/each}
             </div>

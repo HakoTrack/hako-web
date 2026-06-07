@@ -1,9 +1,7 @@
 <script lang="ts">
   import { openQuickEditor } from "../../../core/ui.svelte";
   import { getDisplayTitle, settings } from "../../../core/settings.svelte";
-  import { ListService } from "../services/listService";
-  import { MetadataService } from "../../../features/media/services/metadataService";
-  import { fetchMediaById } from "../../../shared/utils/mediaData";
+  import { fetchMediaSummaryWithGenres } from "../../../shared/utils/mediaData";
   import type { Media, ListEntry } from "../../../shared/types/index";
   import {
     STATUS_COLORS,
@@ -28,8 +26,8 @@
     initialMetadata?: Record<string, Media>;
   }>();
 
-  let listDataEntries: ListEntry[] = $state(initialListData);
-  let metadata: Record<string, Media> = $state(initialMetadata);
+  let listDataEntries: ListEntry[] = $state([]);
+  let metadata: Record<string, Media> = $state({});
   let viewMode: "table" | "grid" = $state("table");
   let sortBy = $state("Title");
   let filterStatus = $state("all");
@@ -38,20 +36,46 @@
   let wasmEngine: ListEngine | null = $state(null);
   let isWasmReady = $state(false);
 
-  // Sync state if props change (deferred in effect below)
-  $effect(() => {
-    if (Object.keys(initialMetadata).length > 0) metadata = initialMetadata;
-  });
-
   // Initialize Wasm
   $effect(() => {
     init().catch(console.error);
   });
 
+  // Unified Synchronization Effect (Deferred for Performance)
+  let lastType = "";
+  $effect(() => {
+    // React to prop changes
+    initialListData;
+    initialMetadata;
+    type;
+    profileId;
+
+    const timer = setTimeout(() => {
+      const typeChanged = type !== lastType;
+      if (typeChanged) {
+        lastType = type;
+        wasmEngine = null;
+        isWasmReady = false;
+        displayLimit = 20;
+      }
+
+      listDataEntries = initialListData;
+      metadata = initialMetadata;
+
+      // We are done loading ONLY if we have both data and metadata
+      const hasData = listDataEntries && listDataEntries.length > 0;
+      const hasMetadata = Object.keys(metadata).length > 0;
+
+      isLoading = !(hasData && hasMetadata);
+    }, 0);
+
+    return () => clearTimeout(timer);
+  });
+
   // Re-instantiate engine when raw data changes
   $effect(() => {
     if (listDataEntries.length > 0 && Object.keys(metadata).length > 0) {
-      // Defer instantiation to a new task to avoid blocking the click handler/main thread
+      // Defer instantiation to avoid blocking
       const timer = setTimeout(() => {
         wasmEngine = new ListEngine(listDataEntries, metadata);
         isWasmReady = true;
@@ -60,10 +84,10 @@
     }
   });
 
-  // Unified loading state: either fetching from DB or processing in Wasm
+  // Unified loading state
   const isReallyLoading = $derived(isLoading || !isWasmReady);
 
-  // Progressive rendering limit to avoid blocking the main thread
+  // Progressive rendering limit
   let displayLimit = $state(20);
 
   const statusGroups = $derived(getStatusGroups(type));
@@ -74,40 +98,6 @@
     if (t === "manga") return "Manga";
     return t.charAt(0).toUpperCase() + t.slice(1) + "s";
   }
-
-  // Sync state whenever the profileId, type, or initial data arrives/changes
-  let lastType = "";
-  $effect(() => {
-    const supportedTypes = ["anime", "manga", "light_novel", "visual_novels"];
-    if (profileId && type && supportedTypes.includes(type)) {
-      const typeChanged = type !== lastType;
-
-      if (typeChanged) {
-        lastType = type;
-        wasmEngine = null;
-        isWasmReady = false;
-      }
-
-      const hasData = initialListData && initialListData.length > 0;
-
-      if (hasData) {
-        listDataEntries = initialListData;
-        if (typeChanged) displayLimit = 20;
-        isLoading = false;
-        // metadata might still be loading or needs refresh
-        loadData();
-      } else if (typeChanged) {
-        listDataEntries = [];
-        displayLimit = 20;
-        isLoading = true;
-        loadData();
-      }
-    } else {
-      isLoading = false;
-      listDataEntries = [];
-      lastType = "";
-    }
-  });
 
   function setFilter(status: string) {
     displayLimit = 20;
@@ -129,24 +119,12 @@
   $effect(() => {
     if (!isReallyLoading && displayLimit < listDataEntries.length) {
       const timer = setTimeout(() => {
-        displayLimit += 50; // Can be larger with Wasm performance
+        displayLimit += 50;
       }, 50);
       return () => clearTimeout(timer);
     }
   });
 
-  async function loadData() {
-    const result = await ListService.getList(profileId, type);
-    if (result.success) {
-      listDataEntries = result.data;
-      const ids = listDataEntries.map((item) => item.media_id);
-      metadata = await MetadataService.getMetadata(ids, type);
-      isLoading = false;
-    } else {
-      console.error("Error loading list:", result.error);
-      isLoading = false;
-    }
-  }
   function getScoreColor(score: number | null): string {
     if (!score) return "text-(--c8)";
     if (score >= 9) return "text-(--c2)";
@@ -157,15 +135,14 @@
   }
 
   async function handleOpenEditor(id: number) {
-    const media = await fetchMediaById(id);
-    if (media) openQuickEditor(media, type);
+    openQuickEditor(id, type);
   }
 
   // Wasm-powered sorting and filtering
   const sortedItems = $derived.by(() => {
     if (!wasmEngine) return [];
 
-    // Dependencies
+    // Explicit dependencies for the derived block
     listDataEntries;
     metadata;
     searchQuery;
@@ -181,7 +158,7 @@
     );
   });
 
-  // Group the sorted items (O(N) instead of O(N*G))
+  // Group the sorted items
   const groupedItems = $derived.by(() => {
     const groups: Record<string, any[]> = {};
     for (const item of sortedItems) {
@@ -193,7 +170,7 @@
   });
 
   const visibleGroups = $derived.by(() => {
-    if (isLoading || listDataEntries.length === 0) return [];
+    if (isReallyLoading || listDataEntries.length === 0) return [];
 
     const groups = statusGroups.filter(
       (g) => filterStatus === "all" || g.id === filterStatus,
@@ -225,15 +202,12 @@
     return counts;
   });
 
-  // Reset limit whenever filters change to keep interaction snappy
+  // Reset limit whenever filters change
   $effect(() => {
-    // We access these to establish dependencies
     searchQuery;
     sortBy;
     filterStatus;
 
-    // Use a microtask or slight delay to ensure the click handler returns quickly
-    // before the heavy rendering work starts
     const timer = setTimeout(() => {
       displayLimit = 20;
     }, 0);
@@ -482,129 +456,74 @@
                   </tr>
                 </thead>
                 <tbody>
-                  {#if isReallyLoading}
-                    {#each Array(8) as _}
-                      <tr
-                        class="group hover:bg-(--surface-elevated)/30 last:border-0"
+                  {#each group.items as item}
+                    {@const meta = metadata[item.media_id.toString()] || {}}
+                    {@const total =
+                      type === "manga" ||
+                      type === "light_novel" ||
+                      type === "lightnovel"
+                        ? (meta.chapters ?? item.total ?? "?")
+                        : (meta.episodes ?? item.total ?? "?")}
+                    {@const displayTitle = item.displayTitle}
+                    <tr
+                      class="group hover:bg-(--surface-elevated)/30 last:border-0"
+                    >
+                      <td
+                        class="p-2 border-b border-(--surface-elevated) group-last:border-0"
                       >
-                        <td
-                          class="p-2 border-b border-(--surface-elevated) group-last:border-0"
-                        >
-                          <div
-                            class="w-12 aspect-17/23 bg-(--surface-elevated) animate-pulse rounded mx-auto"
-                          ></div>
-                        </td>
-                        <td
-                          class="p-4 cursor-pointer border-b border-(--surface-elevated) group-last:border-0"
-                        >
-                          <div
-                            class="text-sm font-bold bg-(--surface-elevated) animate-pulse rounded text-transparent w-2/3"
-                          >
-                            Placeholder
-                          </div>
-                          <div class="flex flex-wrap gap-1 mt-1.5">
-                            <span
-                              class="text-[10px] px-3 py-1 rounded-full bg-(--surface-elevated)/50 animate-pulse text-transparent font-bold uppercase tracking-wider"
-                              >Badge</span
-                            >
-                          </div>
-                        </td>
-                        <td
-                          class="p-4 text-center text-sm font-mono border-b border-(--surface-elevated) group-last:border-0 hidden sm:table-cell"
-                        >
-                          <span
-                            class="bg-(--surface-elevated) animate-pulse rounded text-transparent"
-                            >0.0</span
-                          >
-                        </td>
-                        <td
-                          class="p-4 text-center text-sm font-mono border-b border-(--surface-elevated) group-last:border-0 hidden sm:table-cell"
-                        >
-                          <span
-                            class="bg-(--surface-elevated) animate-pulse rounded text-transparent"
-                            >00/00</span
-                          >
-                        </td>
-                        <td
-                          class="p-4 text-center border-b border-(--surface-elevated) group-last:border-0 hidden sm:table-cell"
-                        >
-                          <span
-                            class="text-[10px] font-bold bg-(--surface-elevated) animate-pulse px-2 py-1 rounded text-transparent border border-transparent"
-                            >TV</span
-                          >
-                        </td>
-                      </tr>
-                    {/each}
-                  {:else}
-                    {#each group.items as item}
-                      {@const meta = item.meta || {}}
-                      {@const total =
-                        type === "manga" ||
-                        type === "light_novel" ||
-                        type === "lightnovel"
-                          ? meta.chapters || item.total || "?"
-                          : meta.episodes || item.total || "?"}
-                      {@const displayTitle = item.displayTitle}
-                      <tr
-                        class="group hover:bg-(--surface-elevated)/30 last:border-0"
+                        <MediaCover
+                          mediaId={item.media_id}
+                          {type}
+                          size="small"
+                          alt={displayTitle}
+                          class="mx-auto group-hover:scale-105 transition-transform"
+                          showTooltip={false}
+                          prefetchedMedia={metadata[item.media_id.toString()]}
+                        />
+                      </td>
+                      <td
+                        class="p-4 cursor-pointer border-b border-(--surface-elevated) group-last:border-0"
+                        onclick={() => handleOpenEditor(item.media_id)}
                       >
-                        <td
-                          class="p-2 border-b border-(--surface-elevated) group-last:border-0"
+                        <div
+                          class="text-sm font-bold text-(--hako-fg) truncate sm:whitespace-normal"
                         >
-                          <MediaCover
-                            mediaId={item.media_id}
-                            {type}
-                            size="small"
-                            alt={displayTitle}
-                            class="mx-auto group-hover:scale-105 transition-transform"
-                            showTooltip={false}
-                          />
-                        </td>
-                        <td
-                          class="p-4 cursor-pointer border-b border-(--surface-elevated) group-last:border-0"
-                          onclick={() => handleOpenEditor(item.media_id)}
+                          {displayTitle}
+                        </div>
+                        <div class="flex flex-wrap gap-1 mt-1.5 hidden sm:flex">
+                          {#each (meta as any).genres?.slice(0, 5) as genre}
+                            <Badge label={genre} variant="genre" />
+                          {/each}
+                        </div>
+                      </td>
+                      <td
+                        class="p-4 text-center text-sm font-mono {getScoreColor(
+                          item.score,
+                        )} border-b border-(--surface-elevated) group-last:border-0"
+                        >{item.score?.toFixed(1) || "—"}</td
+                      >
+                      <td
+                        class="p-4 text-center text-sm font-mono text-(--hako-fg) border-b border-(--surface-elevated) group-last:border-0"
+                      >
+                        <span class="text-(--hako-fg)">{item.progress}</span
+                        ><span class="text-(--c8) mx-1">/</span><span
+                          class="text-(--c8) text-xs">{total}</span
                         >
-                          <div
-                            class="text-sm font-bold text-(--hako-fg) truncate sm:whitespace-normal"
-                          >
-                            {displayTitle}
-                          </div>
-                          <div
-                            class="flex flex-wrap gap-1 mt-1.5 hidden sm:flex"
-                          >
-                            {#each (meta as any).genres?.slice(0, 5) as genre}
-                              <Badge label={genre} variant="genre" />
-                            {/each}
-                          </div>
-                        </td>
-                        <td
-                          class="p-4 text-center text-sm font-mono {getScoreColor(
-                            item.score,
-                          )} border-b border-(--surface-elevated) group-last:border-0"
-                          >{item.score?.toFixed(1) || "—"}</td
+                      </td>
+                      <td
+                        class="p-4 text-center border-b border-(--surface-elevated) group-last:border-0 hidden sm:table-cell"
+                      >
+                        <span
+                          class="text-[10px] font-bold bg-(--surface-dim) px-2 py-1 rounded text-slate-400 border border-(--surface-elevated)"
                         >
-                        <td
-                          class="p-4 text-center text-sm font-mono text-(--hako-fg) border-b border-(--surface-elevated) group-last:border-0"
-                        >
-                          <span class="text-(--hako-fg)">{item.progress}</span
-                          ><span class="text-(--c8) mx-1">/</span><span
-                            class="text-(--c8) text-xs">{total}</span
-                          >
-                        </td>
-                        <td
-                          class="p-4 text-center border-b border-(--surface-elevated) group-last:border-0 hidden sm:table-cell"
-                        >
-                          <span
-                            class="text-[10px] font-bold bg-(--surface-dim) px-2 py-1 rounded text-slate-400 border border-(--surface-elevated)"
-                            >{(meta.format || item.type || "TV").replace(
-                              /_/g,
-                              " ",
-                            )}</span
-                          >
-                        </td>
-                      </tr>
-                    {/each}
-                  {/if}
+                          {(meta.format || item.type || "TV").replace(
+                            /_/g,
+                            " ",
+                          )}
+                        </span>
+                      </td>
+                    </tr>
+                  {/each}
                 </tbody>
               </table>
             </div>
@@ -613,13 +532,13 @@
                 class="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-6 gap-4 p-4"
               >
                 {#each group.items as item}
-                  {@const meta = item.meta || {}}
+                  {@const meta = metadata[item.media_id.toString()] || {}}
                   {@const total =
                     type === "manga" ||
                     type === "light_novel" ||
                     type === "lightnovel"
-                      ? meta.chapters || item.total || "?"
-                      : meta.episodes || item.total || "?"}
+                      ? (meta.chapters ?? item.total ?? "?")
+                      : (meta.episodes ?? item.total ?? "?")}
                   <div class="relative group">
                     <MediaCover
                       mediaId={item.media_id}
@@ -628,6 +547,7 @@
                       alt={item.displayTitle}
                       class="w-full aspect-2/3 rounded-md"
                       showTooltip={false}
+                      prefetchedMedia={metadata[item.media_id.toString()]}
                     />
                     <div
                       class="absolute bottom-0 left-0 right-0 bg-(--hako-bg)/80 p-2 text-(--hako-fg) opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none rounded-lg"

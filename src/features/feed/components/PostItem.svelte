@@ -1,7 +1,7 @@
 <script lang="ts">
   import { HakoImage } from "../../../shared/utils/images";
   import { openQuickEditor } from "../../../core/ui.svelte";
-  import { fetchMediaById } from "../../../shared/utils/mediaData";
+  import { fetchMediaSummaries } from "../../../shared/utils/mediaData";
   import { FeedInteractionService } from "../services/feedInteractionService";
   import { AuthService } from "../../../core/auth";
   import PostRenderer from "../../../shared/components/PostRenderer.svelte";
@@ -12,15 +12,22 @@
   import { getDisplayTitle, settings } from "../../../core/settings.svelte";
   import Skeleton from "../../../shared/components/Skeleton.svelte";
 
-  let { post }: { post: Post } = $props();
+  let {
+    post,
+    prefetchedMedia = null,
+  }: { post: Post; prefetchedMedia?: Media | null } = $props();
   let isLiked = $state(false);
   let showComments = $state(false);
-  let mediaInfo = $state<Media | null>(null);
+  let mediaInfo = $state<Media | null>(prefetchedMedia);
 
   $effect(() => {
-    if (post.post_type === "list_update" && post.metadata?.media_id) {
-      fetchMediaById(post.metadata.media_id).then(
-        (media) => (mediaInfo = media),
+    if (
+      !prefetchedMedia &&
+      post.post_type === "list_update" &&
+      post.metadata?.media_id
+    ) {
+      fetchMediaSummaries([post.metadata.media_id]).then(
+        (mediaMap) => (mediaInfo = mediaMap[post.metadata!.media_id!] as any),
       );
     }
   });
@@ -144,8 +151,9 @@
   );
 
   async function handleOpenEditor(id: number, type: string) {
-    const media = await fetchMediaById(id);
-    if (media) openQuickEditor(media, type);
+    const mediaMap = await fetchMediaSummaries([id]);
+    const media = mediaMap[id];
+    if (media) openQuickEditor(media as any, type);
   }
 
   async function handleLike() {

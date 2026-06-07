@@ -4,12 +4,18 @@
   import GenreCard from "./GenreCard.svelte";
   import SegmentedControl from "../../../shared/components/SegmentedControl.svelte";
   import Select from "../../../shared/components/Select.svelte";
-  import { ProfileService } from "../services/profileService";
-  import { MetadataService } from "../../../features/media/services/metadataService";
   import { calculateAllStats, type StatsResult } from "../services/statsCalc";
   import Chart from "chart.js/auto";
 
-  let { profileData } = $props<{ profileData: { id: string } }>();
+  let {
+    profileData,
+    metadata = {},
+    mediaLists = {},
+  } = $props<{
+    profileData: { id: string };
+    metadata?: Record<string, any>;
+    mediaLists?: Record<string, any[]>;
+  }>();
 
   let activeCategory = $state("anime-general");
   let stats: Record<string, StatsResult> | null = $state(null);
@@ -41,18 +47,14 @@
     },
   ];
 
-  onMount(async () => {
-    if (!profileData?.id) {
+  $effect(() => {
+    if (
+      Object.keys(metadata).length > 0 &&
+      Object.keys(mediaLists).length > 0
+    ) {
+      stats = calculateAllStats(mediaLists, metadata);
       isLoading = false;
-      return;
     }
-    const listData = await ProfileService.getMediaLists(profileData.id);
-    const allIds = Object.values(listData)
-      .flat()
-      .map((item) => item.media_id);
-    const metadata = await MetadataService.getMetadata(allIds);
-    stats = calculateAllStats(listData, metadata);
-    isLoading = false;
   });
 
   const getAnimeMetrics = $derived.by(() => {
@@ -342,6 +344,7 @@
             stats={genreStat}
             type="anime"
             activeMetric={scoreMetric}
+            {metadata}
           />
         {/each}
       </div>

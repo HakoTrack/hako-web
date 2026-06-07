@@ -1,10 +1,11 @@
 <script lang="ts">
-  import { onMount } from "svelte";
-  import { fetchMediaById } from "../../shared/utils/mediaData";
+  import {
+    fetchMediaDetails,
+    formatDescription,
+  } from "../../shared/utils/mediaData";
   import { HakoImage } from "../../shared/utils/images";
   import { get_vibes_wasm } from "$wasm/hako_wasm";
   import { getDisplayTitle, settings } from "../../core/settings.svelte";
-  import { formatDescription } from "../../shared/utils/mediaData";
   import MediaCover from "../../shared/components/MediaCover.svelte";
   import Badge from "../../shared/components/Badge.svelte";
   import TasteProfile from "../profile/components/TasteProfile.svelte";
@@ -37,7 +38,7 @@
 
   onMount(async () => {
     try {
-      media = await fetchMediaById(Number(mediaId));
+      media = await fetchMediaDetails(Number(mediaId));
     } catch (e) {
       console.error("Failed to fetch media:", e);
     } finally {
@@ -53,6 +54,119 @@
     { id: "reviews", label: "Reviews", icon: "fa-comments" },
     { id: "stats", label: "Stats", icon: "fa-chart-simple" },
   ];
+
+  // Placeholder data for the new sections
+  const mockExtraData = {
+    studio: "Kyoto Animation",
+    producers: ["Pony Canyon", "Lantis", "ABC Animation"],
+    favorites: 12450,
+    tags: [
+      { name: "Coming of Age", rank: 95 },
+      { name: "Music", rank: 88 },
+      { name: "School", rank: 82 },
+      { name: "Slice of Life", rank: 75 },
+      { name: "Post-Apocalyptic", rank: 68 },
+      { name: "Melancholy", rank: 62 },
+    ],
+    relations: [
+      {
+        id: 101,
+        title: "Hako: The Movie",
+        type: "Sequel",
+        format: "Movie",
+        image: "https://placehold.co/100x150/151f2e/ffffff?text=Movie",
+      },
+      {
+        id: 102,
+        title: "Hako: Side Story",
+        type: "Side Story",
+        format: "OVA",
+        image: "https://placehold.co/100x150/151f2e/ffffff?text=OVA",
+      },
+      {
+        id: 103,
+        title: "Hako: Early Days",
+        type: "Prequel",
+        format: "TV",
+        image: "https://placehold.co/100x150/151f2e/ffffff?text=Prequel",
+      },
+    ],
+    characters: [
+      {
+        name: "Hako-chan",
+        role: "Main",
+        image: "https://placehold.co/100x150/151f2e/ffffff?text=Hako",
+        va: {
+          name: "Aoi Koga",
+          image: "https://placehold.co/100x150/0b1622/ffffff?text=VA1",
+        },
+      },
+      {
+        name: "Sora-kun",
+        role: "Main",
+        image: "https://placehold.co/100x150/151f2e/ffffff?text=Sora",
+        va: {
+          name: "Natsuki Hanae",
+          image: "https://placehold.co/100x150/0b1622/ffffff?text=VA2",
+        },
+      },
+      {
+        name: "Rin",
+        role: "Supporting",
+        image: "https://placehold.co/100x150/151f2e/ffffff?text=Rin",
+        va: {
+          name: "Rie Takahashi",
+          image: "https://placehold.co/100x150/0b1622/ffffff?text=VA3",
+        },
+      },
+      {
+        name: "Ken",
+        role: "Supporting",
+        image: "https://placehold.co/100x150/151f2e/ffffff?text=Ken",
+        va: {
+          name: "Mamoru Miyano",
+          image: "https://placehold.co/100x150/0b1622/ffffff?text=VA4",
+        },
+      },
+    ],
+    staff: [
+      {
+        name: "Naoko Yamada",
+        role: "Director",
+        image: "https://placehold.co/100x100/151f2e/ffffff?text=Staff1",
+      },
+      {
+        name: "Reiko Yoshida",
+        role: "Series Composition",
+        image: "https://placehold.co/100x100/151f2e/ffffff?text=Staff2",
+      },
+      {
+        name: "Futoshi Nishiya",
+        role: "Character Design",
+        image: "https://placehold.co/100x100/151f2e/ffffff?text=Staff3",
+      },
+      {
+        name: "Kensuke Ushio",
+        role: "Music",
+        image: "https://placehold.co/100x100/151f2e/ffffff?text=Staff4",
+      },
+    ],
+    stats: {
+      medianScore: 84,
+      distribution: [
+        { score: 10, count: 120 },
+        { score: 20, count: 450 },
+        { score: 30, count: 800 },
+        { score: 40, count: 1500 },
+        { score: 50, count: 3200 },
+        { score: 60, count: 5600 },
+        { score: 70, count: 12000 },
+        { score: 80, count: 18000 },
+        { score: 90, count: 14000 },
+        { score: 100, count: 9000 },
+      ],
+    },
+  };
 </script>
 
 {#if isLoading}
@@ -139,25 +253,6 @@
               <div class="w-16 h-6 bg-slate-800 animate-pulse rounded"></div>
             </div>
           </div>
-          <div
-            class="bg-card p-6 rounded-xl shadow-lg border border-slate-800 space-y-4"
-          >
-            <div
-              class="w-16 h-5 bg-(--surface-elevated) animate-pulse rounded"
-            ></div>
-            <div class="space-y-4">
-              {#each Array(4) as _}
-                <div class="flex justify-between">
-                  <div
-                    class="w-12 h-4 bg-(--surface-elevated)/50 animate-pulse rounded"
-                  ></div>
-                  <div
-                    class="w-16 h-4 bg-(--surface-elevated) animate-pulse rounded"
-                  ></div>
-                </div>
-              {/each}
-            </div>
-          </div>
         </div>
       </div>
     </div>
@@ -214,10 +309,24 @@
         />
 
         <!-- Header Info -->
-        <div class="mb-2">
-          <h1 class="text-4xl font-bold text-(--hako-fg) mb-2">
-            {displayTitle}
-          </h1>
+        <div class="mb-2 w-full">
+          <div class="flex justify-between items-start">
+            <h1 class="text-4xl font-bold text-(--hako-fg) mb-2">
+              {displayTitle}
+            </h1>
+            <div class="flex flex-col items-end shrink-0">
+              <div class="flex items-center gap-2 text-pink-500 mb-1">
+                <i class="fa-solid fa-heart"></i>
+                <span class="text-xl font-bold"
+                  >{mockExtraData.favorites.toLocaleString()}</span
+                >
+              </div>
+              <span
+                class="text-[10px] text-slate-500 uppercase tracking-widest font-bold"
+                >Favorites</span
+              >
+            </div>
+          </div>
           <div class="flex flex-wrap gap-2">
             {#each media.genres as genre}
               <Badge label={genre} variant="genre" />
@@ -231,9 +340,7 @@
         <!-- Sidebar Navigation -->
         <aside class="lg:w-50 shrink-0">
           <div class="sticky top-24">
-            <div
-              class="bg-card rounded-xl border border-slate-800 overflow-hidden"
-            >
+            <div class="bg-card rounded-xl overflow-hidden">
               {#each tabs as tab}
                 <button
                   onclick={() => (currentActiveTab = tab.id)}
@@ -251,33 +358,249 @@
         </aside>
 
         <!-- Main Content Area -->
-        <main class="lg:w-[65%] min-h-100 pb-12">
-          <div class:hidden={currentActiveTab !== "overview"}>
-            <div
-              class="bg-card p-6 rounded-xl shadow-lg border border-slate-800"
-            >
+        <main class="lg:w-[65%] min-h-100 pb-12 space-y-6">
+          <!-- Overview Tab -->
+          <div class:hidden={currentActiveTab !== "overview"} class="space-y-6">
+            <div class="bg-card p-6 rounded-xl shadow-lg">
               <h3 class="text-(--hako-fg) font-bold mb-4">Description</h3>
               <div class="text-slate-400 text-sm leading-relaxed">
                 {@html formatDescription(media.description)}
               </div>
             </div>
+
+            <!-- Relations -->
+            <div class="space-y-4">
+              <h3 class="text-(--hako-fg) font-bold px-2">Relations</h3>
+              <div class="grid grid-cols-2 sm:grid-cols-3 gap-4">
+                {#each mockExtraData.relations as relation}
+                  <div
+                    class="bg-card rounded-lg overflow-hidden flex gap-3 p-2 hover:bg-slate-800/30 transition-colors group cursor-pointer"
+                  >
+                    <img
+                      src={relation.image}
+                      alt={relation.title}
+                      class="w-12 h-18 object-cover rounded shadow-md shrink-0"
+                    />
+                    <div class="flex flex-col justify-center min-w-0">
+                      <span
+                        class="text-[10px] text-accent font-bold uppercase tracking-wider"
+                        >{relation.type}</span
+                      >
+                      <span
+                        class="text-xs text-(--hako-fg) font-medium truncate group-hover:text-accent transition-colors"
+                        >{relation.title}</span
+                      >
+                      <span class="text-[10px] text-slate-500"
+                        >{relation.format}</span
+                      >
+                    </div>
+                  </div>
+                {/each}
+              </div>
+            </div>
+
+            <!-- Characters Preview -->
+            <div class="space-y-4">
+              <div class="flex justify-between items-center px-2">
+                <h3 class="text-(--hako-fg) font-bold">Characters</h3>
+                <button
+                  onclick={() => (currentActiveTab = "characters")}
+                  class="text-xs text-slate-500 hover:text-accent font-medium transition-colors"
+                  >View all</button
+                >
+              </div>
+              <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                {#each mockExtraData.characters.slice(0, 4) as char}
+                  <div
+                    class="bg-card rounded-lg overflow-hidden flex justify-between p-2 hover:bg-slate-800/30 transition-colors"
+                  >
+                    <div class="flex gap-3 min-w-0">
+                      <img
+                        src={char.image}
+                        alt={char.name}
+                        class="w-12 h-16 object-cover rounded shadow-md shrink-0"
+                      />
+                      <div class="flex flex-col justify-center min-w-0">
+                        <span
+                          class="text-xs text-(--hako-fg) font-bold truncate"
+                          >{char.name}</span
+                        >
+                        <span class="text-[10px] text-slate-500"
+                          >{char.role}</span
+                        >
+                      </div>
+                    </div>
+                    <div class="flex gap-3 text-right min-w-0">
+                      <div class="flex flex-col justify-center min-w-0">
+                        <span
+                          class="text-xs text-(--hako-fg) font-bold truncate"
+                          >{char.va.name}</span
+                        >
+                        <span class="text-[10px] text-slate-500">Japanese</span>
+                      </div>
+                      <img
+                        src={char.va.image}
+                        alt={char.va.name}
+                        class="w-12 h-16 object-cover rounded shadow-md shrink-0"
+                      />
+                    </div>
+                  </div>
+                {/each}
+              </div>
+            </div>
+
+            <!-- Staff Preview -->
+            <div class="space-y-4">
+              <div class="flex justify-between items-center px-2">
+                <h3 class="text-(--hako-fg) font-bold">Staff</h3>
+                <button
+                  onclick={() => (currentActiveTab = "staff")}
+                  class="text-xs text-slate-500 hover:text-accent font-medium transition-colors"
+                  >View all</button
+                >
+              </div>
+              <div class="grid grid-cols-2 sm:grid-cols-4 gap-4">
+                {#each mockExtraData.staff as person}
+                  <div
+                    class="bg-card rounded-lg overflow-hidden p-3 hover:bg-slate-800/30 transition-colors text-center"
+                  >
+                    <img
+                      src={person.image}
+                      alt={person.name}
+                      class="w-16 h-16 object-cover rounded-full shadow-md mx-auto mb-2"
+                    />
+                    <span
+                      class="block text-xs text-(--hako-fg) font-bold truncate"
+                      >{person.name}</span
+                    >
+                    <span class="block text-[10px] text-slate-500 truncate"
+                      >{person.role}</span
+                    >
+                  </div>
+                {/each}
+              </div>
+            </div>
           </div>
+
+          <!-- Characters Tab -->
           <div class:hidden={currentActiveTab !== "characters"}>
-            <div class="p-10 text-slate-500">Character view coming soon...</div>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+              {#each mockExtraData.characters as char}
+                <div
+                  class="bg-card rounded-lg overflow-hidden flex justify-between p-3 hover:bg-slate-800/30 transition-colors"
+                >
+                  <div class="flex gap-4 min-w-0">
+                    <img
+                      src={char.image}
+                      alt={char.name}
+                      class="w-16 h-24 object-cover rounded shadow-lg shrink-0"
+                    />
+                    <div class="flex flex-col justify-center min-w-0">
+                      <span class="text-sm text-(--hako-fg) font-bold truncate"
+                        >{char.name}</span
+                      >
+                      <span class="text-xs text-slate-500">{char.role}</span>
+                    </div>
+                  </div>
+                  <div class="flex gap-4 text-right min-w-0">
+                    <div class="flex flex-col justify-center min-w-0">
+                      <span class="text-sm text-(--hako-fg) font-bold truncate"
+                        >{char.va.name}</span
+                      >
+                      <span class="text-xs text-slate-500">Japanese</span>
+                    </div>
+                    <img
+                      src={char.va.image}
+                      alt={char.va.name}
+                      class="w-16 h-24 object-cover rounded shadow-lg shrink-0"
+                    />
+                  </div>
+                </div>
+              {/each}
+            </div>
           </div>
+
+          <!-- Staff Tab -->
           <div class:hidden={currentActiveTab !== "staff"}>
-            <div class="p-10 text-slate-500">Staff view coming soon...</div>
+            <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-6">
+              {#each mockExtraData.staff as person}
+                <div
+                  class="bg-card rounded-xl p-4 hover:bg-slate-800/30 transition-all text-center group"
+                >
+                  <div class="relative mb-4">
+                    <img
+                      src={person.image}
+                      alt={person.name}
+                      class="w-24 h-24 object-cover rounded-full shadow-xl mx-auto border-2 border-slate-700 group-hover:border-accent transition-colors"
+                    />
+                  </div>
+                  <span
+                    class="block text-sm text-(--hako-fg) font-bold truncate mb-1"
+                    >{person.name}</span
+                  >
+                  <span class="block text-xs text-slate-500 truncate"
+                    >{person.role}</span
+                  >
+                </div>
+              {/each}
+            </div>
           </div>
+
           <div class:hidden={currentActiveTab !== "recommendations"}>
-            <div class="p-10 text-slate-500">
+            <div class="p-10 text-slate-500 text-center">
               Recommendations view coming soon...
             </div>
           </div>
           <div class:hidden={currentActiveTab !== "reviews"}>
-            <div class="p-10 text-slate-500">Reviews view coming soon...</div>
+            <div class="p-10 text-slate-500 text-center">
+              Reviews view coming soon...
+            </div>
           </div>
+
+          <!-- Stats Tab -->
           <div class:hidden={currentActiveTab !== "stats"}>
-            <div class="p-10 text-slate-500">Stats view coming soon...</div>
+            <div class="bg-card p-8 rounded-xl shadow-lg space-y-10">
+              <div class="flex flex-col items-center text-center">
+                <span class="text-6xl font-black text-accent mb-2"
+                  >{mockExtraData.stats.medianScore}%</span
+                >
+                <span
+                  class="text-sm text-slate-400 uppercase tracking-widest font-bold"
+                  >Median Score</span
+                >
+              </div>
+
+              <div class="space-y-6">
+                <h4
+                  class="text-(--hako-fg) font-bold text-sm uppercase tracking-wider text-center"
+                >
+                  Score Distribution
+                </h4>
+                <div class="flex items-end gap-1 h-48 group px-4">
+                  {#each mockExtraData.stats.distribution as dist}
+                    <div
+                      class="flex-1 flex flex-col items-center gap-3 group/bar"
+                    >
+                      <div
+                        class="w-full bg-accent/20 rounded-t-md group-hover:bg-accent/10 group-hover/bar:bg-accent transition-all relative"
+                        style="height: {(dist.count / 18000) * 100}%"
+                      >
+                        <div
+                          class="absolute -top-10 left-1/2 -translate-x-1/2 bg-slate-800 text-[10px] px-2 py-1.5 rounded-md opacity-0 group-hover/bar:opacity-100 transition-opacity shadow-xl border border-slate-700 whitespace-nowrap z-10"
+                        >
+                          <span class="text-accent font-bold"
+                            >{dist.count.toLocaleString()}</span
+                          > users
+                        </div>
+                      </div>
+                      <span class="text-[10px] text-slate-500 font-bold"
+                        >{dist.score}</span
+                      >
+                    </div>
+                  {/each}
+                </div>
+              </div>
+            </div>
           </div>
         </main>
 
@@ -288,9 +611,7 @@
             <TasteProfile {vibes} />
 
             <!-- Info -->
-            <div
-              class="bg-card p-6 rounded-xl shadow-lg border border-slate-800"
-            >
+            <div class="bg-card p-6 rounded-xl shadow-lg">
               <h3 class="text-(--hako-fg) font-bold mb-4">Info</h3>
               <div class="space-y-3 text-sm text-slate-300">
                 <div class="flex justify-between">
@@ -343,6 +664,54 @@
                     </div>
                   {/if}
                 </div>
+
+                <hr class="border-slate-800 my-4" />
+
+                <div class="flex justify-between">
+                  <span>Studio</span><span class="text-accent font-medium"
+                    >{mockExtraData.studio}</span
+                  >
+                </div>
+                <div class="space-y-1">
+                  <span class="text-slate-500 text-xs">Producers</span>
+                  <div class="flex flex-wrap gap-1">
+                    {#each mockExtraData.producers as producer}
+                      <span
+                        class="text-[10px] text-slate-400 bg-slate-800/50 px-2 py-0.5 rounded border border-slate-700/50"
+                        >{producer}</span
+                      >
+                    {/each}
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Tags -->
+            <div class="bg-card p-6 rounded-xl shadow-lg">
+              <h3 class="text-(--hako-fg) font-bold mb-4">Tags</h3>
+              <div class="space-y-3">
+                {#each mockExtraData.tags as tag}
+                  <div class="group cursor-default">
+                    <div class="flex justify-between text-[11px] mb-1.5">
+                      <span
+                        class="text-slate-400 group-hover:text-accent transition-colors"
+                        >{tag.name}</span
+                      >
+                      <span
+                        class="text-slate-600 group-hover:text-slate-400 transition-colors font-medium"
+                        >{tag.rank}%</span
+                      >
+                    </div>
+                    <div
+                      class="w-full h-1 bg-slate-800 rounded-full overflow-hidden"
+                    >
+                      <div
+                        class="h-full bg-accent/40 group-hover:bg-accent transition-all duration-500"
+                        style="width: {tag.rank}%"
+                      ></div>
+                    </div>
+                  </div>
+                {/each}
               </div>
             </div>
           </div>

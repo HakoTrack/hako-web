@@ -13,7 +13,7 @@
     isLoading = true;
     supabase
       .from("top_rated_media_view")
-      .select("*")
+      .select("id, title_romaji, title_english, title_native, median_score")
       .eq("media_type", mediaType)
       .limit(12)
       .then(({ data, error }) => {

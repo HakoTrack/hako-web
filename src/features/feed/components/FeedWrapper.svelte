@@ -2,6 +2,8 @@
   import { FeedService } from "../services/feedService";
   import PostItem from "./PostItem.svelte";
   import PostCreator from "./PostCreator.svelte";
+  import { fetchMediaSummaries } from "../../../shared/utils/mediaData";
+  import type { Media } from "../../../shared/types/index";
 
   let {
     profileId = null,
@@ -11,6 +13,8 @@
   } = $props();
 
   let posts: any[] = $state([]);
+  // Adjusted the type to Media summary, not full Media object
+  let feedMetadata: Record<string, any> = $state({});
 
   // Client-side filtering logic
   const filteredPosts = $derived.by(() => {
@@ -54,6 +58,16 @@
       if (result.success) {
         const newPosts = result.data;
         if (newPosts.length < 20) hasMore = false;
+
+        // Bulk load metadata for list_update posts
+        const mediaIds = newPosts
+          .filter((p) => p.post_type === "list_update" && p.metadata?.media_id)
+          .map((p) => Number(p.metadata.media_id));
+
+        if (mediaIds.length > 0) {
+          const newMetadata = await fetchMediaSummaries(mediaIds);
+          feedMetadata = { ...feedMetadata, ...newMetadata };
+        }
 
         if (isNewLoad) {
           posts = newPosts;
@@ -128,7 +142,10 @@
         </p>
       {:else}
         {#each filteredPosts as post (post.id)}
-          <PostItem {post} />
+          <PostItem
+            {post}
+            prefetchedMedia={feedMetadata[post.metadata?.media_id]}
+          />
         {/each}
       {/if}
 

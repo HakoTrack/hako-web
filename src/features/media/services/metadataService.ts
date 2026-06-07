@@ -1,29 +1,22 @@
-import { fetchMediaByIds } from '../../../shared/utils/mediaData';
+import { fetchMediaDetails, fetchMediaSummaryWithGenres } from '../../../shared/utils/mediaData';
 import type { Media } from '../../../shared/types/index';
 
-const cache = new Map<string, Media>();
-
+// MetadataService is now a wrapper for the optimized fetchers.
+// Components should ideally use fetchers directly to avoid this extra layer if possible.
 export const MetadataService = {
   async getMetadata(ids: number[], type?: string): Promise<Record<string, Media>> {
-    const validIds = ids.filter((id): id is number => id != null);
-    const uncached = validIds.filter(id => !cache.has(id.toString()));
+    // This now just serves as a compatibility layer.
+    // For lists needing genres, use fetchMediaSummaryWithGenres.
+    // For detail pages, use fetchMediaDetails.
+    const summaries = await fetchMediaSummaryWithGenres(ids);
 
-    if (uncached.length > 0) {
-      const newMetadata = await fetchMediaByIds(uncached, type);
-      Object.entries(newMetadata).forEach(([id, data]) => cache.set(id, data));
-    }
-
-    // Return requested batch from cache
-    return validIds.reduce((acc: Record<string, Media>, id) => {
-      const entry = cache.get(id.toString());
-      if (entry) {
-        acc[id.toString()] = entry;
-      }
+    // Convert Pick<Media, ...> to Media for compatibility
+    return Object.entries(summaries).reduce((acc, [id, data]) => {
+      acc[id] = { ...data, description: "" } as unknown as Media;
       return acc;
-    }, {});
+    }, {} as Record<string, Media>);
   },
   invalidate(id?: number): void {
-    if (id) cache.delete(id.toString());
-    else cache.clear();
+    // Cache invalidation is now handled in CacheService
   }
 };

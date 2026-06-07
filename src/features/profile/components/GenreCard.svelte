@@ -1,7 +1,13 @@
 <script lang="ts">
   import MediaCover from "../../../shared/components/MediaCover.svelte";
 
-  let { genre, stats, type, activeMetric } = $props<{
+  let {
+    genre,
+    stats,
+    type,
+    activeMetric,
+    metadata = {},
+  } = $props<{
     genre: string;
     type: string;
     activeMetric: "median" | "avg";
@@ -11,6 +17,7 @@
       scores: number[];
       topTitles: { id: number; score: number }[];
     };
+    metadata?: Record<string, any>;
   }>();
 
   // Helper for median
@@ -57,7 +64,12 @@
     </div>
     <div class="flex gap-2">
       {#each stats.topTitles as title}
-        <MediaCover mediaId={title.id} {type} size="small" />
+        <MediaCover
+          mediaId={title.id}
+          {type}
+          size="small"
+          prefetchedMedia={metadata[title.id]}
+        />
       {/each}
     </div>
   </div>
