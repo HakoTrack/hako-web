@@ -326,6 +326,7 @@ fn get_vibes(media: &Media) -> VibeResult {
 struct ParsedQuery {
     genre: Option<String>,
     min_score: Option<f32>,
+    format: Option<String>,
     free_query: String,
 }
 
@@ -334,6 +335,7 @@ fn parse_query(query: &str) -> ParsedQuery {
     let parts = query.split_whitespace();
     let mut genre = None;
     let mut min_score = None;
+    let mut format = None;
     let mut free_query_parts = Vec::new();
 
     for part in parts {
@@ -345,6 +347,7 @@ fn parse_query(query: &str) -> ParsedQuery {
             match key.as_str() {
                 "genre" => genre = Some(value),
                 "score" => min_score = value.parse::<f32>().ok(),
+                "format" => format = Some(value),
                 _ => free_query_parts.push(part),
             }
         } else {
@@ -355,6 +358,7 @@ fn parse_query(query: &str) -> ParsedQuery {
     ParsedQuery {
         genre,
         min_score,
+        format,
         free_query: free_query_parts.join(" "),
     }
 }
@@ -526,7 +530,23 @@ impl ListEngine {
                     }
                 }
 
-                // 2. Operator Filtering (Score)
+                // 2. Operator Filtering (Format)
+                if let Some(ref target_format) = parsed.format {
+                    let normalized_format = match target_format.as_str() {
+                        "tvshort" | "short" => "tv_short",
+                        "oneshot" => "one_shot",
+                        f => f,
+                    };
+                    let matches = meta
+                        .format
+                        .as_deref()
+                        .map_or(false, |f| f.to_lowercase() == normalized_format);
+                    if !matches {
+                        return None;
+                    }
+                }
+
+                // 3. Operator Filtering (Score)
                 if let Some(min_s) = parsed.min_score {
                     if item.score.unwrap_or(0.0) < min_s {
                         return None;
