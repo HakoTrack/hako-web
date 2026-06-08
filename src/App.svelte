@@ -79,13 +79,13 @@
       const lastUsername =
         lastPathParts[0] === "user" ? lastPathParts[1] : null;
 
-      // Only clear and re-fetch if we've switched users
-      if (targetUsername !== lastUsername) {
-        targetProfileData = null;
-
+      // Re-fetch if switched users or if we don't have data yet (e.g. initial load)
+      if (targetUsername !== lastUsername || !targetProfileData) {
         if (profile && profile.username === targetUsername) {
           targetProfileData = profile;
         } else {
+          // Clear current data while fetching to avoid showing wrong profile
+          targetProfileData = null;
           ProfileService.getProfileByUsername(targetUsername).then((res) => {
             if (res.success) targetProfileData = res.data;
           });

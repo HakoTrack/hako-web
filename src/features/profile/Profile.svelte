@@ -13,12 +13,21 @@
     currentPath,
     activeTab = "overview",
     profileData: propProfileData,
-  } = $props();
+  } = $props<{
+    currentPath: string;
+    activeTab?: string;
+    profileData: Profile | null;
+  }>();
 
   let username = $derived(currentPath.split("/")[2]);
   let profileData: Profile | null = $state(propProfileData);
   let metadataCache: Record<string, Record<string, any>> = $state({});
   let currentActiveTab = $state(activeTab);
+
+  // Sync state when props change
+  $effect(() => {
+    profileData = propProfileData;
+  });
 
   $effect(() => {
     currentActiveTab = activeTab;
