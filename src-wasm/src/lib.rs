@@ -158,6 +158,13 @@ pub struct TopTitle {
     pub score: f32,
 }
 
+/// Combined result for all profile data types.
+#[derive(Serialize, Deserialize)]
+pub struct AllProfileData {
+    pub stats: HashMap<String, StatsResult>,
+    pub affinities: HashMap<String, Vec<VibeAffinity>>,
+}
+
 /// Scores categorized by vibe pillars.
 #[derive(Serialize, Deserialize, Clone, Debug, Default)]
 #[serde(rename_all = "PascalCase")] // VibeScore categories are PascalCase
@@ -783,8 +790,61 @@ impl ListEngine {
     }
 }
 
+/// Standalone WASM binding to calculate everything in one pass for performance.
+#[wasm_bindgen]
+pub fn calculate_all_profile_data_wasm(
+    lists: JsValue,         // Record<string, ListEntry[]>
+    metadata: JsValue,      // Record<string, Media>
+    status_groups: JsValue, // Record<string, StatusGroupInput[]>
+) -> Result<JsValue, JsValue> {
+    let lists_map: HashMap<String, Vec<ListEntry>> = from_value(lists)?;
+    let metadata_map: HashMap<String, Media> = from_value(metadata)?;
+    let status_groups_map: HashMap<String, Vec<StatusGroupInput>> = from_value(status_groups)?;
+
+    let mut processed_metadata = HashMap::new();
+    for (id_str, m) in metadata_map {
+        if let Ok(id) = id_str.parse::<i32>() {
+            processed_metadata.insert(id, m);
+        }
+    }
+
+    let mut all_stats = HashMap::new();
+    let mut all_affinities = HashMap::new();
+
+    for (media_type, items) in lists_map {
+        // Calculate affinity for types that we care about (those that have lists)
+        let affinity = calculate_affinity(&items, &processed_metadata);
+        all_affinities.insert(media_type.clone(), affinity);
+
+        // Calculate stats if we have status groups for it
+        if let Some(groups) = status_groups_map.get(&media_type) {
+            let engine = ListEngine {
+                items,
+                metadata: processed_metadata.clone(),
+                matcher: SkimMatcherV2::default(),
+            };
+
+            let groups_val = serde_wasm_bindgen::to_value(groups)?;
+            if let Ok(stats_val) = engine.calculate_stats(&media_type, groups_val) {
+                let stats: StatsResult = from_value(stats_val)?;
+                all_stats.insert(media_type, stats);
+            }
+        }
+    }
+
+    let result = AllProfileData {
+        stats: all_stats,
+        affinities: all_affinities,
+    };
+
+    let serializer = Serializer::new().serialize_maps_as_objects(true);
+    result
+        .serialize(&serializer)
+        .map_err(|e| JsValue::from_str(&e.to_string()))
+}
+
 /// Input structure for status group definitions.
-#[derive(Deserialize)]
+#[derive(Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 struct StatusGroupInput {
     id: String,

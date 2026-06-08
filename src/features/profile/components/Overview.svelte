@@ -21,28 +21,15 @@
 
   let feedFilter = $state("all");
 
-  // Stats calculation (shared by multiple sub-components if needed)
-  const flatMetadata = $derived.by(() => {
-    // Flatten metadata if it's currently nested by type
-    if (
-      Object.keys(metadata).some((k) =>
-        ["anime", "manga", "light_novel"].includes(k),
-      )
-    ) {
-      return Object.values(metadata).reduce(
-        (acc: Record<string, any>, curr: any) => ({
-          ...acc,
-          ...(curr || {}),
-        }),
-        {} as Record<string, any>,
-      );
+  let allStatsResult = $derived.by(() => {
+    if (isMetadataLoading || Object.keys(metadata).length === 0) {
+      return { stats: {}, affinities: {} };
     }
-    return metadata;
+    return calculateAllStats(profileData?.mediaLists || {}, metadata);
   });
 
-  let allStats = $derived(
-    calculateAllStats(profileData?.mediaLists || {}, flatMetadata),
-  );
+  let allStats = $derived(allStatsResult.stats);
+  let allAffinities = $derived(allStatsResult.affinities);
 </script>
 
 <div class="grid grid-cols-1 lg:grid-cols-12 gap-8 mb-12">
@@ -83,7 +70,8 @@
 
     <TasteProfile
       {profileData}
-      metadata={isMetadataLoading ? {} : flatMetadata}
+      metadata={isMetadataLoading ? {} : metadata}
+      affinities={allAffinities}
     />
   </div>
 </div>

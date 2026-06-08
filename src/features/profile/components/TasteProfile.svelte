@@ -16,10 +16,16 @@
   } from "../../../shared/utils/constants";
   import { Skeleton } from "$components";
 
-  let { profileData, metadata, vibes } = $props<{
+  let {
+    profileData,
+    metadata,
+    vibes,
+    affinities: propAffinities,
+  } = $props<{
     profileData?: Profile | null;
     metadata?: Record<string, Media>;
     vibes?: VibeResult;
+    affinities?: Record<string, any[]>;
   }>();
 
   let chartInstance: Chart | null = null;
@@ -37,23 +43,24 @@
     !!vibes ||
       (!!metadata &&
         Object.keys(metadata).length > 0 &&
-        !!profileData?.mediaLists),
+        !!profileData?.mediaLists) ||
+      (!!propAffinities && Object.keys(propAffinities).length > 0),
   );
-
-  let showChart = $derived(dataReady);
 
   $effect(() => {
     // Establishing deep dependencies
     metadata;
     profileData?.mediaLists;
     vibes;
+    propAffinities;
 
-    if (!dataReady || !chartCanvas) return;
+    if (!chartCanvas) return;
 
     const getComputedColor = (varName: string) => {
-      return getComputedStyle(document.documentElement)
+      const val = getComputedStyle(document.documentElement)
         .getPropertyValue(varName)
         .trim();
+      return val || (varName === "--hako-accent" ? "#ff4757" : "#ffffff");
     };
 
     const COLORS: Record<string, string> = {
@@ -65,60 +72,87 @@
     };
 
     let datasets: any[] = [];
-    if (vibes) {
-      const rawScores = Object.keys(VIBE_LABELS).map((label) => {
-        return vibes.scores[label as keyof typeof vibes.scores] || 0;
-      });
-      const min = Math.min(...rawScores);
-      const max = Math.max(...rawScores);
-      const normalizedData = rawScores.map((score) =>
-        max === min ? 50 : Math.round(((score - min) / (max - min)) * 80 + 10),
-      );
 
-      datasets = [
-        {
-          label: "Vibes",
-          data: normalizedData,
-          backgroundColor: COLORS.media + "33",
-          borderColor: COLORS.media,
-          pointBackgroundColor: COLORS.media,
-          pointRadius: 0,
-          borderWidth: 1,
-        },
-      ];
-    } else if (profileData && metadata) {
-      datasets = Object.keys(profileData.mediaLists)
-        .filter((type) => type !== "visual_novels")
-        .map((type) => {
-          const activeEntries = (
-            profileData!.mediaLists[type] as ListEntry[]
-          ).filter((entry) =>
-            ["completed", "current", "dropped"].includes(
-              entry.status?.toLowerCase() || "",
-            ),
-          );
+    if (dataReady) {
+      if (vibes) {
+        const rawScores = Object.keys(VIBE_LABELS).map((label) => {
+          return vibes.scores[label as keyof typeof vibes.scores] || 0;
+        });
+        const min = Math.min(...rawScores);
+        const max = Math.max(...rawScores);
+        const normalizedData = rawScores.map((score) =>
+          max === min
+            ? 50
+            : Math.round(((score - min) / (max - min)) * 80 + 10),
+        );
 
-          if (activeEntries.length === 0) return null;
-
-          const affinities = get_profile_affinity_wasm(activeEntries, metadata);
-          const color = COLORS[type] || "#ffffff";
-
-          return {
-            label: type.replace("_", " "),
-            data: affinities.map((a: any) => a.value),
-            backgroundColor: color + "33",
-            borderColor: color,
-            pointBackgroundColor: color,
+        datasets = [
+          {
+            label: "Vibes",
+            data: normalizedData,
+            backgroundColor: COLORS.media + "33",
+            borderColor: COLORS.media,
+            pointBackgroundColor: COLORS.media,
             pointRadius: 0,
             borderWidth: 1,
-          };
-        })
-        .filter((d) => d !== null) as any[];
+          },
+        ];
+      } else if (propAffinities && Object.keys(propAffinities).length > 0) {
+        datasets = Object.keys(propAffinities)
+          .filter((type) => type !== "visual_novels")
+          .map((type) => {
+            const affinities = propAffinities[type];
+            if (!affinities || affinities.length === 0) return null;
+            const color = COLORS[type] || "#ffffff";
+
+            return {
+              label: type.replace("_", " "),
+              data: affinities.map((a: any) => a.value),
+              backgroundColor: color + "33",
+              borderColor: color,
+              pointBackgroundColor: color,
+              pointRadius: 0,
+              borderWidth: 1,
+            };
+          })
+          .filter((d) => d !== null) as any[];
+      } else if (profileData && metadata) {
+        datasets = Object.keys(profileData.mediaLists)
+          .filter((type) => type !== "visual_novels")
+          .map((type) => {
+            const activeEntries = (
+              profileData!.mediaLists[type] as ListEntry[]
+            ).filter((entry) =>
+              ["completed", "current", "dropped"].includes(
+                entry.status?.toLowerCase() || "",
+              ),
+            );
+
+            if (activeEntries.length === 0) return null;
+
+            const affinities = get_profile_affinity_wasm(
+              activeEntries,
+              metadata,
+            );
+            const color = COLORS[type] || "#ffffff";
+
+            return {
+              label: type.replace("_", " "),
+              data: affinities.map((a: any) => a.value),
+              backgroundColor: color + "33",
+              borderColor: color,
+              pointBackgroundColor: color,
+              pointRadius: 0,
+              borderWidth: 1,
+            };
+          })
+          .filter((d) => d !== null) as any[];
+      }
     }
 
     if (chartInstance) {
       chartInstance.data.datasets = datasets;
-      chartInstance.update("none"); // Update without animation for snappiness
+      chartInstance.update();
     } else {
       chartInstance = new Chart(chartCanvas, {
         type: "radar",
@@ -129,7 +163,10 @@
         options: {
           responsive: true,
           maintainAspectRatio: false,
-          animation: false,
+          animation: {
+            duration: 1000,
+            easing: "easeOutQuart",
+          },
           events: ["mousemove", "mouseout", "touchstart", "touchmove"],
           interaction: {
             mode: "nearest",
@@ -206,18 +243,7 @@
   </h3>
   <div class="pt-2">
     <div class="h-50 w-full flex justify-center relative">
-      {#if !showChart}
-        <div class="absolute inset-0 flex items-center justify-center">
-          <Skeleton class="w-full h-full" />
-        </div>
-      {/if}
-      <canvas
-        bind:this={chartCanvas}
-        id="genreChart"
-        class:opacity-0={!showChart}
-        class:opacity-100={showChart}
-        class="transition-opacity duration-500 ease-in-out"
-      ></canvas>
+      <canvas bind:this={chartCanvas} id="genreChart"></canvas>
     </div>
   </div>
 

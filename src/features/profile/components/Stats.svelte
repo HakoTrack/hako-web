@@ -11,10 +11,12 @@
     profileData,
     metadata = {},
     mediaLists = {},
+    isMetadataLoading = false,
   } = $props<{
     profileData: { id: string };
     metadata?: Record<string, any>;
     mediaLists?: Record<string, any[]>;
+    isMetadataLoading?: boolean;
   }>();
 
   let activeCategory = $state("anime-general");
@@ -49,10 +51,12 @@
 
   $effect(() => {
     if (
+      !isMetadataLoading &&
       Object.keys(metadata).length > 0 &&
       Object.keys(mediaLists).length > 0
     ) {
-      stats = calculateAllStats(mediaLists, metadata);
+      const result = calculateAllStats(mediaLists, metadata);
+      stats = result.stats;
       isLoading = false;
     }
   });

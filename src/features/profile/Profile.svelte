@@ -109,6 +109,16 @@
       ? ROLES[(profileData as any).role.toLowerCase()]
       : null,
   );
+
+  let flatMetadata = $derived.by(() => {
+    return Object.values(metadataCache).reduce(
+      (acc: Record<string, any>, curr: any) => ({
+        ...acc,
+        ...(curr || {}),
+      }),
+      {} as Record<string, any>,
+    );
+  });
 </script>
 
 <div id="profile-container" class="relative">
@@ -183,11 +193,7 @@
     <div class="py-8 min-h-screen">
       <div class:hidden={currentActiveTab !== "overview"}>
         {#if profileData}
-          <Overview
-            {profileData}
-            metadata={metadataCache}
-            {isMetadataLoading}
-          />
+          <Overview {profileData} metadata={flatMetadata} {isMetadataLoading} />
         {/if}
       </div>
 
@@ -214,14 +220,9 @@
         {#if profileData}
           <Stats
             {profileData}
-            metadata={Object.values(metadataCache).reduce(
-              (acc: Record<string, any>, curr: any) => ({
-                ...acc,
-                ...(curr || {}),
-              }),
-              {} as Record<string, any>,
-            )}
+            metadata={flatMetadata}
             mediaLists={profileData.mediaLists || {}}
+            {isMetadataLoading}
           />
         {/if}
       </div>
