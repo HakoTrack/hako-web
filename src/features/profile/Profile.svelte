@@ -8,6 +8,7 @@
   import Stats from "./components/Stats.svelte";
   import Overview from "./components/Overview.svelte";
   import { ROLES } from "../../shared/utils/constants";
+  import { onMount, untrack } from "svelte";
 
   let {
     currentPath,
@@ -20,16 +21,43 @@
   }>();
 
   let username = $derived(currentPath.split("/")[2]);
-  let profileData: Profile | null = $state(propProfileData);
+  let profileData: Profile | null = $state(null);
   let metadataCache: Record<string, Record<string, any>> = $state({});
   let currentActiveTab = $state(activeTab);
 
-  // Sync state when props change
+  onMount(() => {
+    console.log("[Profile] Component MOUNTED. user:", username);
+    return () => console.log("[Profile] Component UNMOUNTED. user:", username);
+  });
+
+  // Sync state when props change, but MERGE to avoid losing data
   $effect(() => {
-    profileData = propProfileData;
+    console.log(
+      "[Profile] propProfileData changed:",
+      propProfileData?.username,
+    );
+    const newData = propProfileData;
+
+    untrack(() => {
+      if (newData) {
+        const hasNewLists =
+          newData.mediaLists && Object.keys(newData.mediaLists).length > 0;
+
+        profileData = {
+          ...newData,
+          // Keep current lists if the new ones are empty/missing
+          mediaLists: hasNewLists
+            ? newData.mediaLists
+            : profileData?.mediaLists || {},
+        };
+      } else {
+        profileData = null;
+      }
+    });
   });
 
   $effect(() => {
+    console.log("[Profile] activeTab changed:", activeTab);
     currentActiveTab = activeTab;
   });
 
@@ -42,52 +70,77 @@
   let lastFetchedId = $state<string | null>(null);
 
   $effect(() => {
+    const currentId = profileData?.id;
+    const isFetching = isFetchingLists;
+    console.log(
+      "[Profile] Data effect triggered. isFetching:",
+      isFetching,
+      "profileData:",
+      currentId,
+      "lastFetchedId:",
+      lastFetchedId,
+    );
+
     if (
       propProfileData &&
       propProfileData.id !== lastFetchedId &&
-      !isFetchingLists
+      !isFetching
     ) {
-      profileData = propProfileData;
+      untrack(() => {
+        profileData = propProfileData;
 
-      const hasLists = Object.keys(profileData.mediaLists || {}).length > 0;
+        const hasLists = Object.keys(profileData?.mediaLists || {}).length > 0;
+        console.log("[Profile] Checking lists. hasLists:", hasLists);
 
-      if (!hasLists) {
-        isFetchingLists = true;
-        isMetadataLoading = true;
-        lastFetchedId = profileData.id;
-        ProfileService.getMediaLists(profileData.id).then((lists) => {
-          if (profileData) {
-            profileData = { ...profileData, mediaLists: lists };
+        if (!hasLists && profileData) {
+          console.log(
+            "[Profile] Lists missing, starting fetch for:",
+            profileData.id,
+          );
+          isFetchingLists = true;
+          isMetadataLoading = true;
+          lastFetchedId = profileData.id;
+          ProfileService.getMediaLists(profileData.id).then((lists) => {
+            console.log("[Profile] Media lists fetched:", Object.keys(lists));
+            if (profileData) {
+              profileData = { ...profileData, mediaLists: lists };
 
-            const types = Object.keys(lists);
-            const totalTypes = types.length;
-            let loadedTypes = 0;
+              const types = Object.keys(lists);
+              const totalTypes = types.length;
+              let loadedTypes = 0;
 
-            if (totalTypes === 0) {
-              isMetadataLoading = false;
-            }
+              if (totalTypes === 0) {
+                console.log("[Profile] No lists found for user");
+                isMetadataLoading = false;
+              }
 
-            Object.entries(lists).forEach(([type, items]) => {
-              const ids = (items as any[]).map((i: any) => i.media_id);
-              if (ids.length > 0) {
-                fetchMediaSummaryWithGenres(ids).then((m) => {
-                  metadataCache[type] = m;
+              Object.entries(lists).forEach(([type, items]) => {
+                const ids = (items as any[]).map((i: any) => i.media_id);
+                console.log(
+                  `[Profile] Fetching metadata for ${type}: ${ids.length} items`,
+                );
+                if (ids.length > 0) {
+                  fetchMediaSummaryWithGenres(ids).then((m) => {
+                    console.log(`[Profile] Metadata fetched for ${type}`);
+                    metadataCache[type] = m;
+                    loadedTypes++;
+                    if (loadedTypes === totalTypes) {
+                      console.log("[Profile] All metadata loaded");
+                      isMetadataLoading = false;
+                    }
+                  });
+                } else {
                   loadedTypes++;
                   if (loadedTypes === totalTypes) {
                     isMetadataLoading = false;
                   }
-                });
-              } else {
-                loadedTypes++;
-                if (loadedTypes === totalTypes) {
-                  isMetadataLoading = false;
                 }
-              }
-            });
-          }
-          isFetchingLists = false;
-        });
-      }
+              });
+            }
+            isFetchingLists = false;
+          });
+        }
+      });
     }
   });
 

@@ -1,5 +1,5 @@
 <script>
-  import { onMount, onDestroy } from "svelte";
+  import { onMount, onDestroy, untrack } from "svelte";
   import Navbar from "./components/Navbar.svelte";
   import Footer from "./components/Footer.svelte";
   import Landing from "./features/landing/Landing.svelte";
@@ -43,18 +43,40 @@
   });
 
   $effect(() => {
-    if (user) {
-      ProfileService.getProfileById(user.id).then((result) => {
+    console.log("[App] User state changed:", user?.id);
+    const currentUser = user;
+    if (currentUser) {
+      ProfileService.getProfileById(currentUser.id).then((result) => {
         if (result.success && result.data) {
-          profile = result.data;
-          // Eagerly set targetProfileData if on own profile
-          const pathParts = currentPath.split("/").filter((p) => p);
-          if (
-            pathParts[0] === "user" &&
-            pathParts[1] === result.data.username
-          ) {
-            targetProfileData = result.data;
-          }
+          console.log("[App] Fetched own profile:", result.data.username);
+
+          untrack(() => {
+            // Preserve mediaLists if we already have them for this user
+            const updatedProfile = {
+              ...result.data,
+              mediaLists:
+                profile?.id === result.data.id ? profile.mediaLists || {} : {},
+            };
+            profile = updatedProfile;
+
+            // Eagerly set targetProfileData if on own profile
+            const pathParts = currentPath.split("/").filter((p) => p);
+            if (
+              pathParts[0] === "user" &&
+              pathParts[1] === result.data.username
+            ) {
+              console.log(
+                "[App] Setting targetProfileData to own profile (merging lists)",
+              );
+              targetProfileData = {
+                ...result.data,
+                mediaLists:
+                  targetProfileData?.id === result.data.id
+                    ? targetProfileData.mediaLists || {}
+                    : {},
+              };
+            }
+          });
         } else {
           console.error(
             "DEBUG: Failed to load profile for navbar:",
@@ -63,7 +85,9 @@
         }
       });
     } else {
-      profile = null;
+      untrack(() => {
+        profile = null;
+      });
     }
   });
 
@@ -74,20 +98,58 @@
     const pathParts = currentPath.split("/").filter((p) => p);
     const lastPathParts = lastPath.split("/").filter((p) => p);
 
+    console.log("[App] handleRouting:", currentPath, "lastPath:", lastPath);
+
     if (pathParts[0] === "user") {
       const targetUsername = pathParts[1];
       const lastUsername =
         lastPathParts[0] === "user" ? lastPathParts[1] : null;
 
+      console.log(
+        "[App] Profile route detected. Target:",
+        targetUsername,
+        "Last:",
+        lastUsername,
+      );
+
       // Re-fetch if switched users or if we don't have data yet (e.g. initial load)
       if (targetUsername !== lastUsername || !targetProfileData) {
+        console.log(
+          "[App] Syncing targetProfileData. missing:",
+          !targetProfileData,
+        );
+
         if (profile && profile.username === targetUsername) {
+          console.log("[App] Using own profile as target");
           targetProfileData = profile;
         } else {
-          // Clear current data while fetching to avoid showing wrong profile
-          targetProfileData = null;
+          // ONLY clear if it's a DIFFERENT user to avoid unmounting components during refresh
+          if (targetProfileData?.username !== targetUsername) {
+            console.log("[App] Clearing targetProfileData (User changed)");
+            targetProfileData = null;
+          } else {
+            console.log(
+              "[App] Keeping current targetProfileData while refreshing same user",
+            );
+          }
+
           ProfileService.getProfileByUsername(targetUsername).then((res) => {
-            if (res.success) targetProfileData = res.data;
+            if (res.success) {
+              console.log(
+                "[App] Successfully fetched target profile:",
+                res.data.username,
+              );
+              // Merge to avoid losing mediaLists if we already have them
+              targetProfileData = {
+                ...res.data,
+                mediaLists:
+                  targetProfileData?.id === res.data.id
+                    ? targetProfileData.mediaLists || {}
+                    : {},
+              };
+            } else {
+              console.error("[App] Failed to fetch target profile:", res.error);
+            }
           });
         }
       }
@@ -100,16 +162,21 @@
   onMount(async () => {
     init().catch(console.error);
     user = await AuthService.getCurrentUser();
+    console.log("[App] Initial user load:", user?.id);
     authInitialized = true;
     window.addEventListener("scroll", handleScroll);
 
-    const { data } = supabase.auth.onAuthStateChange((_event, session) => {
+    const { data } = supabase.auth.onAuthStateChange((event, session) => {
+      console.log("[App] onAuthStateChange:", event, session?.user?.id);
       user = session?.user ?? null;
       handleRouting();
     });
     authSubscription = data.subscription;
 
-    window.addEventListener("popstate", handleRouting);
+    window.addEventListener("popstate", () => {
+      console.log("[App] popstate event");
+      handleRouting();
+    });
     handleRouting();
   });
 
