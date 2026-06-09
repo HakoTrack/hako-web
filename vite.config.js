@@ -52,25 +52,13 @@ export default defineConfig({
         navigateFallback: 'index.html',
         runtimeCaching: [
           {
-            // Simple CacheFirst for R2 assets
-            urlPattern: /^https:\/\/assets\.hako\.moe\/.*\.(?:png|jpg|jpeg|svg|gif|webp|avif)$/,
-            handler: 'CacheFirst',
-            options: {
-              cacheName: 'r2-image-cache-v4',
-              expiration: {
-                maxEntries: 2000,
-                maxAgeSeconds: 30 * 24 * 60 * 60, // 30 days
-              },
-            },
-          },
-          {
-            // Cache all other image requests with CacheFirst
+            // Unified cache strategy for all image assets
             urlPattern: /.*\.(?:png|jpg|jpeg|svg|gif|webp|avif)$/,
             handler: 'CacheFirst',
             options: {
-              cacheName: 'image-cache-v3',
+              cacheName: 'image-cache-v4',
               expiration: {
-                maxEntries: 1000,
+                maxEntries: 3000,
                 maxAgeSeconds: 30 * 24 * 60 * 60, // 30 days
               },
             },

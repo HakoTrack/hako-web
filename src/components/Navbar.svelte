@@ -212,7 +212,7 @@
       <div class="flex items-center space-x-3">
         {#if user}
           <button
-            class="w-8 h-8 flex items-center justify-center rounded-lg hover:bg-slate-800 transition-colors {ui.isQuickUpdateOpen
+            class="w-8 h-8 flex items-center justify-center text-(--hako-fg) hover:text-white transition-colors cursor-pointer {ui.isQuickUpdateOpen
               ? 'text-accent'
               : 'text-slate-400'}"
             onclick={() => {
