@@ -51,19 +51,14 @@ export default defineConfig({
       workbox: {
         runtimeCaching: [
           {
-            // Handle assets.hako.moe with StaleWhileRevalidate, ensuring CORS mode
+            // Simple CacheFirst for R2 assets
             urlPattern: /^https:\/\/assets\.hako\.moe\/.*\.(?:png|jpg|jpeg|svg|gif|webp|avif)$/,
-            handler: 'StaleWhileRevalidate',
+            handler: 'CacheFirst',
             options: {
-              cacheName: 'r2-image-cache-v2',
+              cacheName: 'r2-image-cache-v3',
               expiration: {
                 maxEntries: 1000,
                 maxAgeSeconds: 30 * 24 * 60 * 60, // 30 days
-              },
-              // Required for CORS to work, otherwise responses will be opaque
-              fetchOptions: {
-                mode: 'cors',
-                credentials: 'omit',
               },
             },
           },
