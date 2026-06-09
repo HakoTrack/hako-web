@@ -1,10 +1,14 @@
 <script lang="ts">
+  import { onMount } from "svelte";
   import {
     fetchMediaDetails,
     formatDescription,
   } from "../../shared/utils/mediaData";
+  import { MediaService } from "./services/mediaService";
+  import { CacheService } from "../../core/cache";
   import { HakoImage } from "../../shared/utils/images";
   import { get_vibes_wasm } from "$wasm/hako_wasm";
+  import { wasmInitialized } from "../../core/wasm-init";
   import { getDisplayTitle, settings } from "../../core/settings.svelte";
   import MediaCover from "../../shared/components/MediaCover.svelte";
   import Badge from "../../shared/components/Badge.svelte";
@@ -16,7 +20,9 @@
     type?: string;
   }>();
   let media: Media | null = $state(null);
+  let relations: any[] = $state([]);
   let isLoading = $state(true);
+  let isWasmReady = $state(false);
   let currentActiveTab = $state("overview"); // Tab tracking state
   let bannerError = $state(false);
 
@@ -29,7 +35,14 @@
     return "";
   });
   // Reactive vibe calculation
-  let vibes = $derived(media ? get_vibes_wasm(media) : null);
+  let vibes = $derived(isWasmReady && media ? get_vibes_wasm(media) : null);
+
+  $effect(() => {
+    const unsub = wasmInitialized.subscribe((ready) => {
+      isWasmReady = ready;
+    });
+    return unsub;
+  });
 
   function toTitleCase(str: string | null | undefined): string {
     if (!str) return "N/A";
@@ -38,7 +51,25 @@
 
   onMount(async () => {
     try {
-      media = await fetchMediaDetails(Number(mediaId));
+      const [mediaRes, cachedRelations] = await Promise.all([
+        fetchMediaDetails(Number(mediaId)),
+        CacheService.getMediaRelations(mediaId),
+      ]);
+
+      media = mediaRes;
+
+      if (cachedRelations) {
+        relations = cachedRelations;
+      } else {
+        const relRes = await MediaService.getMediaRelations(Number(mediaId));
+        if (relRes.success) {
+          relations = relRes.data;
+          await CacheService.setMediaRelations(
+            mediaId,
+            JSON.parse(JSON.stringify(relations)),
+          );
+        }
+      }
     } catch (e) {
       console.error("Failed to fetch media:", e);
     } finally {
@@ -369,35 +400,30 @@
             </div>
 
             <!-- Relations -->
-            <div class="space-y-4">
-              <h3 class="text-(--hako-fg) font-bold px-2">Relations</h3>
-              <div class="grid grid-cols-2 sm:grid-cols-3 gap-4">
-                {#each mockExtraData.relations as relation}
-                  <div
-                    class="bg-card rounded-lg overflow-hidden flex gap-3 p-2 hover:bg-slate-800/30 transition-colors group cursor-pointer"
-                  >
-                    <img
-                      src={relation.image}
-                      alt={relation.title}
-                      class="w-12 h-18 object-cover rounded shadow-md shrink-0"
-                    />
-                    <div class="flex flex-col justify-center min-w-0">
-                      <span
-                        class="text-[10px] text-accent font-bold uppercase tracking-wider"
-                        >{relation.type}</span
+            {#if relations.length > 0}
+              <div class="space-y-4">
+                <h3 class="text-(--hako-fg) font-bold px-2">Relations</h3>
+                <div class="flex flex-wrap gap-4">
+                  {#each relations as relation}
+                    <div class="relative group">
+                      <MediaCover
+                        mediaId={relation.related_media.id}
+                        type={relation.related_media.format === "MANGA"
+                          ? "manga"
+                          : "anime"}
+                        size="medium"
+                        alt={relation.related_media.title_romaji}
+                      />
+                      <div
+                        class="absolute bottom-0.5 left-0.5 bg-(--hako-bg)/80 text-[0.7rem] font-bold text-(--hako-fg) px-1.5 py-0.5 rounded z-10 whitespace-nowrap"
                       >
-                      <span
-                        class="text-xs text-(--hako-fg) font-medium truncate group-hover:text-accent transition-colors"
-                        >{relation.title}</span
-                      >
-                      <span class="text-[10px] text-slate-500"
-                        >{relation.format}</span
-                      >
+                        {toTitleCase(relation.relation_type)}
+                      </div>
                     </div>
-                  </div>
-                {/each}
+                  {/each}
+                </div>
               </div>
-            </div>
+            {/if}
 
             <!-- Characters Preview -->
             <div class="space-y-4">

@@ -41,5 +41,27 @@ export const MediaService = {
 
     const media = (data || []).map(mapSupabaseMedia).filter((m): m is Media => m !== null);
     return success(media);
-  }
+  },
+
+  /**
+   * Fetches relations for a given media ID.
+   */
+  async getMediaRelations(mediaId: number): Promise<Result<any[]>> {
+    const { data, error } = await supabase
+      .from('media_relations')
+      .select(`
+        relation_type,
+        related_media:related_media_id (
+          id,
+          title_romaji,
+          title_english,
+          title_native,
+          format
+        )
+      `)
+      .eq('media_id', mediaId);
+
+    if (error) return failure(error.message);
+    return success(data || []);
+  },
 };

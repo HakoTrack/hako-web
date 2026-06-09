@@ -16,9 +16,13 @@
     post,
     prefetchedMedia = null,
   }: { post: Post; prefetchedMedia?: Media | null } = $props();
+
   let isLiked = $state(false);
   let showComments = $state(false);
-  let mediaInfo = $state<Media | null>(prefetchedMedia);
+
+  // Use derived to handle reactive updates from props
+  let fetchedMedia = $state<Media | null>(null);
+  let mediaInfo = $derived(prefetchedMedia || fetchedMedia);
 
   $effect(() => {
     if (
@@ -26,22 +30,24 @@
       post.post_type === "list_update" &&
       post.metadata?.media_id
     ) {
-      fetchMediaSummaries([post.metadata.media_id]).then(
-        (mediaMap) => (mediaInfo = mediaMap[post.metadata!.media_id!] as any),
+      const media_id = post.metadata.media_id;
+      fetchMediaSummaries([media_id]).then(
+        (mediaMap) => (fetchedMedia = mediaMap[media_id] as any),
       );
     }
   });
 
-  // Extract counts (Direct integer columns)
-  let likeCount = $state(post.likes_count || 0);
-  let commentCount = $state(post.comments_count || 0);
-  let shareCount = $state(post.shares_count || 0);
+  // Reactive counts derived directly from post prop
+  let likeCount = $derived(post.likes_count || 0);
+  let commentCount = $derived(post.comments_count || 0);
+  let shareCount = $derived(post.shares_count || 0);
 
   $effect(() => {
+    const currentPost = post;
     AuthService.getCurrentUser().then((user) => {
       if (user) {
         // 'likes' property contains the array of user_id objects for checking if *we* liked it
-        isLiked = post.likes.some((l) => l.user_id === user.id);
+        isLiked = currentPost.likes.some((l) => l.user_id === user.id);
       }
     });
   });
@@ -204,7 +210,7 @@
       onclick={() => navigateToProfile(post.author?.username)}
     >
       <img
-        src={HakoImage.get(post.author?.avatar_url, { w: 24, f: "webp" })}
+        src={HakoImage.get(post.author?.avatar_url)}
         class="object-cover w-6 h-6 rounded-full bg-slate-700"
         alt="avatar"
         onerror={(e: Event) => ((e.target as HTMLImageElement).src = "")}

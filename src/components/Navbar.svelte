@@ -245,11 +245,7 @@
           <Dropdown items={dropdownItems}>
             {#if profile?.avatar_url}
               <img
-                src={HakoImage.get(profile.avatar_url, {
-                  w: 32,
-                  h: 32,
-                  f: "webp",
-                })}
+                src={HakoImage.get(profile.avatar_url)}
                 class="w-8 h-8 rounded-full object-cover border border-slate-700 cursor-pointer"
                 alt="{username}'s avatar"
               />

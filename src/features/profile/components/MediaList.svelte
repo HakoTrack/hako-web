@@ -490,7 +490,7 @@
                         >
                           {displayTitle}
                         </div>
-                        <div class="flex flex-wrap gap-1 mt-1.5 hidden sm:flex">
+                        <div class="flex flex-wrap gap-1 mt-1.5 sm:flex">
                           {#each (meta as any).genres?.slice(0, 5) as genre}
                             <Badge label={genre} variant="genre" />
                           {/each}

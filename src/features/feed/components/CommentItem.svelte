@@ -33,7 +33,7 @@
     onclick={() => navigateToProfile(comment.author?.username)}
   >
     <img
-      src={HakoImage.get(comment.author?.avatar_url, { w: 24, f: "webp" })}
+      src={HakoImage.get(comment.author?.avatar_url)}
       class="object-cover w-6 h-6 mt-0.5 rounded-full bg-slate-700 cursor-pointer"
       alt="avatar"
       onerror={(e: Event) => ((e.target as HTMLImageElement).src = "")}

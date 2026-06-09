@@ -37,6 +37,7 @@
     label: string;
     value: number;
     color: string;
+    opacity: number;
   } | null = $state(null);
 
   let dataReady = $derived(

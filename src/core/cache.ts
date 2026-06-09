@@ -10,6 +10,10 @@ interface HakoDB extends DBSchema {
     key: string;
     value: any;
   };
+  media_relations: {
+    key: string;
+    value: any;
+  };
   user_lists: {
     key: string;
     value: SyncCache<any[]>;
@@ -25,7 +29,7 @@ interface HakoDB extends DBSchema {
 }
 
 const DB_NAME = 'HakoDB_v2';
-const DB_VERSION = 10.0;
+const DB_VERSION = 11.0;
 
 
 const dbPromise = openDB<HakoDB>(DB_NAME, DB_VERSION, {
@@ -33,6 +37,9 @@ const dbPromise = openDB<HakoDB>(DB_NAME, DB_VERSION, {
     // Delete existing stores to ensure full invalidation on version bump
     if (db.objectStoreNames.contains('media_metadata')) {
       db.deleteObjectStore('media_metadata');
+    }
+    if (db.objectStoreNames.contains('media_relations')) {
+      db.deleteObjectStore('media_relations');
     }
     if (db.objectStoreNames.contains('user_lists')) {
       db.deleteObjectStore('user_lists');
@@ -44,6 +51,7 @@ const dbPromise = openDB<HakoDB>(DB_NAME, DB_VERSION, {
       db.deleteObjectStore('profiles');
     }
     db.createObjectStore('media_metadata');
+    db.createObjectStore('media_relations');
     db.createObjectStore('user_lists');
     db.createObjectStore('user_favorites');
     db.createObjectStore('profiles');
@@ -62,6 +70,19 @@ export const CacheService = {
   async deleteMedia(id: string) {
     const db = await dbPromise;
     return db.delete('media_metadata', id);
+  },
+
+  async getMediaRelations(id: string) {
+    const db = await dbPromise;
+    return db.get('media_relations', id);
+  },
+  async setMediaRelations(id: string, value: any) {
+    const db = await dbPromise;
+    return db.put('media_relations', value, id);
+  },
+  async deleteMediaRelations(id: string) {
+    const db = await dbPromise;
+    return db.delete('media_relations', id);
   },
 
   // --- Sync-Aware Methods ---

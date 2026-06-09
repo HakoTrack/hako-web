@@ -1,5 +1,5 @@
 <script lang="ts">
-  import type { Profile } from "../../types";
+  import type { Profile } from "../../../shared/types";
 
   let { profileData } = $props<{
     profileData: Profile | null;

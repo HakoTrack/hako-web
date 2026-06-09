@@ -23,7 +23,7 @@
   });
 
   onMount(() => {
-    heroUrl = HakoImage.get("landing.jpg", { f: "avif" });
+    heroUrl = HakoImage.get("global/landing.webp");
   });
 
   async function next() {

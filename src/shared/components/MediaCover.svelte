@@ -35,14 +35,20 @@
     medium: "w-28 aspect-[17/23]",
     large: "w-40 aspect-[17/23]",
   };
-
   let loaded = $state(false);
   // Keep mediaInfo for tooltip title if prefetched
-  let mediaInfo = $state<Media | null>(prefetchedMedia);
+  let fetchedInfo = $state<Media | null>(null);
+  let mediaInfo = $derived(prefetchedMedia || fetchedInfo);
   let isHovered = $state(false);
 
   async function handleOpenEditor() {
     openQuickEditor(Number(mediaId), type);
+  }
+
+  function handleNavigate(e: Event) {
+    e.stopPropagation();
+    window.history.pushState({}, "", `/${type}/${mediaId}`);
+    window.dispatchEvent(new PopStateEvent("popstate"));
   }
 
   async function handleHover() {
@@ -50,7 +56,7 @@
     if (onmouseover) onmouseover();
     if (showTooltip && !mediaInfo) {
       const mediaMap = await fetchMediaSummaries([Number(mediaId)]);
-      mediaInfo = mediaMap[mediaId] as any;
+      fetchedInfo = mediaMap[mediaId] as any;
     }
   }
 </script>
@@ -64,7 +70,11 @@
 {/snippet}
 
 {#snippet coverImage()}
-  <div class="relative {sizeClasses[size]} {className}">
+  <!-- svelte-ignore a11y_no_static_element_interactions -->
+  <div
+    class="relative {sizeClasses[size]} {className} group"
+    onmouseenter={handleHover}
+  >
     {#if !loaded}
       <div
         class="absolute inset-0 bg-(--surface-elevated) animate-pulse rounded"
@@ -75,7 +85,7 @@
     <!-- svelte-ignore a11y_mouse_events_have_key_events -->
     <img
       src={HakoImage.getCover(mediaId, size === "large" ? "large" : "medium")}
-      class="w-full h-full object-cover rounded shadow cursor-pointer hover:scale-105 transition-transform {loaded
+      class="w-full h-full object-cover rounded shadow cursor-pointer group-hover:scale-105 transition-transform {loaded
         ? 'opacity-100'
         : 'opacity-0'} transition-opacity"
       {alt}
@@ -87,8 +97,17 @@
           "https://ik.imagekit.io/HakoImage/covers/placeholder.webp?tr=w-240,f=webp";
       }}
       onclick={handleOpenEditor}
-      onmouseenter={handleHover}
     />
+    <button
+      onclick={handleNavigate}
+      class="absolute bottom-0 right-0 bg-(--hako-bg)/80 text-(--hako-fg) rounded-full w-7 h-7 flex items-center justify-center text-xs z-50 opacity-0 group-hover:opacity-100 transition-opacity hover:text-accent pointer-events-auto cursor-pointer"
+      title="Go to page"
+      style="pointer-events: auto;"
+    >
+      <i
+        class="fa-solid fa-arrow-up-right-from-square text-[10px] translate-x-[0.5px] -translate-y-[0.5px]"
+      ></i>
+    </button>
   </div>
 {/snippet}
 

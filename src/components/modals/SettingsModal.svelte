@@ -35,8 +35,8 @@
   let deletePassword = $state("");
   let deletionCode = $state("");
 
-  let avatarInput: HTMLInputElement;
-  let bannerInput: HTMLInputElement;
+  let avatarInput = $state<HTMLInputElement>();
+  let bannerInput = $state<HTMLInputElement>();
 
   async function initiateCrop(event: Event, bucket: "avatars" | "banners") {
     const target = event.target as HTMLInputElement;
@@ -68,9 +68,10 @@
       const cacheBustedUrl = `${newUrl}?t=${new Date().getTime()}`;
 
       // Update the local state for immediate UI feedback
-      if (bucket === "avatars")
+      if (bucket === "avatars" && ui.modalData?.profile)
         ui.modalData.profile.avatar_url = cacheBustedUrl;
-      else ui.modalData.profile.banner_url = cacheBustedUrl;
+      else if (ui.modalData?.profile)
+        ui.modalData.profile.banner_url = cacheBustedUrl;
     }
     isUploading = false;
   }
@@ -179,10 +180,10 @@
             <!-- svelte-ignore a11y_no_static_element_interactions -->
             <div
               class="relative w-20 h-20 group cursor-pointer"
-              onclick={() => avatarInput.click()}
+              onclick={() => avatarInput?.click()}
             >
               <img
-                src={HakoImage.get(profile?.avatar_url, { w: 80, f: "webp" })}
+                src={HakoImage.get(profile?.avatar_url)}
                 class="w-full h-full rounded-full object-cover border-2 border-slate-700"
                 alt="Avatar"
               />
@@ -204,10 +205,10 @@
             <!-- svelte-ignore a11y_no_static_element_interactions -->
             <div
               class="relative w-48 h-20 group cursor-pointer"
-              onclick={() => bannerInput.click()}
+              onclick={() => bannerInput?.click()}
             >
               <img
-                src={HakoImage.get(profile?.banner_url, { w: 192, f: "webp" })}
+                src={HakoImage.get(profile?.banner_url)}
                 class="w-full h-full rounded-lg object-cover border border-slate-700"
                 alt="Banner"
               />
@@ -228,7 +229,7 @@
               >About Me</label
             >
             <textarea
-              class="w-full bg-(--surface-dim) border border-(--c8) rounded-xl p-3 text-sm text-(--hako-fg) outline-none min-h-[80px]"
+              class="w-full bg-(--surface-dim) border border-(--c8) rounded-xl p-3 text-sm text-(--hako-fg) outline-none min-h-20"
               placeholder="Tell us about yourself..."
               bind:value={aboutMe}
             ></textarea>

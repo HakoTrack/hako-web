@@ -1,22 +1,15 @@
 /**
  * src/utils/images.ts
- * Handles image URL construction for ImageKit (Media) and Supabase (Profiles).
+ * Handles image URL construction for Media and Profiles.
  */
 
-const IMAGEKIT_ID = "HakoImage";
-
-interface ImageOptions {
-  w?: number;
-  h?: number;
-  f?: string;
-  q?: number;
-}
+const ASSET_DOMAIN = "https://assets.hako.moe";
 
 export const HakoImage = {
   /**
-   * Constructs optimized URLs for ImageKit (Media) or returns Supabase URLs directly.
+   * Constructs URLs for assets on media bucket or returns Supabase URLs directly.
    */
-  get: function (path: string | null | undefined, options: ImageOptions = {}): string {
+  get: function (path: string | null | undefined): string {
     if (!path) return "";
 
     // 1. If it's already a full URL (Supabase storage), return it as-is
@@ -24,37 +17,23 @@ export const HakoImage = {
       return path;
     }
 
-    // 2. Treat relative path as a media asset for ImageKit origin
+    // 2. Treat relative path as a media asset for media bucket origin
     const cleanPath = path.replace(/^\/+/, '');
-    let baseUrl = `https://ik.imagekit.io/${IMAGEKIT_ID}/${cleanPath}`;
-
-    const tr: string[] = [];
-    if (options.w) tr.push(`w-${options.w}`);
-    if (options.h) tr.push(`h-${options.h}`);
-    if (options.f) tr.push(`f-${options.f}`); // webp, auto
-    if (options.q) tr.push(`q-${options.q}`); // 1-100
-
-    return tr.length > 0 ? `${baseUrl}?tr=${tr.join(',')}` : baseUrl;
+    return `${ASSET_DOMAIN}/${cleanPath}`;
   },
 
   /**
-   * Helper for covers using dynamic ImageKit transforms.
+   * Helper for covers mapping to pre-generated variants in media bucket: /covers/{id}/{size}.webp
    */
   getCover: function (id: number | string, size: 'small' | 'medium' | 'large' = 'medium'): string {
-    const widths = {
-      small: 120,
-      medium: 240,
-      large: 480
-    };
-    const width = widths[size] || widths.medium;
-    return this.get(`covers/${id}.webp`, { w: width, f: 'webp' });
+    return `${ASSET_DOMAIN}/covers/${id}/${size}.webp`;
   },
 
   /**
-   * Helper for high-res banners using dynamic ImageKit transforms.
+   * Helper for banners mapping to pre-generated banner in media bucket: /banners/{id}.webp
    */
-  getBanner: function (id: number | string, width: number = 1920): string {
-    return this.get(`banners/${id}.webp`, { w: width, f: 'webp', q: 80 });
+  getBanner: function (id: number | string): string {
+    return `${ASSET_DOMAIN}/banners/${id}.webp`;
   },
 
   /**

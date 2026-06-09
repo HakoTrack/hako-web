@@ -8,7 +8,7 @@
   let heroUrl = "";
 
   onMount(() => {
-    heroUrl = HakoImage.get("landing.jpg", { f: "avif" });
+    heroUrl = HakoImage.get("global/landing.webp");
     const img = new Image();
     img.src = heroUrl;
     img.onload = () => {

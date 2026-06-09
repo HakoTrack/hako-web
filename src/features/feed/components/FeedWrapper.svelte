@@ -62,7 +62,7 @@
         // Bulk load metadata for list_update posts
         const mediaIds = newPosts
           .filter((p) => p.post_type === "list_update" && p.metadata?.media_id)
-          .map((p) => Number(p.metadata.media_id));
+          .map((p) => Number(p.metadata!.media_id));
 
         if (mediaIds.length > 0) {
           const newMetadata = await fetchMediaSummaries(mediaIds);

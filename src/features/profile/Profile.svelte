@@ -8,7 +8,7 @@
   import Stats from "./components/Stats.svelte";
   import Overview from "./components/Overview.svelte";
   import { ROLES } from "../../shared/utils/constants";
-  import { onMount, untrack } from "svelte";
+  import { untrack } from "svelte";
 
   let {
     currentPath,
@@ -23,19 +23,10 @@
   let username = $derived(currentPath.split("/")[2]);
   let profileData: Profile | null = $state(null);
   let metadataCache: Record<string, Record<string, any>> = $state({});
-  let currentActiveTab = $state(activeTab);
-
-  onMount(() => {
-    console.log("[Profile] Component MOUNTED. user:", username);
-    return () => console.log("[Profile] Component UNMOUNTED. user:", username);
-  });
+  let currentActiveTab = $derived(activeTab);
 
   // Sync state when props change, but MERGE to avoid losing data
   $effect(() => {
-    console.log(
-      "[Profile] propProfileData changed:",
-      propProfileData?.username,
-    );
     const newData = propProfileData;
 
     untrack(() => {
@@ -57,7 +48,6 @@
   });
 
   $effect(() => {
-    console.log("[Profile] activeTab changed:", activeTab);
     currentActiveTab = activeTab;
   });
 
@@ -70,16 +60,7 @@
   let lastFetchedId = $state<string | null>(null);
 
   $effect(() => {
-    const currentId = profileData?.id;
     const isFetching = isFetchingLists;
-    console.log(
-      "[Profile] Data effect triggered. isFetching:",
-      isFetching,
-      "profileData:",
-      currentId,
-      "lastFetchedId:",
-      lastFetchedId,
-    );
 
     if (
       propProfileData &&
@@ -90,18 +71,12 @@
         profileData = propProfileData;
 
         const hasLists = Object.keys(profileData?.mediaLists || {}).length > 0;
-        console.log("[Profile] Checking lists. hasLists:", hasLists);
 
         if (!hasLists && profileData) {
-          console.log(
-            "[Profile] Lists missing, starting fetch for:",
-            profileData.id,
-          );
           isFetchingLists = true;
           isMetadataLoading = true;
           lastFetchedId = profileData.id;
           ProfileService.getMediaLists(profileData.id).then((lists) => {
-            console.log("[Profile] Media lists fetched:", Object.keys(lists));
             if (profileData) {
               profileData = { ...profileData, mediaLists: lists };
 
@@ -110,22 +85,16 @@
               let loadedTypes = 0;
 
               if (totalTypes === 0) {
-                console.log("[Profile] No lists found for user");
                 isMetadataLoading = false;
               }
 
               Object.entries(lists).forEach(([type, items]) => {
                 const ids = (items as any[]).map((i: any) => i.media_id);
-                console.log(
-                  `[Profile] Fetching metadata for ${type}: ${ids.length} items`,
-                );
                 if (ids.length > 0) {
                   fetchMediaSummaryWithGenres(ids).then((m) => {
-                    console.log(`[Profile] Metadata fetched for ${type}`);
                     metadataCache[type] = m;
                     loadedTypes++;
                     if (loadedTypes === totalTypes) {
-                      console.log("[Profile] All metadata loaded");
                       isMetadataLoading = false;
                     }
                   });
@@ -186,11 +155,7 @@
 <div id="profile-container" class="relative">
   <div class="fixed top-0 left-0 w-full h-100 -z-20 mt-15 overflow-hidden">
     <img
-      src={HakoImage.get(profileData?.banner_url, {
-        w: 1200,
-        f: "webp",
-        q: 80,
-      })}
+      src={HakoImage.get(profileData?.banner_url)}
       alt="Banner"
       class="object-top w-full h-full object-cover bg-[#151f2e]"
     />
@@ -210,7 +175,7 @@
       >
         <div class="relative group">
           <img
-            src={HakoImage.get(profileData?.avatar_url, { w: 200, f: "webp" })}
+            src={HakoImage.get(profileData?.avatar_url)}
             alt="Avatar"
             class="w-32 h-32 md:w-40 md:h-40 rounded-xl border-4 border-[#0b1622] shadow-2xl object-cover bg-[#151f2e]"
           />

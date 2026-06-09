@@ -20,18 +20,12 @@
   } from "$components";
 
   let { entry: initialEntry } = $props<{ entry: any }>();
-  let entry = $state(ui.modalData?.entry || initialEntry);
+  let entry = $derived(ui.modalData?.entry || initialEntry);
   const displayTitle = $derived(
     getDisplayTitle(entry?.rawMetadata?.title, settings.titlePreference) ||
       entry?.title ||
       "",
   );
-
-  $effect(() => {
-    if (ui.modalData?.entry) {
-      entry = ui.modalData.entry;
-    }
-  });
 
   const mediaType = $derived(entry?.type || "anime");
   let vibes = $derived(

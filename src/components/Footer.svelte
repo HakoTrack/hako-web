@@ -6,12 +6,15 @@
       HAKO
     </div>
     <div class="flex space-x-8 text-sm font-medium text-(--c0)">
-      <a href="#" class="hover:text-accent">Donate</a>
+      <a href="https://github.com/HakoTrack" class="hover:text-accent">Donate</a
+      >
       <a href="https://github.com/HakoTrack" class="hover:text-accent">GitHub</a
       >
-      <a href="#" class="hover:text-accent">Terms</a>
-      <a href="#" class="hover:text-accent">Staff</a>
-      <a href="#" class="hover:text-accent">Contact</a>
+      <a href="https://github.com/HakoTrack" class="hover:text-accent">Terms</a>
+      <a href="https://github.com/HakoTrack" class="hover:text-accent">Staff</a>
+      <a href="https://github.com/HakoTrack" class="hover:text-accent"
+        >Contact</a
+      >
     </div>
   </div>
 </footer>
