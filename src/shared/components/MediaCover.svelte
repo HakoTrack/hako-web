@@ -93,8 +93,7 @@
       onload={() => (loaded = true)}
       onerror={(e) => {
         const img = e.target as HTMLImageElement;
-        img.src =
-          "https://ik.imagekit.io/HakoImage/covers/placeholder.webp?tr=w-240,f=webp";
+        img.src = HakoImage.get("global/placeholderCover.webp");
       }}
       onclick={handleOpenEditor}
     />
