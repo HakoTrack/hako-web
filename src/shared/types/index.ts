@@ -77,6 +77,12 @@ export interface ListEntry {
   profileId: string;
 }
 
+export type QuickUpdateItem = ListEntry & {
+  metadata: Media;
+  media_type: 'anime' | 'manga' | 'light_novel';
+  updated_at: string;
+};
+
 // --- Zod Schemas & Inferred Types ---
 export const PostMetadataSchema = z.object({
   media_id: z.number().optional(),

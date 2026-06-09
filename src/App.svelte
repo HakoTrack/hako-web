@@ -10,8 +10,11 @@
   import { openModal } from "./core/ui.svelte.ts";
   import { routes } from "./routes";
   import { Toasts } from "./shared/components";
+  import SearchOverlay from "./components/SearchOverlay.svelte";
+  import QuickUpdateOverlay from "./components/QuickUpdateOverlay.svelte";
   import init from "$wasm/hako_wasm";
   import { wasmInitialized } from "./core/wasm-init";
+  import { ui } from "./core/ui.svelte";
 
   let user = $state(null);
   let profile = $state(null);
@@ -88,6 +91,8 @@
 
   // Updated routing logic to handle /user/ paths
   function handleRouting() {
+    ui.isSearchOpen = false;
+    ui.isQuickUpdateOpen = false;
     const lastPath = currentPath;
     currentPath = window.location.pathname;
     const pathParts = currentPath.split("/").filter((p) => p);
@@ -163,11 +168,40 @@
   let activeRoute = $derived(
     routes.find((r) => currentPath.startsWith(r.path)),
   );
+
+  function handleSearchSelect(media) {
+    const fmt = media.format?.toLowerCase();
+    const type =
+      fmt === "manga" || fmt === "one_shot"
+        ? "manga"
+        : fmt === "novel"
+          ? "lightnovel"
+          : "anime";
+    ui.searchQuery = "";
+    ui.searchResults = [];
+    ui.isSearchOpen = false;
+    window.history.pushState({}, "", `/${type}/${media.media_id}`);
+    handleRouting();
+  }
 </script>
 
 <svelte:window on:show-login={() => openModal("login")} />
 
 <div class="min-h-screen flex flex-col">
+  <SearchOverlay
+    isOpen={ui.isSearchOpen}
+    isSearching={ui.isSearching}
+    query={ui.searchQuery}
+    results={ui.searchResults}
+    onClose={() => (ui.isSearchOpen = false)}
+    onSelect={handleSearchSelect}
+  />
+  <QuickUpdateOverlay
+    isOpen={ui.isQuickUpdateOpen}
+    isLoading={ui.isQuickUpdateLoading}
+    items={ui.quickUpdateItems}
+    onClose={() => (ui.isQuickUpdateOpen = false)}
+  />
   <Toasts />
   <ModalWrapper />
   {#if !isSignup}

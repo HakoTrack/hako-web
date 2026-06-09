@@ -110,7 +110,7 @@ export const ListService = {
 
     await ActivityOrchestrator.handleListUpdate(
       profileId,
-      { ...dbUpdates, total, media_id: mediaId, status: dbUpdates.status },
+      { ...dbUpdates, total, media_id: mediaId, status: dbUpdates.status, metadata: oldEntry.metadata },
       oldEntry,
       type
     );

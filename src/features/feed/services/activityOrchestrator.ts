@@ -21,11 +21,11 @@ export const ActivityOrchestrator = {
    */
   async handleListUpdate(
     userId: string,
-    entry: any, // Changed to any to support merged metadata
+    entry: any,
     oldEntry: any | null,
     mediaType: string
   ) {
-    console.log("DEBUG: handleListUpdate called", { userId, progress: entry.progress, oldProgress: oldEntry?.progress });
+    console.log("DEBUG [ActivityOrchestrator]: handleListUpdate called", { userId, entry, oldEntry });
 
     // 1. Log heatmap activity for the number of episodes/chapters progressed
     const oldProgress = oldEntry?.progress || 0;
@@ -33,12 +33,9 @@ export const ActivityOrchestrator = {
 
     if (newProgress > oldProgress) {
       const progressDelta = newProgress - oldProgress;
-      console.log(`DEBUG: Logging ${progressDelta} activities for progress increase`);
       for (let i = 0; i < progressDelta; i++) {
         await ActivityService.trackActivity(userId);
       }
-    } else {
-      console.log("DEBUG: Skipping activity log (no progress increase detected)");
     }
 
     // 2. Debounce feed post creation to batch updates
@@ -49,43 +46,43 @@ export const ActivityOrchestrator = {
     }
 
     const timer = setTimeout(async () => {
-      console.log("DEBUG: Debounce timer fired for update", key);
+      console.log("DEBUG [ActivityOrchestrator]: Debounce timer fired", key);
       const update = pendingPosts.get(key);
       if (!update) {
-        console.log("DEBUG: No update found in pendingPosts for key", key);
+        console.log("DEBUG [ActivityOrchestrator]: No update found for key", key);
         return;
       }
 
       const { entry: finalEntry, mediaType: finalMediaType, oldEntry: originalOldEntry } = update;
 
-      console.log("DEBUG: Attempting to create feed post for", finalEntry.media_id);
+      console.log("DEBUG [ActivityOrchestrator]: Attempting feed post creation", {
+        media_id: finalEntry.media_id,
+        shouldCreate: this.shouldCreateFeedPost(finalEntry, originalOldEntry)
+      });
+
       // Finalize post
       if (this.shouldCreateFeedPost(finalEntry, originalOldEntry)) {
-        console.log("DEBUG: shouldCreateFeedPost returned true, creating post");
         await FeedService.createListUpdatePost(
           userId,
           userId,
           finalEntry.media_id,
-          getDisplayTitle(finalEntry.rawMetadata?.title || { romaji: finalEntry.title }, settings.titlePreference),
+          getDisplayTitle(finalEntry.metadata?.title || finalEntry.rawMetadata?.title || { romaji: finalEntry.title }, settings.titlePreference),
           finalEntry.progress || 0,
           finalEntry.total ?? null,
           finalMediaType,
           finalEntry.status || "updated"
         );
-      } else {
-        console.log("DEBUG: shouldCreateFeedPost returned false, skipping post");
       }
-
       pendingPosts.delete(key);
-    }, 3000); // 3 second debounce window
+    }, 3000);
 
     // Update pending post state
     pendingPosts.set(key, {
       userId,
-      entry,
+      entry: JSON.parse(JSON.stringify(entry)),
       mediaType,
       timer,
-      oldEntry: pendingPosts.has(key) ? pendingPosts.get(key)!.oldEntry : oldEntry
+      oldEntry: pendingPosts.has(key) ? pendingPosts.get(key)!.oldEntry : JSON.parse(JSON.stringify(oldEntry))
     });
   },
 
@@ -93,15 +90,26 @@ export const ActivityOrchestrator = {
    * Logic to determine if a list update warrants a feed post.
    */
   shouldCreateFeedPost(newEntry: any, oldEntry: any | null): boolean {
+    console.log("DEBUG [ActivityOrchestrator]: shouldCreateFeedPost", { newEntry, oldEntry });
     if (!oldEntry) return true; // New list entry, always post
 
-    // Status changes that warrant a post:
-    // planning, current (watching/reading), paused, dropped
+    // Safely access and ensure progress is treated as a number
+    const newProgress = Number(newEntry.progress || 0);
+    const oldProgress = Number(oldEntry.progress || 0);
+
+    // Status changes that warrant a post
     const statusChanged = newEntry.status !== oldEntry.status;
-    const progressChanged = newEntry.progress !== oldEntry.progress;
+    const progressChanged = newProgress !== oldProgress;
+
+    console.log("DEBUG [ActivityOrchestrator]: shouldCreateFeedPost evaluation", {
+      statusChanged,
+      progressChanged,
+      newProgress,
+      oldProgress
+    });
 
     // We want to post for:
-    // 1. Status changes (including planning, watching, paused, dropped)
+    // 1. Status changes
     // 2. Progress updates
     if (statusChanged || progressChanged) return true;
 

@@ -58,7 +58,7 @@ export default defineConfig({
             options: {
               cacheName: 'r2-image-cache-v4',
               expiration: {
-                maxEntries: 1000,
+                maxEntries: 2000,
                 maxAgeSeconds: 30 * 24 * 60 * 60, // 30 days
               },
             },

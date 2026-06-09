@@ -4,12 +4,14 @@
     placeholder = "Search...",
     label = "",
     oninput,
+    onfocus,
     inputRef = $bindable(null),
   } = $props<{
     value?: string;
     placeholder?: string;
     label?: string;
     oninput?: (e: Event) => void;
+    onfocus?: (e: FocusEvent) => void;
     inputRef?: HTMLInputElement | null;
   }>();
 
@@ -47,6 +49,7 @@
       {placeholder}
       {value}
       oninput={handleInput}
+      {onfocus}
       class="w-full h-10 bg-(--surface-dim) border border-(--c8) rounded-xl pl-10 pr-10 text-sm text-(--hako-fg) placeholder:text-slate-600 focus:border-(--hako-accent) outline-none transition-all"
     />
     {#if value}

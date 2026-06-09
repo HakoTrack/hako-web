@@ -267,7 +267,7 @@
       <div class="flex items-start gap-5">
         <!-- svelte-ignore a11y_no_noninteractive_element_interactions -->
         <!-- svelte-ignore a11y_click_events_have_key_events -->
-        <div class="shrink-0">
+        <div class="shrink-0 w-22">
           <MediaCover
             mediaId={metadata.media_id ?? 0}
             type={metadata.media_type ?? "anime"}

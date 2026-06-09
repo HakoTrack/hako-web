@@ -72,6 +72,11 @@ export const CacheService = {
     return db.delete('media_metadata', id);
   },
 
+  async getAllMedia() {
+    const db = await dbPromise;
+    return db.getAll('media_metadata');
+  },
+
   async getMediaRelations(id: string) {
     const db = await dbPromise;
     return db.get('media_relations', id);

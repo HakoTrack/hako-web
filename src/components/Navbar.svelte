@@ -7,45 +7,29 @@
   import SearchInput from "../shared/components/SearchInput.svelte";
   import { MediaService } from "../features/media/services/mediaService";
   import type { Media } from "../shared/types/index";
+  import { ui } from "../core/ui.svelte";
 
   let { user = null, profile = null } = $props();
 
   let username = $derived(profile?.username || "user");
   let searchInputRef = $state<HTMLInputElement | null>(null);
-  let containerRef = $state<HTMLElement | null>(null);
-  let searchQuery = $state("");
-  let searchResults = $state<Media[]>([]);
-  let isSearching = $state(false);
-
-  function handleClickOutside(event: MouseEvent) {
-    if (containerRef && !containerRef.contains(event.target as Node)) {
-      searchResults = [];
-    }
-  }
-
-  onMount(() => {
-    window.addEventListener("click", handleClickOutside);
-  });
-
-  onDestroy(() => {
-    window.removeEventListener("click", handleClickOutside);
-  });
 
   let searchTimeout: ReturnType<typeof setTimeout>;
 
   $effect(() => {
     clearTimeout(searchTimeout);
-    if (searchQuery.length < 2) {
-      searchResults = [];
+    if (ui.searchQuery.length < 2) {
+      ui.searchResults = [];
+      ui.isSearching = false;
       return;
     }
+    ui.isSearching = true;
     searchTimeout = setTimeout(async () => {
-      isSearching = true;
-      const result = await MediaService.searchMedia(searchQuery);
+      const result = await MediaService.searchMedia(ui.searchQuery);
       if (result.success) {
-        searchResults = result.data;
+        ui.searchResults = result.data;
       }
-      isSearching = false;
+      ui.isSearching = false;
     }, 300);
   });
 
@@ -57,12 +41,20 @@
     ) {
       e.preventDefault();
       searchInputRef?.focus();
+      ui.isSearchOpen = true;
+    }
+    if (e.key === "Escape") {
+      if (ui.activeModal) return;
+      ui.isSearchOpen = false;
+      ui.isQuickUpdateOpen = false;
+      searchInputRef?.blur();
     }
   }
 
   function handleResultClick(mediaId: number, mediaType: string) {
-    searchQuery = "";
-    searchResults = [];
+    ui.searchQuery = "";
+    ui.searchResults = [];
+    ui.isSearchOpen = false;
     navigate(`/${mediaType}/${mediaId}`);
   }
 
@@ -202,44 +194,39 @@
       </div>
     </div>
     <div class="flex items-center space-x-4">
-      <div bind:this={containerRef} class="relative hidden sm:block w-64">
+      <div class="relative hidden sm:block w-64">
         <SearchInput
           placeholder="Search media..."
           bind:inputRef={searchInputRef}
-          bind:value={searchQuery}
+          bind:value={ui.searchQuery}
+          onfocus={() => {
+            ui.isSearchOpen = true;
+            ui.isQuickUpdateOpen = false;
+          }}
+          oninput={() => {
+            ui.isSearchOpen = true;
+            ui.isQuickUpdateOpen = false;
+          }}
         />
-
-        {#if searchResults.length > 0}
-          <div
-            class="absolute z-10 w-full mt-2 py-2 p-2 bg-(--surface) border border-(--c8) rounded-xl shadow-2xl animate-in fade-in zoom-in-95 duration-100"
-          >
-            {#each searchResults as media}
-              <button
-                type="button"
-                onclick={() => {
-                  const fmt = media.format?.toLowerCase();
-                  const type =
-                    fmt === "manga" || fmt === "one_shot"
-                      ? "manga"
-                      : fmt === "novel"
-                        ? "lightnovel"
-                        : "anime";
-                  handleResultClick(media.media_id, type);
-                }}
-                class="w-full text-left px-4 py-2.5 rounded-xl text-sm text-(--hako-fg) hover:bg-(--surface-elevated) transition-colors flex items-center gap-3"
-              >
-                <img
-                  src={HakoImage.getCover(media.media_id, "small")}
-                  alt={media.title.romaji}
-                  class="w-6 h-9 object-cover rounded shadow-sm"
-                />
-                <span class="truncate">{media.title.romaji}</span>
-              </button>
-            {/each}
-          </div>
-        {/if}
       </div>
       <div class="flex items-center space-x-3">
+        {#if user}
+          <button
+            class="w-8 h-8 flex items-center justify-center rounded-lg hover:bg-slate-800 transition-colors {ui.isQuickUpdateOpen
+              ? 'text-accent'
+              : 'text-slate-400'}"
+            onclick={() => {
+              ui.isQuickUpdateOpen = !ui.isQuickUpdateOpen;
+              if (ui.isQuickUpdateOpen) {
+                ui.isSearchOpen = false;
+                ui.loadQuickUpdateItems();
+              }
+            }}
+            title="Quick Update"
+          >
+            <i class="fa-solid fa-list text-lg"></i>
+          </button>
+        {/if}
         <i class="fa-solid fa-bell cursor-pointer hover:text-accent"></i>
         {#if user}
           <Dropdown items={dropdownItems}>
