@@ -55,12 +55,11 @@ export default defineConfig({
             urlPattern: /^https:\/\/assets\.hako\.moe\/.*\.(?:png|jpg|jpeg|svg|gif|webp|avif)$/,
             handler: 'CacheFirst',
             options: {
-              cacheName: 'assets-image-cache',
+              cacheName: 'asset-image-cache-v2',
               expiration: {
                 maxEntries: 1000,
                 maxAgeSeconds: 30 * 24 * 60 * 60, // 30 days
               },
-              networkTimeoutSeconds: 5,
               // Required for CORS to work, otherwise responses will be opaque
               fetchOptions: {
                 mode: 'cors',
@@ -73,7 +72,7 @@ export default defineConfig({
             urlPattern: /.*\.(?:png|jpg|jpeg|svg|gif|webp|avif)$/,
             handler: 'CacheFirst',
             options: {
-              cacheName: 'r2-image-cache-v2',
+              cacheName: 'image-cache-v2',
               expiration: {
                 maxEntries: 1000,
                 maxAgeSeconds: 30 * 24 * 60 * 60, // 30 days
