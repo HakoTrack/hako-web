@@ -49,6 +49,7 @@ export default defineConfig({
     VitePWA({
       registerType: 'autoUpdate',
       workbox: {
+        navigateFallback: 'index.html',
         runtimeCaching: [
           {
             // Simple CacheFirst for R2 assets
