@@ -34,7 +34,3 @@ src-wasm/pkg/
 tools/
 new_tools/
 plans/
-
-# Temp
-src/features/profile/components/MediaListDefinedHeights.svelte
-src/features/profile/components/MediaListOld.svelte

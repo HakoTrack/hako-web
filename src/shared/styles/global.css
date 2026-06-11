@@ -89,22 +89,6 @@ body {
   background-color: var(--surface);
 }
 
-.table-header {
-  background-color: var(--surface);
-  border-radius: 0.75rem 0.75rem 0 0;
-}
-
-.table-row {
-  background-color: var(--surface);
-  border-bottom: 1px solid var(--surface-elevated);
-}
-
-.table-row-last {
-  background: var(--surface);
-  border-radius: 0 0 0.75rem 0.75rem;
-  border-bottom: none;
-}
-
 .text-accent {
   color: var(--hako-accent);
 }
