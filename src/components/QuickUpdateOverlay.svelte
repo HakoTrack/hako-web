@@ -1,6 +1,6 @@
 <script lang="ts">
   import { HakoImage } from "../shared/utils/images";
-  import type { Media, QuickUpdateItem } from "../shared/types/index";
+  import type { QuickUpdateItem } from "../shared/types/index";
   import { fade, slide } from "svelte/transition";
   import { settings, getDisplayTitle } from "../core/settings.svelte";
   import { ui, openQuickEditor } from "../core/ui.svelte";

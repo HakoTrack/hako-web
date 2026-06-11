@@ -216,7 +216,7 @@
       <div class="relative -mt-20 flex items-end space-x-6 pb-8">
         <!-- Cover Skeleton -->
         <div
-          class="w-40 h-56 rounded-xl border-4 border-[#0b1622] bg-[#151f2e] animate-pulse shadow-2xl shrink-0"
+          class="w-40 lg:w-50 aspect-17/23 rounded bg-(--surface-elevated) animate-pulse shadow-2xl shrink-0"
         ></div>
 
         <!-- Header Info Skeleton -->
@@ -334,7 +334,7 @@
           mediaId={media.media_id}
           {type}
           size="large"
-          class="rounded-xl border-4 border-[#0b1622] shadow-2xl bg-[#151f2e]"
+          class="rounded shadow-2xl bg-(--surface) lg:w-50 shrink-0"
           showTooltip={false}
           alt={displayTitle}
         />
@@ -377,7 +377,7 @@
                   onclick={() => (currentActiveTab = tab.id)}
                   class="flex items-center px-4 py-3 text-sm font-medium w-full transition-all border-l-4 outline-none focus:ring-0 {currentActiveTab ===
                   tab.id
-                    ? 'text-(--hako-fg) bg-slate-800/50 border-accent'
+                    ? 'text-(--hako-fg) bg-(--surface-elevated) border-accent'
                     : 'text-slate-400 hover:text-(--hako-fg) border-transparent'} "
                 >
                   <i class="fa-solid {tab.icon} mr-3"></i>

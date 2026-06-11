@@ -56,7 +56,7 @@
         lastType = type;
         wasmEngine = null;
         isWasmReady = false;
-        displayLimit = 20;
+        displayLimit = 100;
       }
 
       listDataEntries = initialListData;
@@ -119,7 +119,7 @@
   $effect(() => {
     if (!isReallyLoading && displayLimit < listDataEntries.length) {
       const timer = setTimeout(() => {
-        displayLimit += 50;
+        displayLimit += 100;
       }, 50);
       return () => clearTimeout(timer);
     }

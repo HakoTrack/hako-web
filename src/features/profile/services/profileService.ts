@@ -7,12 +7,16 @@ import { CacheService } from '../../../core/cache';
 async function fetchProfile(column: string, value: string): Promise<Profile | null> {
   const { data, error } = await supabase
     .from('profiles')
-    .select('id, username, about_me, avatar_url, banner_url, join_date, quote, role, updated_at')
+    .select('id, username, about_me, avatar_url, banner_url, join_date, quote, updated_at, user_roles(role)')
     .eq(column, value)
     .single();
 
   if (error || !data) return null;
-  const profile = { ...data, mediaLists: {} } as Profile;
+  const profile = {
+    ...data,
+    role: (data.user_roles as any)?.[0]?.role || 'user',
+    mediaLists: {}
+  } as Profile;
 
   const lastSync = new Date().toISOString();
   await CacheService.setProfile(profile.id, profile, lastSync);

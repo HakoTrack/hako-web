@@ -65,7 +65,7 @@
 
   {#if isOpen}
     <div
-      class="absolute z-20 w-full p-2 mt-1 bg-(--surface) border border-(--c8) rounded-xl shadow-2xl py-1"
+      class="absolute z-20 w-full p-2 mt-1 bg-(--surface) border border-(--c8) rounded-xl shadow-2xl py-1 max-h-60 overflow-y-auto"
     >
       {#each items as item}
         <button

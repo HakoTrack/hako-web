@@ -31,16 +31,20 @@
   }: Props = $props();
 
   let isVisible = $state(false);
-  let triggerRef = $state<HTMLElement | null>(null);
+  let wrapperRef = $state<HTMLElement | null>(null);
   let tooltipRef = $state<HTMLElement | null>(null);
   let timeoutId: any;
 
   async function updatePosition() {
-    if (isVisible && triggerRef && tooltipRef) {
-      const { x, y } = await computePosition(triggerRef, tooltipRef, {
+    if (isVisible && wrapperRef && tooltipRef) {
+      // Use the first child as the reference to anchor precisely to the content
+      const referenceElement =
+        (wrapperRef.firstElementChild as HTMLElement) || wrapperRef;
+
+      const { x, y } = await computePosition(referenceElement, tooltipRef, {
         placement,
         strategy: "fixed",
-        middleware: [offset(offsetValue), flip(), shift()],
+        middleware: [offset(offsetValue), flip(), shift({ padding: 5 })],
       });
 
       if (tooltipRef) {
@@ -81,17 +85,39 @@
       };
     }
   });
+
+  // Attach listeners to the child element instead of the wrapper
+  // This ensures the hover area matches the content (the media cover)
+  $effect(() => {
+    const el = wrapperRef?.firstElementChild as HTMLElement;
+    if (el) {
+      el.addEventListener("mouseenter", show);
+      el.addEventListener("mouseleave", hide);
+      el.addEventListener("focusin", show);
+      el.addEventListener("focusout", hide);
+      return () => {
+        el.removeEventListener("mouseenter", show);
+        el.removeEventListener("mouseleave", hide);
+        el.removeEventListener("focusin", show);
+        el.removeEventListener("focusout", hide);
+      };
+    } else if (wrapperRef) {
+      // Fallback to wrapper if no child is present
+      wrapperRef.addEventListener("mouseenter", show);
+      wrapperRef.addEventListener("mouseleave", hide);
+      return () => {
+        wrapperRef?.removeEventListener("mouseenter", show);
+        wrapperRef?.removeEventListener("mouseleave", hide);
+      };
+    }
+  });
 </script>
 
 <!-- svelte-ignore a11y_no_static_element_interactions -->
 <div
-  bind:this={triggerRef}
+  bind:this={wrapperRef}
   class="flex shrink-0 {className}"
   {style}
-  onmouseenter={show}
-  onmouseleave={hide}
-  onfocusin={show}
-  onfocusout={hide}
   aria-haspopup="true"
 >
   {@render children()}

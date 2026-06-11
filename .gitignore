@@ -32,3 +32,5 @@ src-wasm/pkg/
 
 # Misc
 tools/
+new_tools/
+plans/
