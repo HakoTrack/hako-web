@@ -48,26 +48,22 @@
     });
   };
 
-  // Robust measurement using ResizeObserver to catch layout shifts from siblings
+  // Robust measurement using ResizeObserver
   $effect(() => {
     if (!enabled || !containerEl) return;
 
     measure();
 
-    // Watch the document body for any layout changes that might push this component down
-    const bodyObserver = new ResizeObserver(measure);
-    bodyObserver.observe(document.body);
-
+    // We only need to observe the container itself for size/visibility changes.
+    // Layout shifts from siblings will be caught by the window resize listener
+    // or can be triggered manually if needed. Observing document.body is too expensive.
     const containerObserver = new ResizeObserver(measure);
     containerObserver.observe(containerEl);
 
-    window.addEventListener("scroll", measure, { passive: true });
     window.addEventListener("resize", measure);
 
     return () => {
-      bodyObserver.disconnect();
       containerObserver.disconnect();
-      window.removeEventListener("scroll", measure);
       window.removeEventListener("resize", measure);
     };
   });

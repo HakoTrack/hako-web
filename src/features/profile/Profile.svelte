@@ -22,7 +22,8 @@
 
   let username = $derived(currentPath.split("/")[2]);
   let profileData: Profile | null = $state(null);
-  let metadataCache: Record<string, Record<string, any>> = $state({});
+  // CRITICAL: Use $state.raw for metadata to avoid proxying thousands of objects
+  let metadataCache: Record<string, Record<string, any>> = $state.raw({});
   let currentActiveTab = $derived(activeTab);
 
   // Sync state when props change, but MERGE to avoid losing data
@@ -82,28 +83,31 @@
 
               const types = Object.keys(lists);
               const totalTypes = types.length;
-              let loadedTypes = 0;
 
               if (totalTypes === 0) {
                 isMetadataLoading = false;
               }
 
-              Object.entries(lists).forEach(([type, items]) => {
-                const ids = (items as any[]).map((i: any) => i.media_id);
-                if (ids.length > 0) {
-                  fetchMediaSummaryWithGenres(ids).then((m) => {
-                    metadataCache[type] = m;
-                    loadedTypes++;
-                    if (loadedTypes === totalTypes) {
-                      isMetadataLoading = false;
-                    }
-                  });
-                } else {
-                  loadedTypes++;
-                  if (loadedTypes === totalTypes) {
-                    isMetadataLoading = false;
+              const pendingMetadata: Record<string, Record<string, any>> = {};
+
+              const fetchPromises = Object.entries(lists).map(
+                ([type, items]) => {
+                  const ids = (items as any[]).map((i: any) => i.media_id);
+                  if (ids.length > 0) {
+                    return fetchMediaSummaryWithGenres(ids).then((m) => {
+                      pendingMetadata[type] = m;
+                    });
                   }
-                }
+                  return Promise.resolve();
+                },
+              );
+
+              Promise.all(fetchPromises).then(() => {
+                untrack(() => {
+                  // Use raw assignment to update metadataCache without tracking overhead
+                  metadataCache = { ...metadataCache, ...pendingMetadata };
+                  isMetadataLoading = false;
+                });
               });
             }
             isFetchingLists = false;
@@ -142,13 +146,15 @@
   );
 
   let flatMetadata = $derived.by(() => {
-    return Object.values(metadataCache).reduce(
-      (acc: Record<string, any>, curr: any) => ({
-        ...acc,
-        ...(curr || {}),
-      }),
-      {} as Record<string, any>,
-    );
+    const values = Object.values(metadataCache);
+    if (values.length === 0) return {};
+    if (values.length === 1) return values[0] || {};
+
+    const target = {};
+    for (const m of values) {
+      if (m) Object.assign(target, m);
+    }
+    return target;
   });
 </script>
 

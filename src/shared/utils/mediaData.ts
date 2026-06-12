@@ -92,39 +92,57 @@ export async function fetchUserListEntry(profileId: string, mediaId: number, typ
  * Optimized fetch for LISTS/COVERS.
  * Returns only ID and Titles to minimize payload.
  */
-export async function fetchMediaSummaries(ids: number[]): Promise<Record<string, Media>> {
+export async function fetchMediaSummaries(
+  ids: number[],
+): Promise<Record<string, Media>> {
   if (!ids || ids.length === 0) return {};
 
   const result: Record<string, any> = {};
   const uncachedIds: number[] = [];
 
-  for (const id of ids) {
-    const cached = await CacheService.getMedia(id.toString());
-    if (cached) {
-      result[id.toString()] = cached;
-    } else {
-      uncachedIds.push(id);
-    }
+  // Chunked cache lookup to avoid microtask queue congestion
+  const CACHE_CHUNK_SIZE = 1000;
+  for (let i = 0; i < ids.length; i += CACHE_CHUNK_SIZE) {
+    const chunk = ids.slice(i, i + CACHE_CHUNK_SIZE);
+    const cachedResults = await Promise.all(
+      chunk.map((id) => CacheService.getMedia(id.toString())),
+    );
+
+    chunk.forEach((id, index) => {
+      const cached = cachedResults[index];
+      if (cached) {
+        result[id.toString()] = cached;
+      } else {
+        uncachedIds.push(id);
+      }
+    });
   }
 
   if (uncachedIds.length > 0) {
-    const CHUNK_SIZE = 200;
+    const CHUNK_SIZE = 1000; // Increased chunk size
     for (let i = 0; i < uncachedIds.length; i += CHUNK_SIZE) {
       const chunk = uncachedIds.slice(i, i + CHUNK_SIZE);
       const { data } = await supabase
-        .from('media')
-        .select('id, title_romaji, title_english, title_native')
-        .in('id', chunk);
+        .from("media")
+        .select("id, title_romaji, title_english, title_native")
+        .in("id", chunk);
 
       if (data) {
+        // Prepare bulk cache updates
+        const cachePromises: Promise<any>[] = [];
         for (const item of data) {
           const summary = {
             media_id: item.id,
-            title: { romaji: item.title_romaji, english: item.title_english, native: item.title_native }
+            title: {
+              romaji: item.title_romaji,
+              english: item.title_english,
+              native: item.title_native,
+            },
           };
           result[item.id.toString()] = summary;
-          await CacheService.setMedia(item.id.toString(), summary);
+          cachePromises.push(CacheService.setMedia(item.id.toString(), summary));
         }
+        await Promise.all(cachePromises);
       }
     }
   }
@@ -136,50 +154,75 @@ export async function fetchMediaSummaries(ids: number[]): Promise<Record<string,
  * Optimized fetch for LISTS needing GENRES and AFFINITY calculation.
  * Returns Media object with calculation fields populated.
  */
-export async function fetchMediaSummaryWithGenres(ids: number[]): Promise<Record<string, Media>> {
+export async function fetchMediaSummaryWithGenres(
+  ids: number[],
+): Promise<Record<string, Media>> {
   if (!ids || ids.length === 0) return {};
 
   const result: Record<string, any> = {};
   const uncachedIds: number[] = [];
 
-  for (const id of ids) {
-    const cached = await CacheService.getMedia(id.toString());
-    // Only re-fetch if we are missing critical fields that SHOULD be there if it was a summary-with-genres fetch
-    const isGenresSummary = cached && 'genres' in cached && 'episodes' in cached;
+  // Chunked cache lookup to avoid microtask queue congestion
+  const CACHE_CHUNK_SIZE = 1000;
+  for (let i = 0; i < ids.length; i += CACHE_CHUNK_SIZE) {
+    const chunk = ids.slice(i, i + CACHE_CHUNK_SIZE);
+    const cachedResults = await Promise.all(
+      chunk.map((id) => CacheService.getMedia(id.toString())),
+    );
 
-    if (isGenresSummary) {
-      result[id.toString()] = cached;
-    } else {
-      uncachedIds.push(id);
-    }
+    chunk.forEach((id, index) => {
+      const cached = cachedResults[index];
+      const isGenresSummary =
+        cached && "genres" in cached && "episodes" in cached;
+
+      if (isGenresSummary) {
+        result[id.toString()] = cached;
+      } else {
+        uncachedIds.push(id);
+      }
+    });
   }
+
   if (uncachedIds.length > 0) {
-    const CHUNK_SIZE = 200;
+    const CHUNK_SIZE = 1000; // Increased chunk size
     for (let i = 0; i < uncachedIds.length; i += CHUNK_SIZE) {
       const chunk = uncachedIds.slice(i, i + CHUNK_SIZE);
       const { data } = await supabase
-        .from('media')
-        .select('id, title_romaji, title_english, title_native, genres (genre), tags (tag, rank), episodes, chapters, volumes, format, duration, start_year, start_month, start_day')
-        .in('id', chunk);
+        .from("media")
+        .select(
+          "id, title_romaji, title_english, title_native, genres (genre), tags (tag, rank), episodes, chapters, volumes, format, duration, start_year, start_month, start_day",
+        )
+        .in("id", chunk);
 
       if (data) {
+        const cachePromises: Promise<any>[] = [];
         for (const item of data) {
           const summary = {
             media_id: item.id,
-            title: { romaji: item.title_romaji, english: item.title_english, native: item.title_native },
+            title: {
+              romaji: item.title_romaji,
+              english: item.title_english,
+              native: item.title_native,
+            },
             genres: item.genres?.map((g: any) => g.genre) || [],
-            tags: item.tags?.map((t: any) => ({ name: t.tag, rank: t.rank })) || [],
+            tags:
+              item.tags?.map((t: any) => ({ name: t.tag, rank: t.rank })) || [],
             episodes: item.episodes,
             chapters: item.chapters,
             volumes: item.volumes,
             format: item.format,
             duration: item.duration,
-            startDate: { year: item.start_year, month: item.start_month, day: item.start_day },
-            seasonYear: item.start_year
+            startDate: {
+              year: item.start_year,
+              month: item.start_month,
+              day: item.start_day,
+            },
+            seasonYear: item.start_year,
           };
           result[item.id.toString()] = summary;
-          await CacheService.setMedia(item.id.toString(), summary);
+          cachePromises.push(CacheService.setMedia(item.id.toString(), summary));
         }
+        await Promise.all(cachePromises);
       }
     }
   }

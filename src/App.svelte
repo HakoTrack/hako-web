@@ -24,14 +24,9 @@
   let mediaType = $state("anime");
   let authInitialized = $state(false);
   let authSubscription = null;
-  let scrollY = $state(0);
 
   let isLanding = $derived(authInitialized && currentPath === "/" && !user);
   let isSignup = $derived(currentPath === "/signup");
-
-  function handleScroll() {
-    scrollY = window.scrollY;
-  }
 
   $effect(() => {
     // Auth Guard: Redirect to landing if not logged in and not already on landing
@@ -145,7 +140,6 @@
     }
     user = await AuthService.getCurrentUser();
     authInitialized = true;
-    window.addEventListener("scroll", handleScroll);
 
     const { data } = supabase.auth.onAuthStateChange((event, session) => {
       user = session?.user ?? null;
@@ -161,7 +155,6 @@
 
   onDestroy(() => {
     window.removeEventListener("popstate", handleRouting);
-    window.removeEventListener("scroll", handleScroll);
     authSubscription?.unsubscribe();
   });
 
@@ -215,10 +208,7 @@
 
   <main
     id="app-view"
-    class="grow flex flex-col relative z-10 bg-(--hako-bg)"
-    style="margin-bottom: {scrollY > 0
-      ? '160px'
-      : '0px'}; transition: margin-bottom 0.1s ease-out;"
+    class="grow flex flex-col relative z-10 bg-(--hako-bg) pb-40"
   >
     <div class="grow">
       {#if currentPath === "/"}

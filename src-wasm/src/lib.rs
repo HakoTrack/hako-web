@@ -496,7 +496,7 @@ impl ListEngine {
         })
     }
 
-    /// Filters and sorts list items based on a query, sort preference, and status.
+    /// Filters and sorts list items and returns only their media IDs to minimize serialization overhead.
     pub fn filter_and_sort(
         &self,
         query: &str,
@@ -506,7 +506,8 @@ impl ListEngine {
     ) -> Result<JsValue, JsValue> {
         let parsed = parse_query(query);
 
-        let mut results: Vec<(i64, ProcessedItem)> = self
+        // Results tuple: (fuzzy_score, media_id, display_title, updated_at, score, progress)
+        let mut results: Vec<(i64, i32, String, String, f32, i32)> = self
             .items
             .iter()
             .filter(|item| {
@@ -582,50 +583,38 @@ impl ListEngine {
                     }
                 }
 
+                let updated_at = item.updated_at.clone().unwrap_or_else(|| String::from(""));
+                let score = item.score.unwrap_or(-1.0);
+                let progress = item.progress.unwrap_or(-1);
+
                 Some((
                     fuzzy_score,
-                    ProcessedItem {
-                        media_id: item.media_id,
-                        score: item.score,
-                        progress: item.progress,
-                        status: item.status.clone().unwrap_or_else(|| String::from("")),
-                        display_title,
-                        updated_at: item.updated_at.clone().unwrap_or_else(|| String::from("")),
-                        meta: meta.clone(),
-                    },
+                    item.media_id,
+                    display_title,
+                    updated_at,
+                    score,
+                    progress,
                 ))
             })
             .collect();
 
-        // Sort
+        // Sort using the pre-populated tuple values (O(1) comparison)
         results.sort_by(|a, b| {
             if !parsed.free_query.is_empty() && a.0 != b.0 {
                 return b.0.cmp(&a.0);
             }
 
             match sort_by {
-                "Title" => {
-                    a.1.display_title
-                        .to_lowercase()
-                        .cmp(&b.1.display_title.to_lowercase())
-                }
-                "Score" => {
-                    let s_a = a.1.score.unwrap_or(-1.0);
-                    let s_b = b.1.score.unwrap_or(-1.0);
-                    s_b.partial_cmp(&s_a).unwrap_or(std::cmp::Ordering::Equal)
-                }
-                "Progress" => {
-                    let p_a = a.1.progress.unwrap_or(-1);
-                    let p_b = b.1.progress.unwrap_or(-1);
-                    p_b.cmp(&p_a)
-                }
-                "Last Updated" | _ => b.1.updated_at.cmp(&a.1.updated_at),
+                "Title" => a.2.to_lowercase().cmp(&b.2.to_lowercase()),
+                "Score" => b.4.partial_cmp(&a.4).unwrap_or(std::cmp::Ordering::Equal),
+                "Progress" => b.5.cmp(&a.5),
+                "Last Updated" | _ => b.3.cmp(&a.3),
             }
         });
 
-        let final_items: Vec<ProcessedItem> = results.into_iter().map(|r| r.1).collect();
+        let final_ids: Vec<i32> = results.into_iter().map(|r| r.1).collect();
         let serializer = Serializer::new().serialize_maps_as_objects(true);
-        final_items
+        final_ids
             .serialize(&serializer)
             .map_err(|e| JsValue::from_str(&e.to_string()))
     }
@@ -662,7 +651,6 @@ impl ListEngine {
                 let duration = meta.duration.unwrap_or(0);
                 let progress = entry.progress.unwrap_or(0);
                 let episodes = meta.episodes.unwrap_or(0);
-                let genres = &meta.genres;
 
                 if year > 0 {
                     let ys_entry = year_stats.entry(year.to_string()).or_insert(YearStat {
@@ -674,7 +662,7 @@ impl ListEngine {
                 }
 
                 // Genre Stats
-                for genre in genres {
+                for genre in &meta.genres {
                     let stat = genre_stats.entry(genre.clone()).or_insert(GenreStat {
                         completed: 0,
                         total_minutes: 0,
