@@ -97,7 +97,22 @@
   }
 
   function setFilter(status: string) {
+    if (filterStatus === status) return;
     filterStatus = status;
+
+    // Defer scrolling to allow DOM updates to complete without blocking the click handler
+    setTimeout(() => {
+      const container = document.getElementById("media-list-container");
+      if (container) {
+        const firstVisible = container.querySelector("section:not(.hidden)");
+        if (firstVisible) {
+          firstVisible.scrollIntoView({
+            behavior: "smooth",
+            block: "start",
+          });
+        }
+      }
+    }, 0);
   }
 
   function setSort(sort: string) {
@@ -131,13 +146,13 @@
     metadata;
     searchQuery;
     sortBy;
-    filterStatus;
+    // We NO LONGER depend on filterStatus here to keep all categories "Sticky"
     settings.titlePreference;
 
     return wasmEngine.filter_and_sort(
       searchQuery,
       sortBy,
-      filterStatus,
+      "all", // Always get all statuses
       settings.titlePreference,
     );
   });
@@ -153,14 +168,11 @@
     return groups;
   });
 
-  const visibleGroups = $derived.by(() => {
+  // All groups that have items, used for "Sticky" rendering
+  const allGroups = $derived.by(() => {
     if (isReallyLoading || listDataEntries.length === 0) return [];
 
-    const groups = statusGroups.filter(
-      (g) => filterStatus === "all" || g.id === filterStatus,
-    );
-
-    return groups
+    return statusGroups
       .map((group) => {
         const itemsInGroup = groupedItems[group.id] || [];
 
@@ -403,231 +415,242 @@
           </table>
         </div>
       </div>
-    {:else if visibleGroups.length === 0}
+    {:else if allGroups.length === 0}
       <div class="p-10 text-center text-[20px] text-slate-500">
         This box is currently empty... ( ｡_｡)
       </div>
     {:else}
-      {#each visibleGroups as group}
-        <section class="space-y-4">
-          <div class="flex items-center space-x-3 mb-6">
-            <div
-              class="w-1.5 h-6 rounded-full"
-              style="background-color: {STATUS_COLORS[group.id]}"
-            ></div>
-            <h2
-              class="text-lg font-bold text-(--hako-fg) uppercase tracking-wider"
-            >
-              {group.label}
-            </h2>
-          </div>
-          <div
-            class:bg-card={viewMode === "table"}
-            class="rounded-xl overflow-hidden shadow-sm w-full overflow-x-auto"
-            bind:clientWidth={gridWidth}
+      <div id="media-list-container" class="space-y-10">
+        {#each allGroups as group (group.id)}
+          <section
+            class="space-y-4 scroll-mt-24 {filterStatus !== 'all' &&
+            filterStatus !== group.id
+              ? 'hidden'
+              : ''}"
           >
-            <!-- Table View -->
-            <VirtualScroll
-              items={group.items}
-              itemHeight={105}
-              columns={1}
-              gap={0}
-              class={viewMode === "table" ? "" : "hidden"}
+            <div class="flex items-center space-x-3 mb-6">
+              <div
+                class="w-1.5 h-6 rounded-full"
+                style="background-color: {STATUS_COLORS[group.id]}"
+              ></div>
+              <h2
+                class="text-lg font-bold text-(--hako-fg) uppercase tracking-wider"
+              >
+                {group.label}
+              </h2>
+            </div>
+            <div
+              class:bg-card={viewMode === "table"}
+              class="rounded-xl overflow-hidden shadow-sm w-full overflow-x-auto"
+              bind:clientWidth={gridWidth}
             >
-              {#snippet children({
-                visibleItems,
-                topSpacerHeight,
-                bottomSpacerHeight,
-                virtualizer,
-              })}
-                <table
-                  class="w-full text-left border-separate border-spacing-0"
-                >
-                  <thead>
-                    <tr
-                      class="text-[10px] uppercase text-(--c8) border-b border-(--surface-elevated)"
-                    >
-                      <th
-                        class="p-4 w-16 text-center border-b border-(--surface-elevated)"
-                      ></th>
-                      <th class="p-4 border-b border-(--surface-elevated)"
-                        >Title</th
-                      >
-                      <th
-                        class="p-4 text-center w-24 border-b border-(--surface-elevated)"
-                        >Score</th
-                      >
-                      <th
-                        class="p-4 text-center w-32 border-b border-(--surface-elevated)"
-                        >Progress</th
-                      >
-                      <th
-                        class="p-4 text-center w-28 border-b border-(--surface-elevated) hidden sm:table-cell"
-                        >Format</th
-                      >
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {#if topSpacerHeight > 0}
-                      <tr style="height: {topSpacerHeight}px;"
-                        ><td colspan="5"></td></tr
-                      >
-                    {/if}
-                    {#each visibleItems as item, i (item.media_id)}
-                      {@const meta = metadata[item.media_id.toString()] || {}}
-                      {@const total =
-                        type === "manga" ||
-                        type === "light_novel" ||
-                        type === "lightnovel"
-                          ? (meta.chapters ?? item.total ?? "?")
-                          : (meta.episodes ?? item.total ?? "?")}
-                      {@const displayTitle = item.displayTitle}
-                      <tr
-                        use:virtualizer.measureElement
-                        data-index={virtualizer.getVirtualItems()[i]?.index}
-                        class="group hover:bg-(--surface-elevated)/30 last:border-0"
-                      >
-                        <td
-                          class="p-2 border-b border-(--surface-elevated) group-last:border-0"
-                        >
-                          <MediaCover
-                            mediaId={item.media_id}
-                            {type}
-                            size="small"
-                            alt={displayTitle}
-                            class="mx-auto group-hover:scale-105 transition-transform"
-                            showTooltip={false}
-                            prefetchedMedia={metadata[item.media_id.toString()]}
-                          />
-                        </td>
-                        <td
-                          class="p-4 cursor-pointer border-b border-(--surface-elevated) group-last:border-0"
-                          onclick={() => handleOpenEditor(item.media_id)}
-                        >
-                          <div
-                            class="text-sm font-bold text-(--hako-fg) truncate sm:whitespace-normal"
-                          >
-                            {displayTitle}
-                          </div>
-                          <div class="flex flex-wrap gap-1 mt-1.5 sm:flex">
-                            {#each (meta as any).genres?.slice(0, 5) as genre}
-                              <Badge label={genre} variant="genre" />
-                            {/each}
-                          </div>
-                        </td>
-                        <td
-                          class="p-4 text-center text-sm font-mono {getScoreColor(
-                            item.score,
-                          )} border-b border-(--surface-elevated) group-last:border-0"
-                          >{item.score?.toFixed(1) || "—"}</td
-                        >
-                        <td
-                          class="p-4 text-center text-sm font-mono text-(--hako-fg) border-b border-(--surface-elevated) group-last:border-0"
-                        >
-                          <span class="text-(--hako-fg)">{item.progress}</span
-                          ><span class="text-(--c8) mx-1">/</span><span
-                            class="text-(--c8) text-xs">{total}</span
-                          >
-                        </td>
-                        <td
-                          class="p-4 text-center border-b border-(--surface-elevated) group-last:border-0 hidden sm:table-cell"
-                        >
-                          <span
-                            class="text-[10px] font-bold bg-(--surface-dim) px-2 py-1 rounded text-slate-400 border border-(--surface-elevated)"
-                          >
-                            {(meta.format || item.type || "TV").replace(
-                              /_/g,
-                              " ",
-                            )}
-                          </span>
-                        </td>
-                      </tr>
-                    {/each}
-                    {#if bottomSpacerHeight > 0}
-                      <tr style="height: {bottomSpacerHeight}px;"
-                        ><td colspan="5"></td></tr
-                      >
-                    {/if}
-                  </tbody>
-                </table>
-              {/snippet}
-            </VirtualScroll>
-
-            <!-- Grid View -->
-            <VirtualScroll
-              items={group.items}
-              itemHeight={gridRowHeight}
-              {columns}
-              gap={16}
-              class={viewMode === "grid"
-                ? "grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-6 gap-4 p-4"
-                : "hidden"}
-            >
-              {#snippet children({
-                visibleItems,
-                topSpacerHeight,
-                bottomSpacerHeight,
-                virtualizer,
-              })}
-                {#if topSpacerHeight > 0}
-                  <div
-                    style="grid-column: 1 / -1; height: {topSpacerHeight}px;"
-                  ></div>
-                {/if}
-                {#each visibleItems as item, i (item.media_id)}
-                  {@const meta = metadata[item.media_id.toString()] || {}}
-                  {@const total =
-                    type === "manga" ||
-                    type === "light_novel" ||
-                    type === "lightnovel"
-                      ? (meta.chapters ?? item.total ?? "?")
-                      : (meta.episodes ?? item.total ?? "?")}
-                  <div
-                    class="relative group"
-                    use:virtualizer.measureElement
-                    data-index={virtualizer.getVirtualItems()[
-                      Math.floor(i / columns)
-                    ]?.index}
+              <!-- Table View -->
+              <VirtualScroll
+                enabled={filterStatus === "all" || filterStatus === group.id}
+                items={group.items}
+                itemHeight={105}
+                columns={1}
+                gap={0}
+                class={viewMode === "table" ? "" : "hidden"}
+              >
+                {#snippet children({
+                  visibleItems,
+                  topSpacerHeight,
+                  bottomSpacerHeight,
+                  virtualizer,
+                })}
+                  <table
+                    class="w-full text-left border-separate border-spacing-0"
                   >
-                    <MediaCover
-                      mediaId={item.media_id}
-                      {type}
-                      size="medium"
-                      alt={item.displayTitle}
-                      class="w-full aspect-2/3 rounded-md"
-                      showTooltip={false}
-                      prefetchedMedia={metadata[item.media_id.toString()]}
-                    />
-                    <div
-                      class="absolute bottom-0 left-0 right-0 bg-(--hako-bg)/80 p-2 text-(--hako-fg) opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none rounded-lg"
-                    >
-                      <div
-                        class="text-xs font-bold truncate"
-                        title={item.displayTitle}
+                    <thead>
+                      <tr
+                        class="text-[10px] uppercase text-(--c8) border-b border-(--surface-elevated)"
                       >
-                        {item.displayTitle}
-                      </div>
-                      <div
-                        class="text-[10px] flex justify-between mt-1 font-bold"
-                      >
-                        <span>{item.progress ?? 0} / {total}</span>
-                        <span class={getScoreColor(item.score)}
-                          >{item.score?.toFixed(1) ?? "—"}</span
+                        <th
+                          class="p-4 w-16 text-center border-b border-(--surface-elevated)"
+                        ></th>
+                        <th class="p-4 border-b border-(--surface-elevated)"
+                          >Title</th
                         >
+                        <th
+                          class="p-4 text-center w-24 border-b border-(--surface-elevated)"
+                          >Score</th
+                        >
+                        <th
+                          class="p-4 text-center w-32 border-b border-(--surface-elevated)"
+                          >Progress</th
+                        >
+                        <th
+                          class="p-4 text-center w-28 border-b border-(--surface-elevated) hidden sm:table-cell"
+                          >Format</th
+                        >
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {#if topSpacerHeight > 0}
+                        <tr style="height: {topSpacerHeight}px;"
+                          ><td colspan="5"></td></tr
+                        >
+                      {/if}
+                      {#each visibleItems as item, i (item.media_id)}
+                        {@const meta = metadata[item.media_id.toString()] || {}}
+                        {@const total =
+                          type === "manga" ||
+                          type === "light_novel" ||
+                          type === "lightnovel"
+                            ? (meta.chapters ?? item.total ?? "?")
+                            : (meta.episodes ?? item.total ?? "?")}
+                        {@const displayTitle = item.displayTitle}
+                        <tr
+                          use:virtualizer.measureElement
+                          data-index={virtualizer.getVirtualItems()[i]?.index}
+                          class="group hover:bg-(--surface-elevated)/30 last:border-0"
+                        >
+                          <td
+                            class="p-2 border-b border-(--surface-elevated) group-last:border-0"
+                          >
+                            <MediaCover
+                              mediaId={item.media_id}
+                              {type}
+                              size="small"
+                              alt={displayTitle}
+                              class="mx-auto group-hover:scale-105 transition-transform"
+                              showTooltip={false}
+                              prefetchedMedia={metadata[
+                                item.media_id.toString()
+                              ]}
+                            />
+                          </td>
+                          <td
+                            class="p-4 cursor-pointer border-b border-(--surface-elevated) group-last:border-0"
+                            onclick={() => handleOpenEditor(item.media_id)}
+                          >
+                            <div
+                              class="text-sm font-bold text-(--hako-fg) truncate sm:whitespace-normal"
+                            >
+                              {displayTitle}
+                            </div>
+                            <div class="flex flex-wrap gap-1 mt-1.5 sm:flex">
+                              {#each (meta as any).genres?.slice(0, 5) as genre}
+                                <Badge label={genre} variant="genre" />
+                              {/each}
+                            </div>
+                          </td>
+                          <td
+                            class="p-4 text-center text-sm font-mono {getScoreColor(
+                              item.score,
+                            )} border-b border-(--surface-elevated) group-last:border-0"
+                            >{item.score?.toFixed(1) || "—"}</td
+                          >
+                          <td
+                            class="p-4 text-center text-sm font-mono text-(--hako-fg) border-b border-(--surface-elevated) group-last:border-0"
+                          >
+                            <span class="text-(--hako-fg)">{item.progress}</span
+                            ><span class="text-(--c8) mx-1">/</span><span
+                              class="text-(--c8) text-xs">{total}</span
+                            >
+                          </td>
+                          <td
+                            class="p-4 text-center border-b border-(--surface-elevated) group-last:border-0 hidden sm:table-cell"
+                          >
+                            <span
+                              class="text-[10px] font-bold bg-(--surface-dim) px-2 py-1 rounded text-slate-400 border border-(--surface-elevated)"
+                            >
+                              {(meta.format || item.type || "TV").replace(
+                                /_/g,
+                                " ",
+                              )}
+                            </span>
+                          </td>
+                        </tr>
+                      {/each}
+                      {#if bottomSpacerHeight > 0}
+                        <tr style="height: {bottomSpacerHeight}px;"
+                          ><td colspan="5"></td></tr
+                        >
+                      {/if}
+                    </tbody>
+                  </table>
+                {/snippet}
+              </VirtualScroll>
+
+              <!-- Grid View -->
+              <VirtualScroll
+                enabled={filterStatus === "all" || filterStatus === group.id}
+                items={group.items}
+                itemHeight={gridRowHeight}
+                {columns}
+                gap={16}
+                class={viewMode === "grid"
+                  ? "grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-6 gap-4 p-4"
+                  : "hidden"}
+              >
+                {#snippet children({
+                  visibleItems,
+                  topSpacerHeight,
+                  bottomSpacerHeight,
+                  virtualizer,
+                })}
+                  {#if topSpacerHeight > 0}
+                    <div
+                      style="grid-column: 1 / -1; height: {topSpacerHeight}px;"
+                    ></div>
+                  {/if}
+                  {#each visibleItems as item, i (item.media_id)}
+                    {@const meta = metadata[item.media_id.toString()] || {}}
+                    {@const total =
+                      type === "manga" ||
+                      type === "light_novel" ||
+                      type === "lightnovel"
+                        ? (meta.chapters ?? item.total ?? "?")
+                        : (meta.episodes ?? item.total ?? "?")}
+                    <div
+                      class="relative group"
+                      use:virtualizer.measureElement
+                      data-index={virtualizer.getVirtualItems()[
+                        Math.floor(i / columns)
+                      ]?.index}
+                    >
+                      <MediaCover
+                        mediaId={item.media_id}
+                        {type}
+                        size="medium"
+                        alt={item.displayTitle}
+                        class="w-full aspect-2/3 rounded-md"
+                        showTooltip={false}
+                        prefetchedMedia={metadata[item.media_id.toString()]}
+                      />
+                      <div
+                        class="absolute bottom-0 left-0 right-0 bg-(--hako-bg)/80 p-2 text-(--hako-fg) opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none rounded-lg"
+                      >
+                        <div
+                          class="text-xs font-bold truncate"
+                          title={item.displayTitle}
+                        >
+                          {item.displayTitle}
+                        </div>
+                        <div
+                          class="text-[10px] flex justify-between mt-1 font-bold"
+                        >
+                          <span>{item.progress ?? 0} / {total}</span>
+                          <span class={getScoreColor(item.score)}
+                            >{item.score?.toFixed(1) ?? "—"}</span
+                          >
+                        </div>
                       </div>
                     </div>
-                  </div>
-                {/each}
-                {#if bottomSpacerHeight > 0}
-                  <div
-                    style="grid-column: 1 / -1; height: {bottomSpacerHeight}px;"
-                  ></div>
-                {/if}
-              {/snippet}
-            </VirtualScroll>
-          </div>
-        </section>
-      {/each}
+                  {/each}
+                  {#if bottomSpacerHeight > 0}
+                    <div
+                      style="grid-column: 1 / -1; height: {bottomSpacerHeight}px;"
+                    ></div>
+                  {/if}
+                {/snippet}
+              </VirtualScroll>
+            </div>
+          </section>
+        {/each}
+      </div>
     {/if}
   </main>
 </div>

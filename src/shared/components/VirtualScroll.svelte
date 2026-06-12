@@ -7,6 +7,7 @@
     itemHeight = 80,
     columns = 1,
     gap = 0,
+    enabled = true,
     class: className = "",
     children,
   }: {
@@ -14,45 +15,50 @@
     itemHeight: number;
     columns: number;
     gap?: number;
+    enabled?: boolean;
     class?: string;
     children: (props: {
       visibleItems: T[];
       topSpacerHeight: number;
       bottomSpacerHeight: number;
+      virtualizer: any;
     }) => any;
   } = $props();
 
   let containerEl = $state<HTMLDivElement | null>(null);
   let scrollMargin = $state(0);
+  let measureQueued = false;
 
   const measure = () => {
-    if (!containerEl) return;
-    const rect = containerEl.getBoundingClientRect();
-    // Only update if visible and actually changed
-    if (rect.height > 0) {
+    if (!enabled || !containerEl || measureQueued) return;
+
+    // Skip if the element is hidden (display: none)
+    if (containerEl.offsetParent === null) return;
+
+    measureQueued = true;
+    requestAnimationFrame(() => {
+      measureQueued = false;
+      if (!enabled || !containerEl || containerEl.offsetParent === null) return;
+
+      const rect = containerEl.getBoundingClientRect();
       const newMargin = rect.top + window.scrollY;
       if (Math.abs(scrollMargin - newMargin) > 1) {
         scrollMargin = newMargin;
       }
-    }
+    });
   };
 
   // Robust measurement using ResizeObserver to catch layout shifts from siblings
   $effect(() => {
-    if (!containerEl) return;
+    if (!enabled || !containerEl) return;
 
     measure();
 
     // Watch the document body for any layout changes that might push this component down
-    const bodyObserver = new ResizeObserver(() => {
-      measure();
-    });
+    const bodyObserver = new ResizeObserver(measure);
     bodyObserver.observe(document.body);
 
-    // Also watch the container itself for visibility/size changes
-    const containerObserver = new ResizeObserver(() => {
-      measure();
-    });
+    const containerObserver = new ResizeObserver(measure);
     containerObserver.observe(containerEl);
 
     window.addEventListener("scroll", measure, { passive: true });
@@ -66,10 +72,12 @@
     };
   });
 
-  // Measure whenever items change
+  // Measure whenever items or enabled status change
   $effect(() => {
-    items;
-    measure();
+    if (enabled) {
+      items;
+      measure();
+    }
   });
 
   const totalRows = $derived(Math.ceil(items.length / columns));
@@ -80,26 +88,28 @@
     estimateSize: () => itemHeight,
     scrollMargin: 0,
     overscan: 5,
-    // Add measureElement for dynamic height support
     measureElement: (el) => el.getBoundingClientRect().height,
   });
 
   // Keep virtualizer options updated reactively
   $effect(() => {
-    untrack(() => $virtualizer).setOptions({
-      count: totalRows,
-      estimateSize: () => itemHeight,
-      scrollMargin,
-      overscan: 5,
-      measureElement: (el) => el.getBoundingClientRect().height,
-    });
+    if (enabled) {
+      untrack(() => $virtualizer).setOptions({
+        count: totalRows,
+        estimateSize: () => itemHeight,
+        scrollMargin,
+        overscan: 5,
+        measureElement: (el) => el.getBoundingClientRect().height,
+      });
+    }
   });
 
-  const virtualItems = $derived($virtualizer.getVirtualItems());
-  const totalSize = $derived($virtualizer.getTotalSize());
+  const virtualItems = $derived(enabled ? $virtualizer.getVirtualItems() : []);
+  const totalSize = $derived(enabled ? $virtualizer.getTotalSize() : 0);
 
   // Map virtual row indices back to items
   const visibleItems = $derived.by(() => {
+    if (!enabled) return [];
     const itemsList = virtualItems;
     if (itemsList.length === 0) return [];
     const startIdx = itemsList[0].index * columns;
@@ -110,14 +120,15 @@
 
   // Spacer heights (subtracting layouts' gaps)
   const topSpacerHeight = $derived.by(() => {
+    if (!enabled) return 0;
     const itemsList = virtualItems;
     if (itemsList.length === 0) return 0;
-    // The first item's start is absolute, subtract our scrollMargin to get local spacer
     const height = itemsList[0].start - scrollMargin;
     return height > 0 ? height - gap : 0;
   });
 
   const bottomSpacerHeight = $derived.by(() => {
+    if (!enabled) return 0;
     const itemsList = virtualItems;
     if (itemsList.length === 0) return 0;
     const lastItem = itemsList[itemsList.length - 1];
@@ -127,10 +138,12 @@
 </script>
 
 <div bind:this={containerEl} class={className}>
-  {@render children({
-    visibleItems,
-    topSpacerHeight,
-    bottomSpacerHeight,
-    virtualizer: $virtualizer,
-  })}
+  {#if enabled}
+    {@render children({
+      visibleItems,
+      topSpacerHeight,
+      bottomSpacerHeight,
+      virtualizer: $virtualizer,
+    })}
+  {/if}
 </div>
