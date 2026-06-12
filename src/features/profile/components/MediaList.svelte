@@ -482,24 +482,25 @@
                         <tr
                           use:virtualizer.measureElement
                           data-index={virtualizer.getVirtualItems()[i]?.index}
-                          class="text-[10px] uppercase text-(--c8) bg-card rounded-t-xl overflow-hidden sticky top-0 z-20"
+                          class="text-[10px] uppercase text-(--c8) sticky top-0 z-20"
                         >
                           <th
-                            class="p-4 w-16 text-center border-b border-(--surface-elevated) rounded-tl-xl"
+                            class="p-4 w-16 text-center bg-(--surface) border-b border-(--surface-elevated) rounded-tl-xl"
                           ></th>
-                          <th class="p-4 border-b border-(--surface-elevated)"
+                          <th
+                            class="p-4 border-b bg-(--surface) border-(--surface-elevated)"
                             >Title</th
                           >
                           <th
-                            class="p-4 text-center w-24 border-b border-(--surface-elevated)"
+                            class="p-4 text-center w-24 bg-(--surface) border-b border-(--surface-elevated)"
                             >Score</th
                           >
                           <th
-                            class="p-4 text-center w-32 border-b border-(--surface-elevated)"
+                            class="p-4 text-center w-32 bg-(--surface) border-b border-(--surface-elevated)"
                             >Progress</th
                           >
                           <th
-                            class="p-4 text-center w-28 border-b border-(--surface-elevated) hidden sm:table-cell rounded-tr-xl"
+                            class="p-4 text-center w-28 bg-(--surface) border-b border-(--surface-elevated) hidden sm:table-cell rounded-tr-xl"
                             >Format</th
                           >
                         </tr>
@@ -528,12 +529,12 @@
                         <tr
                           use:virtualizer.measureElement
                           data-index={virtualizer.getVirtualItems()[i]?.index}
-                          class="group bg-card hover:bg-(--surface-elevated)/30 last:border-0 {isLast
-                            ? 'rounded-b-xl overflow-hidden'
+                          class="group last:border-0 {isLast
+                            ? 'rounded-b-xl'
                             : ''}"
                         >
                           <td
-                            class="p-2 border-b border-(--surface-elevated) group-last:border-0 {isLast
+                            class="p-2 border-b bg-(--surface) border-(--surface-elevated) group-hover:!bg-[color-mix(in_srgb,var(--surface-elevated)_80%,transparent)] transition-colors {isLast
                               ? 'rounded-bl-xl border-b-0'
                               : ''}"
                           >
@@ -548,7 +549,7 @@
                             />
                           </td>
                           <td
-                            class="p-4 cursor-pointer border-b border-(--surface-elevated) group-last:border-0 {isLast
+                            class="p-4 cursor-pointer border-b bg-(--surface) border-(--surface-elevated) group-hover:!bg-[color-mix(in_srgb,var(--surface-elevated)_80%,transparent)] transition-colors {isLast
                               ? 'border-b-0'
                               : ''}"
                             onclick={() => handleOpenEditor(item.media_id)}
@@ -565,14 +566,14 @@
                             </div>
                           </td>
                           <td
-                            class="p-4 text-center text-sm font-mono {getScoreColor(
+                            class="bg-(--surface) group-hover:!bg-[color-mix(in_srgb,var(--surface-elevated)_80%,transparent)] transition-colors p-4 text-center text-sm font-mono {getScoreColor(
                               item.score,
                             )} border-b border-(--surface-elevated) group-last:border-0 {isLast
                               ? 'border-b-0'
                               : ''}">{item.score?.toFixed(1) || "—"}</td
                           >
                           <td
-                            class="p-4 text-center text-sm font-mono text-(--hako-fg) border-b border-(--surface-elevated) group-last:border-0 {isLast
+                            class="bg-(--surface) group-hover:!bg-[color-mix(in_srgb,var(--surface-elevated)_80%,transparent)] transition-colors p-4 text-center text-sm font-mono text-(--hako-fg) border-b border-(--surface-elevated) group-last:border-0 {isLast
                               ? 'border-b-0'
                               : ''}"
                           >
@@ -582,7 +583,7 @@
                             >
                           </td>
                           <td
-                            class="p-4 text-center border-b border-(--surface-elevated) group-last:border-0 hidden sm:table-cell {isLast
+                            class="bg-(--surface) group-hover:!bg-[color-mix(in_srgb,var(--surface-elevated)_80%,transparent)] transition-colors p-4 text-center border-b border-(--surface-elevated) group-last:border-0 hidden sm:table-cell {isLast
                               ? 'rounded-br-xl border-b-0'
                               : ''}"
                           >
@@ -696,3 +697,13 @@
     {/if}
   </main>
 </div>
+
+<!-- wtf you mean I need an inline style block to override the group hover background color? -->
+<style>
+  tr.group:hover td {
+    background-color: color-mix(
+      in srgb,
+      var(--surface-elevated) 30%
+    ) !important;
+  }
+</style>
