@@ -280,14 +280,15 @@
         <SearchInput
           value={searchQuery}
           oninput={handleSearchInput}
-          placeholder="Search your list..."
+          placeholder="Search"
+          label="Search List"
         />
         <div>
           <Select
             value={sortBy}
             onchange={(val) => setSort(val)}
             label="Sort By"
-            options={[
+            items={[
               { label: "Title", value: "Title" },
               { label: "Score", value: "Score" },
               { label: "Progress", value: "Progress" },
@@ -296,7 +297,8 @@
           />
         </div>
         <div class="flex items-center justify-between">
-          <label class="text-xs font-bold text-slate-500 uppercase">View</label>
+          <!-- svelte-ignore a11y_label_has_associated_control -->
+          <label class="text-xs font-bold text-slate-400 uppercase">View</label>
           <SegmentedControl
             value={viewMode}
             onchange={(val) => setTimeout(() => (viewMode = val as any), 0)}
@@ -440,7 +442,7 @@
                 virtualizer,
               })}
                 <table
-                  class="w-full text-left border-separate border-spacing-0 table-fixed min-w-[800px]"
+                  class="w-full text-left border-separate border-spacing-0 table-fixed min-w-5xl"
                 >
                   <colgroup>
                     <col class="w-16" />
