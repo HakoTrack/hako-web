@@ -46,7 +46,55 @@
 
   function toTitleCase(str: string | null | undefined): string {
     if (!str) return "N/A";
-    return str.charAt(0).toUpperCase() + str.slice(1).toLowerCase();
+    return str
+      .split("_")
+      .map((word) => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase())
+      .join(" ");
+  }
+
+  function getEffectiveRelationLabel(relationType: string): string {
+    if (relationType === "ADAPTATION" && media?.source !== "ORIGINAL") {
+      return "Source";
+    }
+    return toTitleCase(relationType);
+  }
+
+  function getEffectiveSource(media: Media): string {
+    if (media.source !== "OTHER") return toTitleCase(media.source);
+
+    const ANIME_FORMATS = new Set([
+      "TV",
+      "TV_SHORT",
+      "MOVIE",
+      "OVA",
+      "ONA",
+      "SPECIAL",
+      "MUSIC",
+    ]);
+    const hasAnimeRelation = relations.some((rel: any) => {
+      const type = rel.relation_type;
+      const format = rel.related_media?.format;
+
+      return type === "ADAPTATION" && ANIME_FORMATS.has(format);
+    });
+
+    return hasAnimeRelation ? "Anime" : toTitleCase(media.source);
+  }
+
+  const RELATION_PRIORITY: Record<string, number> = {
+    ADAPTATION: 1,
+    PREQUEL: 2,
+    SIDE_STORY: 3,
+    SPIN_OFF: 3,
+    SEQUEL: 4,
+  };
+
+  function sortRelations(rels: any[]): any[] {
+    return [...rels].sort((a, b) => {
+      const pA = RELATION_PRIORITY[a.relation_type] || 99;
+      const pB = RELATION_PRIORITY[b.relation_type] || 99;
+      return pA - pB;
+    });
   }
 
   onMount(async () => {
@@ -59,11 +107,11 @@
       media = mediaRes;
 
       if (cachedRelations) {
-        relations = cachedRelations;
+        relations = sortRelations(cachedRelations);
       } else {
         const relRes = await MediaService.getMediaRelations(Number(mediaId));
         if (relRes.success) {
-          relations = relRes.data;
+          relations = sortRelations(relRes.data);
           await CacheService.setMediaRelations(
             mediaId,
             JSON.parse(JSON.stringify(relations)),
@@ -417,7 +465,7 @@
                       <div
                         class="absolute bottom-0.5 left-0.5 bg-(--hako-bg)/80 text-[0.7rem] font-bold text-(--hako-fg) px-1.5 py-0.5 rounded z-10 whitespace-nowrap"
                       >
-                        {toTitleCase(relation.relation_type)}
+                        {getEffectiveRelationLabel(relation.relation_type)}
                       </div>
                     </div>
                   {/each}
@@ -642,7 +690,7 @@
               <div class="space-y-3 text-sm text-slate-300">
                 <div class="flex justify-between">
                   <span>Source</span><span class="text-(--hako-fg)"
-                    >{toTitleCase(media.source)}</span
+                    >{getEffectiveSource(media)}</span
                   >
                 </div>
                 <div class="flex justify-between">
