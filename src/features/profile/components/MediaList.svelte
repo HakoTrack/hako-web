@@ -106,12 +106,7 @@
       setTimeout(() => {
         const container = document.getElementById("media-list-container");
         if (container) {
-          const firstVisible = container.querySelector(
-            ".category-label, .category-section:not(.hidden)",
-          );
-          if (firstVisible) {
-            firstVisible.scrollIntoView({ behavior: "smooth", block: "start" });
-          }
+          container.scrollIntoView({ behavior: "smooth", block: "start" });
         }
       }, 0);
     }
@@ -426,7 +421,7 @@
         This box is currently empty... ( ｡_｡)
       </div>
     {:else}
-      <div id="media-list-container" class="space-y-10">
+      <div id="media-list-container" class="space-y-10 scroll-mt-24">
         {#if viewMode === "table"}
           <div class="w-full overflow-x-auto">
             <VirtualScroll
