@@ -16,6 +16,7 @@
     tooltip?: import("svelte").Snippet;
     showTooltip?: boolean;
     prefetchedMedia?: Media | null;
+    isLoading?: boolean;
   }
 
   let {
@@ -28,6 +29,7 @@
     tooltip,
     showTooltip = true,
     prefetchedMedia = null,
+    isLoading = false,
   }: Props = $props();
 
   const sizeClasses = {
@@ -42,10 +44,12 @@
   let isHovered = $state(false);
 
   async function handleOpenEditor() {
+    if (isLoading) return;
     openQuickEditor(Number(mediaId), type);
   }
 
   async function handleHover() {
+    if (isLoading) return;
     isHovered = true;
     if (onmouseover) onmouseover();
     if (showTooltip && !mediaInfo) {
@@ -69,7 +73,7 @@
     class="relative {sizeClasses[size]} {className} group"
     onmouseenter={handleHover}
   >
-    {#if !loaded}
+    {#if isLoading || !loaded}
       <div
         class="absolute inset-0 bg-(--surface-elevated) animate-pulse rounded"
       ></div>
@@ -77,20 +81,22 @@
     <!-- svelte-ignore a11y_no_noninteractive_element_interactions -->
     <!-- svelte-ignore a11y_click_events_have_key_events -->
     <!-- svelte-ignore a11y_mouse_events_have_key_events -->
-    <img
-      src={HakoImage.getCover(mediaId, size === "large" ? "large" : "medium")}
-      class="w-full h-full object-cover rounded shadow cursor-pointer group-hover:scale-105 transition-transform {loaded
-        ? 'opacity-100'
-        : 'opacity-0'} transition-opacity"
-      {alt}
-      loading="lazy"
-      onload={() => (loaded = true)}
-      onerror={(e) => {
-        const img = e.target as HTMLImageElement;
-        img.src = HakoImage.get("global/placeholderCover.webp");
-      }}
-      onclick={handleOpenEditor}
-    />
+    {#if !isLoading}
+      <img
+        src={HakoImage.getCover(mediaId, size === "large" ? "large" : "medium")}
+        class="w-full h-full object-cover rounded shadow cursor-pointer group-hover:scale-105 transition-transform {loaded
+          ? 'opacity-100'
+          : 'opacity-0'} transition-opacity"
+        {alt}
+        loading="lazy"
+        onload={() => (loaded = true)}
+        onerror={(e) => {
+          const img = e.target as HTMLImageElement;
+          img.src = HakoImage.get("global/placeholderCover.webp");
+        }}
+        onclick={handleOpenEditor}
+      />
+    {/if}
   </div>
 {/snippet}
 

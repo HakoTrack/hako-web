@@ -10,14 +10,16 @@
   let feedFilter = $state("all");
   let feedMode = $state("global");
 
+  type FeedItem = Media | { isLoading: true };
+
   let recentlyAdded = $state<{
-    anime: Media[];
-    manga: Media[];
-    light_novel: Media[];
+    anime: FeedItem[];
+    manga: FeedItem[];
+    light_novel: FeedItem[];
   }>({
-    anime: [],
-    manga: [],
-    light_novel: [],
+    anime: Array(5).fill({ isLoading: true }),
+    manga: Array(5).fill({ isLoading: true }),
+    light_novel: Array(5).fill({ isLoading: true }),
   });
 
   onMount(async () => {
@@ -64,8 +66,21 @@
             Anime
           </h4>
           <div class="grid grid-cols-5 gap-2">
-            {#each recentlyAdded.anime as media (media.media_id)}
-              <MediaCover mediaId={media.media_id} type="anime" size="medium" />
+            {#each recentlyAdded.anime as media, i}
+              {#if "isLoading" in media}
+                <MediaCover
+                  mediaId={i}
+                  type="anime"
+                  size="medium"
+                  isLoading={true}
+                />
+              {:else}
+                <MediaCover
+                  mediaId={media.media_id}
+                  type="anime"
+                  size="medium"
+                />
+              {/if}
             {/each}
           </div>
         </div>
@@ -77,8 +92,21 @@
             Manga
           </h4>
           <div class="grid grid-cols-5 gap-2">
-            {#each recentlyAdded.manga as media (media.media_id)}
-              <MediaCover mediaId={media.media_id} type="manga" size="medium" />
+            {#each recentlyAdded.manga as media, i}
+              {#if "isLoading" in media}
+                <MediaCover
+                  mediaId={i}
+                  type="manga"
+                  size="medium"
+                  isLoading={true}
+                />
+              {:else}
+                <MediaCover
+                  mediaId={media.media_id}
+                  type="manga"
+                  size="medium"
+                />
+              {/if}
             {/each}
           </div>
         </div>
@@ -90,12 +118,21 @@
             Light Novels
           </h4>
           <div class="grid grid-cols-5 gap-2">
-            {#each recentlyAdded.light_novel as media (media.media_id)}
-              <MediaCover
-                mediaId={media.media_id}
-                type="light_novel"
-                size="medium"
-              />
+            {#each recentlyAdded.light_novel as media, i}
+              {#if "isLoading" in media}
+                <MediaCover
+                  mediaId={i}
+                  type="light_novel"
+                  size="medium"
+                  isLoading={true}
+                />
+              {:else}
+                <MediaCover
+                  mediaId={media.media_id}
+                  type="light_novel"
+                  size="medium"
+                />
+              {/if}
             {/each}
           </div>
         </div>
