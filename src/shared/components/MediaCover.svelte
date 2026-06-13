@@ -45,12 +45,6 @@
     openQuickEditor(Number(mediaId), type);
   }
 
-  function handleNavigate(e: Event) {
-    e.stopPropagation();
-    window.history.pushState({}, "", `/${type}/${mediaId}`);
-    window.dispatchEvent(new PopStateEvent("popstate"));
-  }
-
   async function handleHover() {
     isHovered = true;
     if (onmouseover) onmouseover();
@@ -97,16 +91,6 @@
       }}
       onclick={handleOpenEditor}
     />
-    <button
-      onclick={handleNavigate}
-      class="absolute bottom-0 right-0 bg-(--hako-bg)/80 text-(--hako-fg) rounded-full w-7 h-7 flex items-center justify-center text-xs z-50 opacity-0 group-hover:opacity-100 transition-opacity hover:text-accent pointer-events-auto cursor-pointer"
-      title="Go to page"
-      style="pointer-events: auto;"
-    >
-      <i
-        class="fa-solid fa-arrow-up-right-from-square text-[10px] translate-x-[0.5px] -translate-y-[0.5px]"
-      ></i>
-    </button>
   </div>
 {/snippet}
 

@@ -8,7 +8,7 @@ interface SyncCache<T> {
 interface HakoDB extends DBSchema {
   media_metadata: {
     key: string;
-    value: any;
+    value: SyncCache<any>;
   };
   media_relations: {
     key: string;
@@ -29,7 +29,7 @@ interface HakoDB extends DBSchema {
 }
 
 const DB_NAME = 'HakoDB_v2';
-const DB_VERSION = 11.0;
+const DB_VERSION = 12.0;
 
 
 const dbPromise = openDB<HakoDB>(DB_NAME, DB_VERSION, {
@@ -44,6 +44,9 @@ const dbPromise = openDB<HakoDB>(DB_NAME, DB_VERSION, {
     if (db.objectStoreNames.contains('user_lists')) {
       db.deleteObjectStore('user_lists');
     }
+    if (db.objectStoreNames.contains('list_entries')) {
+      db.deleteObjectStore('list_entries');
+    }
     if (db.objectStoreNames.contains('user_favorites')) {
       db.deleteObjectStore('user_favorites');
     }
@@ -53,6 +56,7 @@ const dbPromise = openDB<HakoDB>(DB_NAME, DB_VERSION, {
     db.createObjectStore('media_metadata');
     db.createObjectStore('media_relations');
     db.createObjectStore('user_lists');
+    db.createObjectStore('list_entries');
     db.createObjectStore('user_favorites');
     db.createObjectStore('profiles');
   },
@@ -129,5 +133,18 @@ export const CacheService = {
   async deleteProfile(idOrUsername: string) {
     const db = await dbPromise;
     return db.delete('profiles', idOrUsername);
+  },
+
+  async getListEntry(cacheKey: string): Promise<SyncCache<any> | undefined> {
+    const db = await dbPromise;
+    return db.get('list_entries', cacheKey);
+  },
+  async setListEntry(cacheKey: string, data: any, lastSync: string) {
+    const db = await dbPromise;
+    return db.put('list_entries', { data, lastSync }, cacheKey);
+  },
+  async deleteListEntry(cacheKey: string) {
+    const db = await dbPromise;
+    return db.delete('list_entries', cacheKey);
   }
 };

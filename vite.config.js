@@ -53,14 +53,17 @@ export default defineConfig({
         runtimeCaching: [
           {
             // Unified cache strategy for all image assets
-            urlPattern: /.*\.(?:png|jpg|jpeg|svg|gif|webp|avif)$/,
+            urlPattern: /\.(?:png|jpg|jpeg|svg|gif|webp|avif)(?:\?.*)?$/i,
             handler: 'CacheFirst',
             options: {
-              cacheName: 'image-cache-v4',
+              cacheName: 'image-cache-v5',
               expiration: {
-                maxEntries: 3000,
+                maxEntries: 5000,
                 maxAgeSeconds: 30 * 24 * 60 * 60, // 30 days
               },
+              cacheableResponse: {
+                statuses: [0, 200] // 0 handles opaque cross-origin responses
+              }
             },
           },
         ],

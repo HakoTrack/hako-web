@@ -68,7 +68,30 @@ export function mapSupabaseListEntry(entry: any): ListEntry | null {
   };
 }
 
-export async function fetchUserListEntry(profileId: string, mediaId: number, type: string): Promise<ListEntry | null> {
+export async function fetchUserListEntry(
+  profileId: string,
+  mediaId: number,
+  type: string
+): Promise<ListEntry | null> {
+  const cacheKey = `${profileId}:${mediaId}:${type}`;
+  const cached = await CacheService.getListEntry(cacheKey);
+
+  if (cached) {
+    // Perform lightweight timestamp check
+    const { data: dbData, error: dbError } = await supabase
+      .from('profile_list')
+      .select('updated_at')
+      .eq('profile_id', profileId)
+      .eq('media_id', mediaId)
+      .eq('media_type', type)
+      .single();
+
+    if (!dbError && dbData && new Date(dbData.updated_at).getTime() <= new Date(cached.lastSync).getTime()) {
+      return cached.data;
+    }
+  }
+
+  // Fetch full data
   const { data, error } = await supabase
     .from('profile_list')
     .select(`
@@ -80,10 +103,13 @@ export async function fetchUserListEntry(profileId: string, mediaId: number, typ
     .eq('media_type', type)
     .single();
 
-  if (error) {
-    return null;
-  }
-  return mapSupabaseListEntry(data);
+  if (error || !data) return null;
+
+  const entry = mapSupabaseListEntry(data);
+  // Update cache
+  await CacheService.setListEntry(cacheKey, entry, data.updated_at);
+
+  return entry;
 }
 
 // --- Optimized Fetchers ---
@@ -110,8 +136,8 @@ export async function fetchMediaSummaries(
 
     chunk.forEach((id, index) => {
       const cached = cachedResults[index];
-      if (cached) {
-        result[id.toString()] = cached;
+      if (cached && cached.data) {
+        result[id.toString()] = cached.data;
       } else {
         uncachedIds.push(id);
       }
@@ -140,7 +166,7 @@ export async function fetchMediaSummaries(
             },
           };
           result[item.id.toString()] = summary;
-          cachePromises.push(CacheService.setMedia(item.id.toString(), summary));
+          cachePromises.push(CacheService.setMedia(item.id.toString(), { data: summary, lastSync: new Date().toISOString() }));
         }
         await Promise.all(cachePromises);
       }
@@ -171,7 +197,7 @@ export async function fetchMediaSummaryWithGenres(
     );
 
     chunk.forEach((id, index) => {
-      const cached = cachedResults[index];
+      const cached = cachedResults[index]?.data;
       const isGenresSummary =
         cached && "genres" in cached && "episodes" in cached;
 
@@ -220,7 +246,7 @@ export async function fetchMediaSummaryWithGenres(
             seasonYear: item.start_year,
           };
           result[item.id.toString()] = summary;
-          cachePromises.push(CacheService.setMedia(item.id.toString(), summary));
+          cachePromises.push(CacheService.setMedia(item.id.toString(), { data: summary, lastSync: new Date().toISOString() }));
         }
         await Promise.all(cachePromises);
       }
@@ -272,8 +298,9 @@ export async function fetchMediaSummaryWithDescription(id: number): Promise<Medi
  */
 export async function fetchMediaDetails(id: number): Promise<Media | null> {
   const cached = await CacheService.getMedia(id.toString());
-  // Ensure description is actual content, not the poisoned empty string ""
-  if (cached && 'description' in cached && cached.description !== "" && 'tags' in cached && cached.tags.length > 0) return cached;
+  // Unwrap from SyncCache and validate
+  const media = cached?.data;
+  if (media && 'description' in media && media.description !== "" && 'tags' in media && media.tags.length > 0) return media;
 
   const { data } = await supabase
     .from('media')
@@ -290,7 +317,7 @@ export async function fetchMediaDetails(id: number): Promise<Media | null> {
 
   if (!data) return null;
 
-  const media = mapSupabaseMedia(data);
-  if (media) await CacheService.setMedia(id.toString(), media);
-  return media;
+  const fetchedMedia = mapSupabaseMedia(data);
+  if (fetchedMedia) await CacheService.setMedia(id.toString(), { data: fetchedMedia, lastSync: new Date().toISOString() });
+  return fetchedMedia;
 }

@@ -3,6 +3,7 @@ import { ListService } from '../features/profile/services/listService';
 import { MetadataService } from '../features/media/services/metadataService';
 import { fetchUserListEntry, fetchMediaSummaryWithDescription } from '../shared/utils/mediaData';
 import type { QuickUpdateItem } from '../shared/types/index';
+import { CacheService } from './cache';
 
 export interface ModalData {
   entry?: any;
@@ -117,14 +118,36 @@ export function closeModal() {
 export async function openQuickEditor(mediaId: number, type: string = 'anime') {
   openModal('quick-editor', { isFetching: true });
 
-  const [media, user] = await Promise.all([
-    fetchMediaSummaryWithDescription(mediaId),
-    AuthService.getCurrentUser()
-  ]);
+  let media = await CacheService.getMedia(mediaId.toString());
+
+  // Check if cache is fresh and HAS description
+  const isFresh = media && (Date.now() - new Date(media.lastSync).getTime() < 86400000);
+  const hasDescription = media?.data?.description;
+
+  if (isFresh && hasDescription) {
+    console.log(`[QuickEditor] Found fresh media in cache:`, media.data);
+    media = media.data;
+  } else {
+    console.log(`[QuickEditor] Media not in cache, stale, or missing description, fetching from network...`);
+    const fetched = await fetchMediaSummaryWithDescription(mediaId);
+    if (fetched) {
+      await CacheService.setMedia(mediaId.toString(), { data: fetched, lastSync: new Date().toISOString() });
+      console.log(`[QuickEditor] Network fetch complete and cached:`, fetched);
+      media = fetched;
+    } else {
+      media = null;
+    }
+  }
+
+  const user = await AuthService.getCurrentUser();
+  console.log(`[QuickEditor] User status:`, user ? `Logged in (${user.id})` : "Not logged in");
 
   let listEntry = null;
   if (user && media) {
     listEntry = await fetchUserListEntry(user.id, media.media_id, type);
+    console.log(`[QuickEditor] List entry fetched:`, listEntry);
+  } else {
+    console.log(`[QuickEditor] Skipping list entry fetch (user: ${!!user}, media: ${!!media})`);
   }
 
   const entry = media ? {
@@ -132,10 +155,10 @@ export async function openQuickEditor(mediaId: number, type: string = 'anime') {
     id: media.media_id,
     type: type,
     title: media.title?.romaji || media.title,
-    // Add missing properties expected by QuickEditorModal
     total: type === 'anime' ? (media as any).episodes : (media as any).chapters,
     totalChapters: (media as any).chapters,
     totalVolumes: (media as any).volumes,
+    description: media.description,
     status: listEntry?.status || 'planning',
     score: listEntry?.score || 0,
     progress: listEntry?.progress || 0,
