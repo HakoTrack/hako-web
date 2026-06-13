@@ -263,7 +263,8 @@
     const gap = 16;
     const availableWidth = gridWidth - padding;
     const columnWidth = (availableWidth - (columns - 1) * gap) / columns;
-    return columnWidth * 1.5 + 40;
+    // Exactly match MediaCover ratio (23/17) + the row gap
+    return columnWidth * (23 / 17) + gap;
   });
 </script>
 
@@ -711,7 +712,17 @@
                 class="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-6 gap-4 p-4"
                 fallback={listSkeleton}
               >
-                {#snippet children({ visibleItems, virtualizer })}
+                {#snippet children({
+                  visibleItems,
+                  topSpacerHeight,
+                  bottomSpacerHeight,
+                  virtualizer,
+                })}
+                  {#if topSpacerHeight > 0}
+                    <div
+                      style="height: {topSpacerHeight}px; grid-column: 1 / -1;"
+                    ></div>
+                  {/if}
                   {#each visibleItems as item, i (item.media_id)}
                     {@const meta = metadata[item.media_id.toString()] || {}}
                     {@const total =
@@ -725,7 +736,6 @@
                       "Unknown Title"}
                     <div
                       class="relative group"
-                      use:virtualizer.measureElement
                       data-index={virtualizer.getVirtualItems()[
                         Math.floor(i / columns)
                       ]?.index}
@@ -759,6 +769,11 @@
                       </div>
                     </div>
                   {/each}
+                  {#if bottomSpacerHeight > 0}
+                    <div
+                      style="height: {bottomSpacerHeight}px; grid-column: 1 / -1;"
+                    ></div>
+                  {/if}
                 {/snippet}
               </VirtualScroll>
             </div>

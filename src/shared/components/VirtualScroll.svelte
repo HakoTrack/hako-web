@@ -42,7 +42,7 @@
       if (!enabled || !containerEl || containerEl.offsetParent === null) return;
 
       const rect = containerEl.getBoundingClientRect();
-      const newMargin = rect.top + window.scrollY;
+      const newMargin = Math.round(rect.top + window.scrollY);
       if (scrollMargin === null || Math.abs(scrollMargin - newMargin) > 1) {
         scrollMargin = newMargin;
       }
@@ -72,9 +72,16 @@
     const handleResize = () => measure();
     window.addEventListener("resize", handleResize);
 
+    const handleScroll = () => measure();
+    window.addEventListener("scroll", handleScroll, {
+      passive: true,
+      capture: true,
+    });
+
     return () => {
       containerObserver.disconnect();
       window.removeEventListener("resize", handleResize);
+      window.removeEventListener("scroll", handleScroll, true);
     };
   });
 
@@ -93,7 +100,7 @@
     count: 0,
     estimateSize: () => itemHeight,
     scrollMargin: 0,
-    overscan: 5,
+    overscan: 12,
     measureElement: (el) => el.getBoundingClientRect().height,
   });
 
@@ -104,7 +111,7 @@
         count: totalRows,
         estimateSize: () => itemHeight,
         scrollMargin,
-        overscan: 5,
+        overscan: 12,
         measureElement: (el) => el.getBoundingClientRect().height,
       });
     }
@@ -133,8 +140,8 @@
     if (!enabled || scrollMargin === null) return 0;
     const itemsList = virtualItems;
     if (itemsList.length === 0) return 0;
-    const height = itemsList[0].start - scrollMargin;
-    return height > 0 ? height - gap : 0;
+    // spacer height is the start position of the first visible row minus the container's margin
+    return Math.max(0, itemsList[0].start - scrollMargin);
   });
 
   const bottomSpacerHeight = $derived.by(() => {
@@ -142,8 +149,7 @@
     const itemsList = virtualItems;
     if (itemsList.length === 0) return 0;
     const lastItem = itemsList[itemsList.length - 1];
-    const height = totalSize - (lastItem.start + lastItem.size);
-    return height > 0 ? height - gap : 0;
+    return Math.max(0, totalSize - (lastItem.start + lastItem.size));
   });
 </script>
 
