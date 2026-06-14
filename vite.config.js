@@ -50,10 +50,10 @@ export default defineConfig({
       registerType: 'autoUpdate',
       manifest: {
         name: 'Hako',
-        shortName: 'Hako',
+        short_name: 'Hako',
         description: 'Hako is a box of everything Japanese media.',
-        themeColor: '#141415',
-        backgroundColor: '#141415',
+        theme_color: '#141415',
+        background_color: '#141415',
         display: 'standalone',
         start_url: '/',
         icons: [

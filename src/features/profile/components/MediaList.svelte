@@ -292,7 +292,7 @@
                 <h2
                   class="text-lg font-bold text-(--hako-fg) uppercase tracking-wider animate-pulse"
                 >
-                  Loading List...
+                  LOADING
                 </h2>
               </div>
             </td>
@@ -388,7 +388,7 @@
           <h2
             class="text-lg font-bold text-(--hako-fg) uppercase tracking-wider animate-pulse"
           >
-            Loading List...
+            LOADING
           </h2>
         </div>
         <div
