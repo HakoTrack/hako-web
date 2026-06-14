@@ -69,23 +69,23 @@ export default defineConfig({
             purpose: 'any maskable',
           },
         ],
+        screenshots: [
+          {
+            src: '/screenshot-desktop.png',
+            sizes: '1280x720',
+            type: 'image/png',
+            form_factor: 'wide',
+            label: 'Hako Desktop View',
+          },
+          {
+            src: '/screenshot-mobile.png',
+            sizes: '375x667',
+            type: 'image/png',
+            form_factor: 'narrow',
+            label: 'Hako Mobile View',
+          },
+        ],
       },
-      screenshots: [
-        {
-          src: '/screenshot-desktop.png',
-          sizes: '1280x720',
-          type: 'image/png',
-          form_factor: 'wide',
-          label: 'Hako Desktop View'
-        },
-        {
-          src: '/screenshot-mobile.png',
-          sizes: '375x667',
-          type: 'image/png',
-          form_factor: 'narrow',
-          label: 'Hako Mobile View'
-        }
-      ],
       workbox: {
         navigateFallback: 'index.html',
         runtimeCaching: [
