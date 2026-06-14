@@ -177,13 +177,15 @@
 
     <div class="relative pb-8">
       <div
-        class="flex flex-col md:flex-row items-end md:items-center space-y-4 md:space-y-0 md:space-x-6"
+        class="flex flex-col md:flex-row items-center md:items-center space-y-4 md:space-y-0 md:space-x-6"
       >
-        <div class="relative group">
+        <div
+          class="relative group w-32 h-32 md:w-40 md:h-40 rounded-full md:rounded-xl border-2 border-(--hako-bg) shadow-2xl overflow-hidden bg-(--hako-bg)"
+        >
           <img
             src={HakoImage.get(profileData?.avatar_url)}
             alt="Avatar"
-            class="w-32 h-32 md:w-40 md:h-40 rounded-xl border-4 border-[#0b1622] shadow-2xl object-cover bg-[#151f2e]"
+            class="w-full h-full object-cover"
           />
           {#if roleConfig}
             <div
