@@ -37,6 +37,20 @@ export const HakoImage = {
   },
 
   /**
+   * Helper for character images mapping to pre-generated in media bucket: /characters/{id}/{size}.webp
+   */
+  getCharacter: function (id: number | string, size: 'medium' | 'large' = 'medium'): string {
+    return `${ASSET_DOMAIN}/characters/${id}/${size}.webp`;
+  },
+
+  /**
+   * Helper for staff images mapping to pre-generated in media bucket: /people/{id}.webp
+   */
+  getStaff: function (id: number | string): string {
+    return `${ASSET_DOMAIN}/people/${id}.webp`;
+  },
+
+  /**
    * Prefetch banner for performance optimization.
    */
   prefetchBanner: function (id: number | string): void {

@@ -1,10 +1,10 @@
 <script lang="ts">
-  import { onMount } from "svelte";
   import {
     fetchMediaDetails,
     formatDescription,
   } from "../../shared/utils/mediaData";
   import { MediaService } from "./services/mediaService";
+  import { getMediaCharacters } from "./services/characterService";
   import { CacheService } from "../../core/cache";
   import { HakoImage } from "../../shared/utils/images";
   import { get_vibes_wasm } from "$wasm/hako_wasm";
@@ -25,6 +25,7 @@
   let isWasmReady = $state(false);
   let currentActiveTab = $state("overview"); // Tab tracking state
   let bannerError = $state(false);
+  let characters = $state<any[]>([]);
 
   // Derived title based on user preference
   const displayTitle = $derived.by(() => {
@@ -97,32 +98,57 @@
     });
   }
 
-  onMount(async () => {
-    try {
-      const [mediaRes, cachedRelations] = await Promise.all([
-        fetchMediaDetails(Number(mediaId)),
-        CacheService.getMediaRelations(mediaId),
-      ]);
+  $effect(() => {
+    const id = mediaId;
+    const t = type;
+    if (!id) return;
 
-      media = mediaRes;
+    media = null;
+    relations = [];
+    characters = [];
+    bannerError = false;
+    currentActiveTab = "overview";
+    isLoading = true;
 
-      if (cachedRelations) {
-        relations = sortRelations(cachedRelations);
-      } else {
-        const relRes = await MediaService.getMediaRelations(Number(mediaId));
-        if (relRes.success) {
-          relations = sortRelations(relRes.data);
-          await CacheService.setMediaRelations(
-            mediaId,
-            JSON.parse(JSON.stringify(relations)),
-          );
+    let aborted = false;
+
+    (async () => {
+      try {
+        const [mediaRes, cachedRelations, characterRes] = await Promise.all([
+          fetchMediaDetails(Number(id)),
+          CacheService.getMediaRelations(id),
+          getMediaCharacters(Number(id)),
+        ]);
+
+        if (aborted) return;
+
+        media = mediaRes;
+        characters = characterRes;
+
+        if (cachedRelations) {
+          relations = sortRelations(cachedRelations);
+        } else {
+          const relRes = await MediaService.getMediaRelations(Number(id));
+          if (aborted) return;
+          if (relRes.success) {
+            relations = sortRelations(relRes.data);
+            await CacheService.setMediaRelations(
+              id,
+              JSON.parse(JSON.stringify(relations)),
+            );
+          }
         }
+      } catch (e) {
+        if (aborted) return;
+        console.error("Failed to fetch media:", e);
+      } finally {
+        if (!aborted) isLoading = false;
       }
-    } catch (e) {
-      console.error("Failed to fetch media:", e);
-    } finally {
-      isLoading = false;
-    }
+    })();
+
+    return () => {
+      aborted = true;
+    };
   });
 
   const tabs = [
@@ -484,7 +510,7 @@
                 >
               </div>
               <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                {#each mockExtraData.characters.slice(0, 4) as char}
+                {#each characters.filter((c) => c.role === "MAIN") as char}
                   <div
                     class="bg-card rounded-lg overflow-hidden flex justify-between p-2 hover:bg-slate-800/30 transition-colors"
                   >
@@ -493,29 +519,34 @@
                         src={char.image}
                         alt={char.name}
                         class="w-12 h-16 object-cover rounded shadow-md shrink-0"
+                        loading="lazy"
                       />
-                      <div class="flex flex-col justify-center min-w-0">
+                      <div class="flex flex-col min-w-0">
                         <span
-                          class="text-xs text-(--hako-fg) font-bold truncate"
+                          class="text-sm text-(--hako-fg) font-bold whitespace-nowrap"
                           >{char.name}</span
                         >
-                        <span class="text-[10px] text-slate-500"
-                          >{char.role}</span
+                        <span class="text-xs text-slate-500 whitespace-nowrap"
+                          >{toTitleCase(char.role)}</span
                         >
                       </div>
                     </div>
-                    <div class="flex gap-3 text-right min-w-0">
-                      <div class="flex flex-col justify-center min-w-0">
+                    <div class="flex gap-3 text-right min-w-0 items-end">
+                      <div class="flex flex-col min-w-0 text-right">
                         <span
-                          class="text-xs text-(--hako-fg) font-bold truncate"
-                          >{char.va.name}</span
+                          class="text-sm text-(--hako-fg) font-bold whitespace-nowrap"
+                          >{char.va?.name || "Unknown VA"}</span
                         >
-                        <span class="text-[10px] text-slate-500">Japanese</span>
+                        <span class="text-xs text-slate-500 whitespace-nowrap"
+                          >Japanese</span
+                        >
                       </div>
                       <img
-                        src={char.va.image}
-                        alt={char.va.name}
+                        src={char.va?.image ||
+                          "https://placehold.co/100x150/0b1622/ffffff?text=?"}
+                        alt="VA"
                         class="w-12 h-16 object-cover rounded shadow-md shrink-0"
+                        loading="lazy"
                       />
                     </div>
                   </div>
@@ -542,6 +573,7 @@
                       src={person.image}
                       alt={person.name}
                       class="w-16 h-16 object-cover rounded-full shadow-md mx-auto mb-2"
+                      loading="lazy"
                     />
                     <span
                       class="block text-xs text-(--hako-fg) font-bold truncate"
@@ -559,7 +591,7 @@
           <!-- Characters Tab -->
           <div class:hidden={currentActiveTab !== "characters"}>
             <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-              {#each mockExtraData.characters as char}
+              {#each characters as char}
                 <div
                   class="bg-card rounded-lg overflow-hidden flex justify-between p-3 hover:bg-slate-800/30 transition-colors"
                 >
@@ -568,25 +600,36 @@
                       src={char.image}
                       alt={char.name}
                       class="w-16 h-24 object-cover rounded shadow-lg shrink-0"
+                      loading="lazy"
                     />
-                    <div class="flex flex-col justify-center min-w-0">
-                      <span class="text-sm text-(--hako-fg) font-bold truncate"
+                    <div class="flex flex-col min-w-0">
+                      <span
+                        class="text-sm text-(--hako-fg) font-bold whitespace-nowrap"
                         >{char.name}</span
                       >
-                      <span class="text-xs text-slate-500">{char.role}</span>
+                      <span class="text-xs text-slate-500 whitespace-nowrap"
+                        >{toTitleCase(char.role)}</span
+                      >
                     </div>
                   </div>
-                  <div class="flex gap-4 text-right min-w-0">
-                    <div class="flex flex-col justify-center min-w-0">
-                      <span class="text-sm text-(--hako-fg) font-bold truncate"
-                        >{char.va.name}</span
+                  <div
+                    class="flex gap-4 text-right min-w-0 items-end justify-end overflow-hidden"
+                  >
+                    <div class="flex flex-col min-w-0 text-right items-end">
+                      <span
+                        class="text-sm text-(--hako-fg) font-bold whitespace-nowrap"
+                        >{char.va?.name || "Unknown VA"}</span
                       >
-                      <span class="text-xs text-slate-500">Japanese</span>
+                      <span class="text-xs text-slate-500 whitespace-nowrap"
+                        >Japanese</span
+                      >
                     </div>
                     <img
-                      src={char.va.image}
-                      alt={char.va.name}
+                      src={char.va?.image ||
+                        "https://placehold.co/100x150/0b1622/ffffff?text=?"}
+                      alt="VA"
                       class="w-16 h-24 object-cover rounded shadow-lg shrink-0"
+                      loading="lazy"
                     />
                   </div>
                 </div>
@@ -606,6 +649,7 @@
                       src={person.image}
                       alt={person.name}
                       class="w-24 h-24 object-cover rounded-full shadow-xl mx-auto border-2 border-slate-700 group-hover:border-accent transition-colors"
+                      loading="lazy"
                     />
                   </div>
                   <span
