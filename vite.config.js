@@ -48,6 +48,7 @@ export default defineConfig({
     }),
     VitePWA({
       registerType: 'autoUpdate',
+      includeAssets: ['favicon.ico', 'robots.txt', 'apple-touch-icon.png', 'android-chrome-192x192.png', 'android-chrome-512x512.png'],
       manifest: {
         name: 'Hako',
         short_name: 'Hako',
@@ -88,6 +89,9 @@ export default defineConfig({
       },
       workbox: {
         navigateFallback: 'index.html',
+        globPatterns: ['**/*.{js,css,html,ico,woff2,ttf}'],
+        clientsClaim: true,
+        skipWaiting: true,
         runtimeCaching: [
           {
             // Unified cache strategy for all image assets

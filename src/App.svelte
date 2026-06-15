@@ -15,6 +15,20 @@
   import init from "$wasm/hako_wasm";
   import { wasmInitialized } from "./core/wasm-init";
   import { ui } from "./core/ui.svelte";
+  import { initShortcuts, registerShortcut } from "./core/keys.svelte";
+
+  initShortcuts();
+
+  // Register default shortcuts
+  registerShortcut("/", (e) => {
+    e.preventDefault();
+    ui.isSearchOpen = true;
+  });
+
+  registerShortcut("Escape", () => {
+    ui.isSearchOpen = false;
+    ui.isQuickUpdateOpen = false;
+  });
 
   let user = $state(null);
   let profile = $state(null);

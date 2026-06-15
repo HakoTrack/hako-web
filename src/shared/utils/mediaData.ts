@@ -19,6 +19,7 @@ export function mapSupabaseMedia(media: any): Media | null {
 
   return {
     media_id: media.id,
+    media_type: media.media_type || "anime",
     title: {
       romaji: media.title_romaji,
       english: media.title_english,

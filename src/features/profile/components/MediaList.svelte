@@ -15,6 +15,34 @@
   import init, { ListEngine } from "$wasm/hako_wasm";
   import VirtualScroll from "../../../shared/components/VirtualScroll.svelte";
   import { untrack } from "svelte";
+  import { registerShortcut } from "../../../core/keys.svelte";
+
+  let searchInputRef = $state<HTMLInputElement | null>(null);
+
+  $effect(() => {
+    const cleanups: (() => void)[] = [];
+
+    cleanups.push(
+      registerShortcut("f", (e) => {
+        e.preventDefault();
+        searchInputRef?.focus();
+      }),
+    );
+
+    statusGroups.forEach((group, index) => {
+      if (index < 9) {
+        cleanups.push(
+          registerShortcut((index + 1).toString(), () => {
+            setFilter(group.id, true);
+          }),
+        );
+      }
+    });
+
+    return () => {
+      cleanups.forEach((c) => c());
+    };
+  });
 
   let {
     type = "anime",
@@ -328,7 +356,7 @@
                   : ''}"
               >
                 <div
-                  class="w-12 aspect-[17/23] bg-(--surface-elevated) animate-pulse rounded mx-auto"
+                  class="w-12 aspect-17/23 bg-(--surface-elevated) animate-pulse rounded mx-auto"
                 ></div>
               </td>
               <td
@@ -398,7 +426,7 @@
             <div
               class="bg-card rounded-xl overflow-hidden shadow-md border border-(--surface-elevated) flex flex-col h-full animate-pulse"
             >
-              <div class="aspect-[2/3] bg-(--surface-elevated)"></div>
+              <div class="aspect-2/3 bg-(--surface-elevated)"></div>
             </div>
           {/each}
         </div>
@@ -415,6 +443,7 @@
         <SearchInput
           value={searchQuery}
           oninput={handleSearchInput}
+          bind:inputRef={searchInputRef}
           placeholder="Search"
           label="Search List"
         />
@@ -609,7 +638,7 @@
                           : ''}"
                       >
                         <td
-                          class="p-2 border-b bg-(--surface) border-(--surface-elevated) group-hover:!bg-[color-mix(in_srgb,var(--surface-elevated)_80%,transparent)] transition-colors {isLast
+                          class="p-2 border-b bg-(--surface) border-(--surface-elevated) group-hover:bg-[color-mix(in_srgb,var(--surface-elevated)_80%,transparent)]! transition-colors {isLast
                             ? 'rounded-bl-xl border-b-0'
                             : ''}"
                         >
@@ -624,7 +653,7 @@
                           />
                         </td>
                         <td
-                          class="p-4 cursor-pointer border-b bg-(--surface) border-(--surface-elevated) group-hover:!bg-[color-mix(in_srgb,var(--surface-elevated)_80%,transparent)] transition-colors {isLast
+                          class="p-4 cursor-pointer border-b bg-(--surface) border-(--surface-elevated) group-hover:bg-[color-mix(in_srgb,var(--surface-elevated)_80%,transparent)]! transition-colors {isLast
                             ? 'border-b-0'
                             : ''}"
                           onclick={() => handleOpenEditor(item.media_id)}
@@ -641,14 +670,14 @@
                           </div>
                         </td>
                         <td
-                          class="bg-(--surface) group-hover:!bg-[color-mix(in_srgb,var(--surface-elevated)_80%,transparent)] transition-colors p-4 text-center text-sm font-mono {getScoreColor(
+                          class="bg-(--surface) group-hover:bg-[color-mix(in_srgb,var(--surface-elevated)_80%,transparent)]! transition-colors p-4 text-center text-sm font-mono {getScoreColor(
                             item.score,
                           )} border-b border-(--surface-elevated) group-last:border-0 {isLast
                             ? 'border-b-0'
                             : ''}">{item.score?.toFixed(1) || "—"}</td
                         >
                         <td
-                          class="bg-(--surface) group-hover:!bg-[color-mix(in_srgb,var(--surface-elevated)_80%,transparent)] transition-colors p-4 text-center text-sm font-mono text-(--hako-fg) border-b border-(--surface-elevated) group-last:border-0 {isLast
+                          class="bg-(--surface) group-hover:bg-[color-mix(in_srgb,var(--surface-elevated)_80%,transparent)]! transition-colors p-4 text-center text-sm font-mono text-(--hako-fg) border-b border-(--surface-elevated) group-last:border-0 {isLast
                             ? 'border-b-0'
                             : ''}"
                         >
@@ -658,7 +687,7 @@
                           >
                         </td>
                         <td
-                          class="bg-(--surface) group-hover:!bg-[color-mix(in_srgb,var(--surface-elevated)_80%,transparent)] transition-colors p-4 text-center border-b border-(--surface-elevated) group-last:border-0 hidden sm:table-cell {isLast
+                          class="bg-(--surface) group-hover:bg-[color-mix(in_srgb,var(--surface-elevated)_80%,transparent)]! transition-colors p-4 text-center border-b border-(--surface-elevated) group-last:border-0 hidden sm:table-cell {isLast
                             ? 'rounded-br-xl border-b-0'
                             : ''}"
                         >

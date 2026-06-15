@@ -42,6 +42,7 @@ export interface VibeAffinity {
 // --- Media & List Interfaces ---
 export interface Media {
   media_id: number;
+  media_type: 'anime' | 'manga' | 'light_novel';
   title: {
     romaji: string;
     english: string | null;

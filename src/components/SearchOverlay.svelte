@@ -21,10 +21,8 @@
   }>();
 
   function getMediaType(media: Media) {
-    const fmt = media.format?.toLowerCase();
-    if (fmt === "manga" || fmt === "one_shot") return "manga";
-    if (fmt === "novel") return "lightnovel";
-    return "anime";
+    if (media.media_type === "light_novel") return "lightnovel";
+    return media.media_type || "anime";
   }
 
   let categorizedResults = $derived(() => {

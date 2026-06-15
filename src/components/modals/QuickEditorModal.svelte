@@ -221,7 +221,8 @@
     <div class="absolute top-4 right-4 flex items-center gap-2">
       <button
         onclick={() => {
-          const type = entry.type || "anime";
+          let type = entry.type || "anime";
+          if (type === "light_novel") type = "lightnovel";
           window.history.pushState({}, "", `/${type}/${entry.id}`);
           window.dispatchEvent(new PopStateEvent("popstate"));
           closeModal();
@@ -240,7 +241,7 @@
     </div>
     <div class="absolute -bottom-6 left-6 flex items-end gap-4">
       {#if entry}
-        <div class="relative w-24 h-32">
+        <div class="relative w-24 h-32 shrink-0">
           {#if !coverLoaded}
             <div
               class="absolute inset-0 block bg-gray-500 animate-pulse rounded-lg shadow-lg border-2 border-gray-400 z-10"
@@ -262,7 +263,9 @@
             }}
           />
         </div>
-        <h2 class="text-2xl font-bold text-(--hako-fg) drop-shadow-md pb-2">
+        <h2
+          class="text-2xl font-bold text-(--hako-fg) drop-shadow-md pb-2 line-clamp-3"
+        >
           {displayTitle}
         </h2>
       {/if}
@@ -322,11 +325,7 @@
         <label
           class="text-xs font-bold text-slate-400 uppercase tracking-wider mb-1.5 block"
         >
-          {#if mediaType === "anime"}
-            Episodes
-          {:else}
-            Chapters
-          {/if}
+          Progress
         </label>
         {#if !isLoaded || !entry}
           <Skeleton />
@@ -335,7 +334,7 @@
             label=""
             bind:value={progress}
             min={0}
-            max={entry.total || Infinity}
+            max={entry.total || 5000}
             suffix="/ {entry.total || '?'}"
           />
         {/if}
@@ -401,9 +400,9 @@
         >
           {#if !isLoaded}
             <div class="space-y-2">
-              <Skeleton class="!h-3 w-full" />
-              <Skeleton class="!h-3 w-5/6" />
-              <Skeleton class="!h-3 w-4/6" />
+              <Skeleton class="h-3! w-full" />
+              <Skeleton class="h-3! w-5/6" />
+              <Skeleton class="h-3! w-4/6" />
             </div>
           {:else if entry}
             {@html formatDescription(entry.description)}
