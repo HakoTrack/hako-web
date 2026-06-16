@@ -10,6 +10,8 @@
   type Step = "tos" | "credentials" | "profile" | "import";
   let step = $state<Step>("tos");
   let isSaving = $state(false);
+  let signupComplete = $state(false);
+  let signupEmail = $state("");
 
   let formData = $state({
     username: "",
@@ -130,8 +132,8 @@
       return;
     }
 
-    toast.success("Account created successfully!");
-    window.location.href = "/feed";
+    signupEmail = formData.email;
+    signupComplete = true;
   }
 </script>
 
@@ -140,7 +142,22 @@
   style="--hero-bg: url('{heroUrl}')"
 >
   <div class="w-full max-w-2xl p-2">
-    {#if step === "tos"}
+    {#if signupComplete}
+      <div class="text-center py-16">
+        <i class="fa-solid fa-envelope text-6xl text-(--hako-accent) mb-6 block"
+        ></i>
+        <h1 class="text-2xl font-bold text-(--hako-fg) mb-3">
+          Check your email
+        </h1>
+        <p class="text-slate-400 mb-2">We sent a confirmation link to</p>
+        <p class="text-(--hako-fg) font-medium mb-8">
+          {signupEmail}
+        </p>
+        <p class="text-sm text-slate-500">
+          Click the link in the email to verify your account, then log in.
+        </p>
+      </div>
+    {:else if step === "tos"}
       <h1 class="text-2xl font-bold text-(--hako-fg) mb-2 text-center">
         Terms of Service
       </h1>
