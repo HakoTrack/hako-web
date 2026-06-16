@@ -39,6 +39,65 @@ export interface VibeAffinity {
   value: number;
 }
 
+// --- Character Interfaces ---
+export interface CharacterMediaAppearance {
+  mediaId: number;
+  title: {
+    romaji: string;
+    english: string | null;
+    native: string | null;
+  };
+  format: string;
+  mediaType: string;
+  role: string;
+  seasonYear: number | null;
+  cover: string;
+  voiceActor?: {
+    id: number;
+    name: string;
+    image: string;
+  };
+}
+
+export interface StaffMediaAppearance {
+  mediaId: number;
+  title: {
+    romaji: string;
+    english: string | null;
+    native: string | null;
+  };
+  format: string;
+  mediaType: string;
+  role: string;
+  seasonYear: number | null;
+  cover: string;
+  character: {
+    id: number;
+    name: string;
+    image: string;
+  };
+}
+
+export interface StaffDetail {
+  id: number;
+  name: string;
+  nameNative: string | null;
+  biography: string | null;
+  image: string;
+  media: StaffMediaAppearance[];
+}
+
+export interface CharacterDetail {
+  id: number;
+  name: string;
+  nameNative: string | null;
+  biography: string | null;
+  aliases: string[];
+  aliasesSpoiler: string[];
+  image: string;
+  media: CharacterMediaAppearance[];
+}
+
 // --- Media & List Interfaces ---
 export interface Media {
   media_id: number;

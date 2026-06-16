@@ -278,10 +278,10 @@
   <div class="animate-in fade-in duration-300">
     <!-- Banner Skeleton -->
     <div
-      class="w-full h-80 bg-[#0b1622] animate-pulse relative overflow-hidden"
+      class="w-full h-100 bg-(--surface-elevated) animate-pulse relative overflow-hidden"
     >
       <div
-        class="absolute inset-0 bg-linear-to-t from-[#0b1622] to-transparent"
+        class="absolute inset-0 bg-linear-to-t from-(--hako-bg) to-transparent"
       ></div>
     </div>
 
@@ -309,9 +309,7 @@
       <div class="flex flex-col lg:flex-row gap-8 mb-12">
         <!-- Sidebar Skeleton -->
         <aside class="lg:w-50 shrink-0">
-          <div
-            class="bg-card rounded-xl border border-slate-800 overflow-hidden"
-          >
+          <div class="bg-card rounded-xl overflow-hidden">
             {#each Array(4) as _}
               <div
                 class="h-11 w-full border-l-4 border-transparent bg-slate-800/20 animate-pulse mb-px"
@@ -322,9 +320,7 @@
 
         <!-- Main Content Area Skeleton -->
         <main class="lg:w-[65%] min-h-100 pb-12 space-y-6">
-          <div
-            class="bg-card p-6 rounded-xl shadow-lg border border-slate-800 space-y-4"
-          >
+          <div class="bg-card p-6 rounded-xl shadow-lg space-y-4">
             <div
               class="w-32 h-6 bg-(--surface-elevated) animate-pulse rounded"
             ></div>
@@ -347,9 +343,7 @@
 
         <!-- Metadata Column Skeleton -->
         <div class="lg:w-[20%] space-y-6">
-          <div
-            class="bg-card p-6 rounded-xl shadow-lg border border-slate-800 space-y-4"
-          >
+          <div class="bg-card p-6 rounded-xl shadow-lg space-y-4">
             <div
               class="w-20 h-5 bg-(--surface-elevated) animate-pulse rounded"
             ></div>
@@ -367,7 +361,7 @@
 {:else}
   <div class="relative">
     <!-- Banner -->
-    <div class="w-full h-80 relative overflow-hidden bg-[#0b1622]">
+    <div class="w-full h-100 relative overflow-hidden bg-(--hako-bg)">
       {#if bannerError}
         <div
           class="absolute inset-0"
@@ -385,7 +379,7 @@
           "
         ></div>
         <div
-          class="absolute inset-0 bg-linear-to-b from-transparent to-[#0b1622]"
+          class="absolute inset-0 bg-linear-to-b from-transparent to-(--hako-bg)"
         ></div>
       {:else}
         <img
@@ -396,7 +390,7 @@
         />
       {/if}
       <div
-        class="absolute inset-0 bg-linear-to-t from-[#0b1622] to-transparent"
+        class="absolute inset-0 bg-linear-to-t from-(--hako-bg) to-transparent"
       ></div>
     </div>
 
@@ -511,8 +505,12 @@
               </div>
               <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                 {#each characters.filter((c) => c.role === "MAIN") as char}
-                  <div
-                    class="bg-card rounded-lg overflow-hidden flex justify-between p-2 hover:bg-slate-800/30 transition-colors"
+                  <button
+                    onclick={() => {
+                      window.history.pushState({}, "", `/character/${char.id}`);
+                      window.dispatchEvent(new PopStateEvent("popstate"));
+                    }}
+                    class="bg-card rounded-lg overflow-hidden flex justify-between p-2 hover:bg-slate-800/30 transition-colors cursor-pointer text-left w-full"
                   >
                     <div class="flex gap-3 min-w-0">
                       <img
@@ -549,7 +547,7 @@
                         loading="lazy"
                       />
                     </div>
-                  </div>
+                  </button>
                 {/each}
               </div>
             </div>
@@ -592,8 +590,12 @@
           <div class:hidden={currentActiveTab !== "characters"}>
             <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
               {#each characters as char}
-                <div
-                  class="bg-card rounded-lg overflow-hidden flex justify-between p-3 hover:bg-slate-800/30 transition-colors"
+                <button
+                  onclick={() => {
+                    window.history.pushState({}, "", `/character/${char.id}`);
+                    window.dispatchEvent(new PopStateEvent("popstate"));
+                  }}
+                  class="bg-card rounded-lg overflow-hidden flex justify-between p-3 hover:bg-slate-800/30 transition-colors cursor-pointer text-left w-full"
                 >
                   <div class="flex gap-4 min-w-0">
                     <img
@@ -632,7 +634,7 @@
                       loading="lazy"
                     />
                   </div>
-                </div>
+                </button>
               {/each}
             </div>
           </div>

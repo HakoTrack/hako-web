@@ -2,6 +2,8 @@ import Feed from "./features/feed/Feed.svelte";
 import Landing from "./features/landing/Landing.svelte";
 import Profile from "./features/profile/Profile.svelte";
 import MediaDetail from "./features/media/MediaDetail.svelte";
+import CharacterDetail from "./features/character/CharacterDetail.svelte";
+import StaffDetail from "./features/staff/StaffDetail.svelte";
 import SignupPage from "./features/auth/SignupPage.svelte";
 
 import Browse from "./features/browse/Browse.svelte";
@@ -13,6 +15,16 @@ export interface Route {
 }
 
 export const routes: Route[] = [
+  {
+    path: "/character/",
+    component: CharacterDetail,
+    props: (path) => ({ characterId: path.split("/")[2] })
+  },
+  {
+    path: "/staff/",
+    component: StaffDetail,
+    props: (path) => ({ staffId: path.split("/")[2] })
+  },
   {
     path: "/user/",
     component: Profile,
