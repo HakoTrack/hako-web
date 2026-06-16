@@ -33,7 +33,7 @@
     );
 
     results.forEach((r) => {
-      recentlyAdded[r.type] = r.media;
+      recentlyAdded[r.type as keyof typeof recentlyAdded] = r.media;
     });
   });
 

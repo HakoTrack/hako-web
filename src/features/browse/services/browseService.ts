@@ -4,11 +4,11 @@ import type { Media } from '../../../shared/types/index';
 import { mapSupabaseMedia } from '../../../shared/utils/mediaData';
 
 export interface BrowseFilters {
-  genre?: string;
-  tag?: string;
+  genre: string;
+  tag: string;
   year?: number;
-  search?: string;
-  format?: string;
+  search: string;
+  format: string;
 }
 
 // authorative list of genres and common tags to avoid db scans
