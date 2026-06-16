@@ -17,7 +17,7 @@
     class?: string;
     alt?: string;
     onmouseover?: () => void;
-    tooltip?: import("svelte").Snippet;
+    tooltip?: any;
     showTooltip?: boolean;
     prefetchedMedia?: Media | null;
     isLoading?: boolean;
@@ -144,7 +144,7 @@
 {/snippet}
 
 {#if tooltip || showTooltip}
-  <Tooltip content={tooltip || defaultTooltip} placement="bottom" offset={10}>
+  <Tooltip content={tooltip ?? defaultTooltip} placement="bottom" offset={10}>
     {@render coverImage()}
   </Tooltip>
 {:else}

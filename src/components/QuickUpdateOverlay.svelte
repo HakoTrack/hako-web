@@ -198,9 +198,9 @@
                           >
                             <div
                               class="bg-(--c2) h-full transition-all duration-300"
-                              style="width: {(item.progress /
-                                (media.episodes || media.chapters || 100)) *
-                                100}%"
+              style="width: {((item.progress ?? 0) /
+                (media.episodes || media.chapters || 100)) *
+                100}%"
                             ></div>
                           </div>
                           <span

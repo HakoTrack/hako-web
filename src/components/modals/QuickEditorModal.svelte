@@ -204,7 +204,7 @@
         ></div>
       {:else}
         <img
-          src={HakoImage.getBanner(entry.id, 700)}
+          src={HakoImage.getBanner(entry.id)}
           class="w-full h-full object-cover transition-opacity duration-300 {bannerLoaded
             ? 'opacity-50'
             : 'opacity-0'}"

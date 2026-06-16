@@ -26,6 +26,10 @@ interface HakoDB extends DBSchema {
     key: string;
     value: SyncCache<any>;
   };
+  list_entries: {
+    key: string;
+    value: SyncCache<any>;
+  };
 }
 
 const DB_NAME = 'HakoDB_v2';

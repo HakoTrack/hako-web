@@ -10,14 +10,23 @@
       "$core": [
         "./src/core/index.ts"
       ],
+      "$core/*": [
+        "./src/core/*"
+      ],
       "$utils": [
         "./src/shared/utils/index.ts"
+      ],
+      "$utils/*": [
+        "./src/shared/utils/*"
       ],
       "$features/*": [
         "./src/features/*"
       ],
       "$components": [
         "./src/shared/components/index.ts"
+      ],
+      "$components/*": [
+        "./src/shared/components/*"
       ],
       "$wasm/*": [
         "./src-wasm/pkg/*"

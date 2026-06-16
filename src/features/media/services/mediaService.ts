@@ -27,13 +27,13 @@ export const MediaService = {
           // We treat cached media as a "list" for the WASM engine
           // The engine expects items (ListEntry) and metadata (Media)
           const mockItems = allCached.map(m => ({
-            media_id: m.media_id,
+            media_id: m.data.media_id,
             status: 'cached'
           }));
 
           const metadataMap: Record<string, any> = {};
           allCached.forEach(m => {
-            metadataMap[m.media_id.toString()] = m;
+            metadataMap[m.data.media_id.toString()] = m.data;
           });
 
           const engine = new ListEngine(mockItems, metadataMap);
