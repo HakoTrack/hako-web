@@ -1,5 +1,6 @@
 import { supabase } from '../../../core/supabase';
 import { HakoImage } from '../../../shared/utils/images';
+import type { CharacterDetail, CharacterMediaAppearance } from '../../../shared/types/index';
 
 interface Character {
   id: number;
@@ -70,4 +71,90 @@ export async function getMediaCharacters(mediaId: number) {
       } : null
     };
   });
+}
+
+export async function getCharacterById(id: number): Promise<CharacterDetail | null> {
+  const { data: char, error } = await supabase
+    .from('characters')
+    .select('id, name_full, name_native, biography, aliases, aliases_spoiler')
+    .eq('id', id)
+    .single();
+
+  if (error || !char) {
+    if (error) console.error('Error fetching character:', error);
+    return null;
+  }
+
+  const { data: appearances } = await supabase
+    .from('character_relations')
+    .select(`
+      role,
+      media:media_id (
+        id, title_romaji, title_english, title_native,
+        format, media_type, season_year, episodes, chapters
+      )
+    `)
+    .eq('character_id', id);
+
+  const { data: staffRoles } = await supabase
+    .from('staff_roles')
+    .select(`
+      media_id,
+      staff (
+        id,
+        name_full
+      )
+    `)
+    .eq('character_id', id)
+    .not('staff_id', 'is', null);
+
+  const vaByMedia: Record<number, { id: number; name: string; image: string }> = {};
+  for (const sr of (staffRoles as any[]) ?? []) {
+    const staffMember: any = sr.staff;
+    if (staffMember) {
+      vaByMedia[sr.media_id] = {
+        id: staffMember.id,
+        name: staffMember.name_full,
+        image: HakoImage.getStaff(staffMember.id),
+      };
+    }
+  }
+
+  const media: CharacterMediaAppearance[] = (appearances ?? [])
+    .filter((a: any) => a.media)
+    .map((a: any) => ({
+      mediaId: a.media.id,
+      title: {
+        romaji: a.media.title_romaji,
+        english: a.media.title_english,
+        native: a.media.title_native,
+      },
+      format: a.media.format,
+      mediaType: a.media.media_type,
+      role: a.role,
+      seasonYear: a.media.season_year,
+      cover: HakoImage.getCover(a.media.id),
+      voiceActor: vaByMedia[a.media.id] ?? undefined,
+    }));
+
+  let aliases: string[] = [];
+  if (Array.isArray(char.aliases)) {
+    aliases = char.aliases;
+  }
+
+  let aliasesSpoiler: string[] = [];
+  if (Array.isArray(char.aliases_spoiler)) {
+    aliasesSpoiler = char.aliases_spoiler;
+  }
+
+  return {
+    id: char.id,
+    name: char.name_full,
+    nameNative: char.name_native,
+    biography: char.biography,
+    aliases,
+    aliasesSpoiler,
+    image: HakoImage.getCharacter(char.id, 'large'),
+    media,
+  };
 }

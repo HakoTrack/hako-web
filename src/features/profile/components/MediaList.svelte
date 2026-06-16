@@ -650,6 +650,7 @@
                             class="mx-auto group-hover:scale-105 transition-transform"
                             showTooltip={false}
                             prefetchedMedia={meta}
+                            onClick={() => handleOpenEditor(item.media_id)}
                           />
                         </td>
                         <td
@@ -777,6 +778,7 @@
                         class="w-full aspect-2/3 rounded-md"
                         showTooltip={false}
                         prefetchedMedia={meta}
+                        onClick={() => handleOpenEditor(item.media_id)}
                       />
                       <div
                         class="absolute bottom-0 left-0 right-0 bg-(--hako-bg)/80 p-2 text-(--hako-fg) opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none rounded-lg"

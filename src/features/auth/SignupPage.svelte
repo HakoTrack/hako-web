@@ -27,21 +27,23 @@
   });
 
   async function next() {
-    console.log("Current step:", step);
     if (step === "tos") {
       step = "credentials";
-      console.log("Stepped to:", step);
     } else if (step === "credentials") {
-      // Validate invite code
-      const { data, error: rpcError } = await supabase.rpc(
-        "redeem_invite_code",
-        {
-          invite_code: formData.inviteCode,
-        },
-      );
-
-      if (rpcError || !data) {
-        toast.error("Invalid or already used invite code.");
+      if (!formData.username.trim()) {
+        toast.error("Username is required");
+        return;
+      }
+      if (formData.password !== formData.confirmPassword) {
+        toast.error("Passwords do not match");
+        return;
+      }
+      if (formData.password.length < 8) {
+        toast.error("Password must be at least 8 characters");
+        return;
+      }
+      if (!formData.inviteCode.trim()) {
+        toast.error("Invite code is required");
         return;
       }
       step = "profile";
@@ -57,9 +59,36 @@
   }
 
   async function finish() {
+    if (formData.password !== formData.confirmPassword) {
+      toast.error("Passwords do not match");
+      return;
+    }
+    if (formData.password.length < 8) {
+      toast.error("Password must be at least 8 characters");
+      return;
+    }
+    if (!formData.username.trim()) {
+      toast.error("Username is required");
+      return;
+    }
+    if (!formData.inviteCode.trim()) {
+      toast.error("Invite code is required");
+      return;
+    }
+
     isSaving = true;
 
-    // 1. Sign up user
+    const { data: codeData, error: codeError } = await supabase.rpc(
+      "redeem_invite_code",
+      { invite_code: formData.inviteCode },
+    );
+
+    if (codeError || !codeData) {
+      toast.error("Invalid or already used invite code.");
+      isSaving = false;
+      return;
+    }
+
     const { data: authData, error: authError } = await supabase.auth.signUp({
       email: formData.email,
       password: formData.password,
@@ -77,13 +106,23 @@
       return;
     }
 
-    // 2. Update profile
+    const { error: claimError } = await supabase.rpc("claim_invite_code", {
+      invite_code: formData.inviteCode,
+      user_id: authData.user.id,
+    });
+
+    if (claimError) {
+      toast.error("Failed to link invite code: " + claimError.message);
+      isSaving = false;
+      return;
+    }
+
     const { error: profileError } = await supabase
       .from("profiles")
       .update({
         username: formData.username,
         quote: formData.quote,
-        about: formData.aboutMe,
+        about_me: formData.aboutMe,
       })
       .eq("id", authData.user.id);
 
@@ -120,7 +159,7 @@
         </button>
         <button
           type="button"
-          class="px-6 py-2.5 rounded-xl font-bold text-sm bg-[var(--hako-accent)] text-[var(--hako-bg)] hover:opacity-90 shadow-lg transition-all"
+          class="px-6 py-2.5 rounded-xl font-bold text-sm bg-var(--hako-accent) text-var(--hako-bg) hover:opacity-90 shadow-lg transition-all"
           onclick={next}
         >
           Accept & Continue
@@ -145,7 +184,7 @@
           autocomplete="new-password"
         />
         <TextInput
-          label="Email (Optional)"
+          label="Email"
           type="email"
           bind:value={formData.email}
           name="email"
