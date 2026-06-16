@@ -117,14 +117,12 @@
       return;
     }
 
-    const { error: profileError } = await supabase
-      .from("profiles")
-      .update({
-        username: formData.username,
-        quote: formData.quote,
-        about_me: formData.aboutMe,
-      })
-      .eq("id", authData.user.id);
+    const { error: profileError } = await supabase.rpc("setup_profile", {
+      user_id: authData.user.id,
+      p_username: formData.username,
+      p_quote: formData.quote,
+      p_about_me: formData.aboutMe,
+    });
 
     if (profileError) {
       toast.error("Failed to set up profile: " + profileError.message);
