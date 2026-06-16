@@ -213,7 +213,7 @@
                     <div class="grid grid-cols-1 grid-rows-1 mb-2">
                       <div class="col-start-1 row-start-1 justify-self-end">
                         <div
-                          class="w-40 aspect-[17/23] bg-(--surface-elevated) animate-pulse rounded"
+                          class="w-40 aspect-17/23 bg-(--surface-elevated) animate-pulse rounded"
                         ></div>
                       </div>
                       <div

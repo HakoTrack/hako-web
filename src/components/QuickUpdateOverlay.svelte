@@ -198,13 +198,13 @@
                           >
                             <div
                               class="bg-(--c2) h-full transition-all duration-300"
-              style="width: {((item.progress ?? 0) /
-                (media.episodes || media.chapters || 100)) *
-                100}%"
+                              style="width: {((item.progress ?? 0) /
+                                (media.episodes || media.chapters || 100)) *
+                                100}%"
                             ></div>
                           </div>
                           <span
-                            class="text-[10px] font-mono text-slate-500 min-w-[3rem] text-right"
+                            class="text-[10px] font-mono text-slate-500 min-w-12 text-right"
                           >
                             {item.progress} / {media.episodes ||
                               media.chapters ||

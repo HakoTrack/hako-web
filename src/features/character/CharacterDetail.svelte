@@ -225,7 +225,7 @@
               >
                 {#each Array(3) as _}
                   <div
-                    class="w-40 aspect-[17/23] bg-(--surface-elevated) animate-pulse rounded"
+                    class="w-40 aspect-17/23 bg-(--surface-elevated) animate-pulse rounded"
                   ></div>
                 {/each}
               </div>

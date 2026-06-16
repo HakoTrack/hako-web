@@ -81,6 +81,9 @@ export interface StaffMediaAppearance {
 export interface StaffDetail {
   id: number;
   name: string;
+  nameFirst: string;
+  nameMiddle: string;
+  nameLast: string;
   nameNative: string | null;
   biography: string | null;
   image: string;
@@ -90,6 +93,9 @@ export interface StaffDetail {
 export interface CharacterDetail {
   id: number;
   name: string;
+  nameFirst: string;
+  nameMiddle: string;
+  nameLast: string;
   nameNative: string | null;
   biography: string | null;
   aliases: string[];
