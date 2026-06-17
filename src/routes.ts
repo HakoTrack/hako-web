@@ -8,6 +8,8 @@ import SignupPage from "./features/auth/SignupPage.svelte";
 
 import Browse from "./features/browse/Browse.svelte";
 
+import ForumThread from "./features/forum/ForumThread.svelte";
+
 export interface Route {
   path: string;
   component: any;
@@ -65,5 +67,13 @@ export const routes: Route[] = [
     path: "/signup",
     component: SignupPage,
     props: () => ({})
+  },
+  {
+    path: "/forum/",
+    component: ForumThread,
+    props: (path) => {
+      const parts = path.split("/").filter(Boolean);
+      return { threadId: Number(parts[1]), postId: parts[2] ? Number(parts[2]) : null };
+    }
   }
 ];

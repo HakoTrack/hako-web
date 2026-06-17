@@ -170,6 +170,14 @@
           <Dropdown items={browseDropdownItems}>
             <span class="nav-link cursor-pointer">Browse</span>
           </Dropdown>
+          <a
+            href="/forum"
+            class="nav-link ring-0 outline-none"
+            onclick={(e) => {
+              e.preventDefault();
+              navigate("/forum");
+            }}>Forum</a
+          >
         {:else}
           <button
             id="nav-login"

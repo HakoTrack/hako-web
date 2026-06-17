@@ -3,6 +3,7 @@
   import Navbar from "./components/Navbar.svelte";
   import Footer from "./components/Footer.svelte";
   import Landing from "./features/landing/Landing.svelte";
+  import Forum from "./features/forum/Forum.svelte";
   import ModalWrapper from "./components/modals/ModalWrapper.svelte";
   import { AuthService } from "./core/auth";
   import { ProfileService } from "./features/profile/services/profileService";
@@ -227,6 +228,8 @@
     <div class="grow">
       {#if currentPath === "/"}
         <Landing />
+      {:else if currentPath === "/forum"}
+        <Forum />
       {:else if activeRoute}
         {@const Component = activeRoute.component}
         <Component

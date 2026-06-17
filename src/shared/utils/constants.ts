@@ -72,6 +72,16 @@ export const VIBE_LABELS_TO_NAMES: Record<string, string> = {
   "\uf118": "Lighthearted",
 };
 
+export const FORUM_CATEGORY_COLORS: Record<string, string> = {
+  general: 'var(--c7)',
+  anime: 'var(--c4)',
+  manga: 'var(--c1)',
+  'light-novels': 'var(--c10)',
+  'visual-novels': 'var(--c5)',
+  recommendations: 'var(--c3)',
+  'site-feedback': 'var(--c6)',
+};
+
 export const getStatusGroups = (type: string) => [
   { id: "current", label: type === "anime" ? "Watching" : "Reading", color: STATUS_COLORS.current },
   { id: "completed", label: "Completed", color: STATUS_COLORS.completed },
