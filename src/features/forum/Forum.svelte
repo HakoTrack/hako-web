@@ -3,12 +3,22 @@
   import { AuthService } from "../../core/auth";
   import { ForumCategoryService } from "./services/forumCategoryService";
   import { ForumThreadService } from "./services/forumThreadService";
+  import { FORUM_CATEGORIES } from "../../shared/utils/constants";
   import ThreadRow from "./components/ThreadRow.svelte";
   import ForumSidebar from "./components/ForumSidebar.svelte";
   import NewThreadForm from "./components/NewThreadForm.svelte";
   import type { ForumCategory, ForumThread } from "../../shared/types";
 
-  let categories = $state<ForumCategory[]>([]);
+  let categories = $state<ForumCategory[]>(
+    FORUM_CATEGORIES.map((c) => ({
+      id: c.id,
+      name: c.name,
+      slug: c.slug,
+      description: c.description,
+      sortOrder: c.sortOrder,
+      threadCount: 0,
+    })),
+  );
   let threads = $state<ForumThread[]>([]);
   let recentThreads = $state<ForumThread[]>([]);
   let user = $state<{ id: string } | null>(null);
@@ -60,12 +70,12 @@
     const u = await AuthService.getCurrentUser();
     user = u;
 
-    const [catResult, recentResult] = await Promise.all([
-      ForumCategoryService.getCategories(),
+    const [countResult, recentResult] = await Promise.all([
+      ForumCategoryService.getCategoryThreadCounts(),
       ForumThreadService.getRecentThreads(5),
     ]);
 
-    if (catResult.success) categories = catResult.data;
+    if (countResult.success) categories = countResult.data;
     if (recentResult.success) recentThreads = recentResult.data;
 
     await loadThreads(null);
@@ -134,7 +144,7 @@
 
       <!-- Header row -->
       <div
-        class="flex items-center px-5 py-2 text-xs text-slate-500 font-bold uppercase tracking-wider border-b border-(--surface-elevated)/20"
+        class="flex items-center px-5 py-2 text-xs text-slate-500 font-bold uppercase tracking-wider"
       >
         <div class="flex-1">Thread</div>
         <div class="shrink-0 text-right min-w-30 hidden sm:block">
@@ -157,7 +167,7 @@
           {/if}
         </div>
       {:else}
-        <div class="divide-y divide-(--surface-elevated)/20">
+        <div class="space-y-2">
           {#each threads as thread (thread.id)}
             <ThreadRow {thread} />
           {/each}

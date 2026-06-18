@@ -1,46 +1,39 @@
 import { supabase } from '../../../core/supabase.js';
-import { type Result, success, failure } from '../../../shared/utils/result';
+import { type Result, success } from '../../../shared/utils/result';
+import { FORUM_CATEGORIES } from '../../../shared/utils/constants';
 import type { ForumCategory } from '../../../shared/types/index';
 
 export const ForumCategoryService = {
-  async getCategories(): Promise<Result<ForumCategory[]>> {
+  async getCategoryThreadCounts(): Promise<Result<ForumCategory[]>> {
     const { data, error } = await supabase
-      .from('forum_categories')
-      .select(`
-        id, name, slug, description, sort_order, created_at,
-        thread_count:forum_threads(count)
-      `)
-      .order('sort_order', { ascending: true });
+      .from('forum_threads')
+      .select('category_id');
 
-    if (error) return failure(error.message);
+    if (error) {
+      return success(FORUM_CATEGORIES.map((c) => ({
+        id: c.id, name: c.name, slug: c.slug,
+        description: c.description, sortOrder: c.sortOrder, threadCount: 0,
+      })));
+    }
 
-    const categories: ForumCategory[] = (data || []).map((cat: any) => ({
-      id: cat.id,
-      name: cat.name,
-      slug: cat.slug,
-      description: cat.description,
-      sortOrder: cat.sort_order,
-      threadCount: cat.thread_count?.[0]?.count ?? 0,
-    }));
+    const counts: Record<number, number> = {};
+    for (const row of data) {
+      counts[row.category_id] = (counts[row.category_id] || 0) + 1;
+    }
 
-    return success(categories);
+    return success(FORUM_CATEGORIES.map((c) => ({
+      id: c.id,
+      name: c.name,
+      slug: c.slug,
+      description: c.description,
+      sortOrder: c.sortOrder,
+      threadCount: counts[c.id] || 0,
+    })));
   },
 
-  async getCategoryBySlug(slug: string): Promise<Result<ForumCategory | null>> {
-    const { data, error } = await supabase
-      .from('forum_categories')
-      .select('id, name, slug, description, sort_order')
-      .eq('slug', slug)
-      .single();
-
-    if (error) return error.code === 'PGRST116' ? success(null) : failure(error.message);
-
-    return success({
-      id: data.id,
-      name: data.name,
-      slug: data.slug,
-      description: data.description,
-      sortOrder: data.sort_order,
-    });
+  getCategoryBySlug(slug: string): ForumCategory | undefined {
+    const c = FORUM_CATEGORIES.find((c) => c.slug === slug);
+    if (!c) return undefined;
+    return { id: c.id, name: c.name, slug: c.slug, description: c.description, sortOrder: c.sortOrder };
   },
 };

@@ -4,6 +4,7 @@ use pulldown_cmark::{Options, Parser, html};
 use serde::{Deserialize, Serialize};
 use serde_wasm_bindgen::{Serializer, from_value};
 use std::collections::HashMap;
+use std::rc::Rc;
 use wasm_bindgen::prelude::*;
 
 /// Renders Markdown text to HTML using pulldown-cmark.
@@ -470,7 +471,7 @@ pub fn get_profile_affinity_wasm(list: JsValue, metadata: JsValue) -> Result<JsV
 #[wasm_bindgen]
 pub struct ListEngine {
     items: Vec<ListEntry>,
-    metadata: HashMap<i32, Media>,
+    metadata: Rc<HashMap<i32, Media>>,
     matcher: SkimMatcherV2,
 }
 
@@ -491,7 +492,7 @@ impl ListEngine {
 
         Ok(ListEngine {
             items,
-            metadata: processed_metadata,
+            metadata: Rc::new(processed_metadata),
             matcher: SkimMatcherV2::default(),
         })
     }
@@ -789,7 +790,7 @@ impl ListEngine {
 
     /// Calculates and returns the profile vibe affinity.
     pub fn get_profile_affinity(&self) -> Result<JsValue, JsValue> {
-        let final_affinity = calculate_affinity(&self.items, &self.metadata);
+        let final_affinity = calculate_affinity(&self.items, &*self.metadata);
 
         let serializer = Serializer::new().serialize_maps_as_objects(true);
         final_affinity
@@ -816,19 +817,21 @@ pub fn calculate_all_profile_data_wasm(
         }
     }
 
+    let shared_metadata = Rc::new(processed_metadata);
+
     let mut all_stats = HashMap::new();
     let mut all_affinities = HashMap::new();
 
     for (media_type, items) in lists_map {
         // Calculate affinity for types that we care about (those that have lists)
-        let affinity = calculate_affinity(&items, &processed_metadata);
+        let affinity = calculate_affinity(&items, &*shared_metadata);
         all_affinities.insert(media_type.clone(), affinity);
 
         // Calculate stats if we have status groups for it
         if let Some(groups) = status_groups_map.get(&media_type) {
             let engine = ListEngine {
                 items,
-                metadata: processed_metadata.clone(),
+                metadata: Rc::clone(&shared_metadata),
                 matcher: SkimMatcherV2::default(),
             };
 

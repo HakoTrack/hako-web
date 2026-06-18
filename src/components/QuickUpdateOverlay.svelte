@@ -6,6 +6,7 @@
   import { ui, openQuickEditor } from "../core/ui.svelte";
   import { ListService } from "../features/profile/services/listService";
   import { AuthService } from "../core/auth";
+  import { registerShortcut } from "../core/keys.svelte";
 
   let {
     isOpen = false,
@@ -21,6 +22,8 @@
 
   // Track loading state for each image
   let loadedImages = $state<Record<number, boolean>>({});
+  let hoveredPlus = $state<Record<number, boolean>>({});
+  let activeItemId = $state<number | null>(null);
 
   let categorizedItems = $derived(() => {
     const groups: Record<string, QuickUpdateItem[]> = {
@@ -82,6 +85,35 @@
   function handleItemClick(item: QuickUpdateItem) {
     openQuickEditor(item.media_id, item.media_type);
   }
+
+  function handleItemHover(item: QuickUpdateItem) {
+    activeItemId = item.media_id;
+  }
+
+  function handleItemLeave() {
+    activeItemId = null;
+  }
+
+  $effect(() => {
+    const cleanups: (() => void)[] = [];
+    cleanups.push(
+      registerShortcut("u", () => {
+        ui.isQuickUpdateOpen = !ui.isQuickUpdateOpen;
+        if (ui.isQuickUpdateOpen) {
+          ui.loadQuickUpdateItems();
+        }
+      }),
+    );
+    cleanups.push(
+      registerShortcut("e", () => {
+        if (activeItemId != null) {
+          const item = items.find((i: QuickUpdateItem) => i.media_id === activeItemId);
+          if (item) openQuickEditor(item.media_id, item.media_type);
+        }
+      }),
+    );
+    return () => cleanups.forEach((fn) => fn());
+  });
 </script>
 
 {#if isOpen}
@@ -163,6 +195,8 @@
                     <!-- svelte-ignore a11y_no_static_element_interactions -->
                     <div
                       onclick={() => handleItemClick(item)}
+                      onmouseenter={() => handleItemHover(item)}
+                      onmouseleave={handleItemLeave}
                       class="w-full text-left p-2.5 rounded-lg hover:bg-(--surface) transition-all flex items-center gap-4 group relative cursor-pointer"
                     >
                       <div class="relative shrink-0 w-12 h-16">
@@ -216,7 +250,9 @@
                       <button
                         type="button"
                         onclick={(e) => incrementProgress(e, item)}
-                        class="shrink-0 w-8 h-8 rounded-lg bg-accent/10 text-accent hover:bg-accent hover:text-white transition-all flex items-center justify-center"
+                        onmouseenter={() => hoveredPlus[item.media_id] = true}
+                        onmouseleave={() => hoveredPlus[item.media_id] = false}
+                        class="shrink-0 w-8 h-8 rounded-full flex items-center justify-center transition-all cursor-pointer {hoveredPlus[item.media_id] ? 'bg-accent text-white shadow-lg' : 'bg-accent/10 text-accent'}"
                       >
                         <i class="fa-solid fa-plus text-xs"></i>
                       </button>

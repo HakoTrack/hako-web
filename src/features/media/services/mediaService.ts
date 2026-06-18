@@ -8,6 +8,32 @@ import { ListEngine } from '$wasm/hako_wasm';
 import { wasmInitialized } from '../../../core/wasm-init';
 import { get } from 'svelte/store';
 
+let cachedAllMedia: { data: Media }[] | null = null;
+let cachedEngine: ListEngine | null = null;
+
+async function ensureWasmEngine(): Promise<{ allCached: { data: Media }[]; engine: ListEngine } | null> {
+  if (cachedEngine && cachedAllMedia) {
+    return { allCached: cachedAllMedia, engine: cachedEngine };
+  }
+
+  cachedAllMedia = await CacheService.getAllMedia();
+  if (!cachedAllMedia || cachedAllMedia.length === 0) {
+    return null;
+  }
+
+  const metadataMap: Record<string, any> = {};
+  cachedAllMedia.forEach(m => {
+    metadataMap[m.data.media_id.toString()] = m.data;
+  });
+  const mockItems = cachedAllMedia.map(m => ({
+    media_id: m.data.media_id,
+    status: 'cached',
+  }));
+
+  cachedEngine = new ListEngine(mockItems, metadataMap);
+  return { allCached: cachedAllMedia, engine: cachedEngine };
+}
+
 export const MediaService = {
   /**
    * Searches for media by title (english, native, or romaji).
@@ -23,31 +49,19 @@ export const MediaService = {
     // 1. Try WASM Local Search first if initialized
     if (get(wasmInitialized)) {
       try {
-        const allCached = await CacheService.getAllMedia();
-        if (allCached.length > 0) {
-          const mockItems = allCached.map(m => ({
-            media_id: m.data.media_id,
-            status: 'cached'
-          }));
-
-          const metadataMap: Record<string, any> = {};
-          allCached.forEach(m => {
-            const id = m.data.media_id;
-            metadataMap[id] = m.data;
-            metadataMap[id.toString()] = m.data;
-          });
-
-          const engine = new ListEngine(mockItems, metadataMap);
-          const filtered = engine.filter_and_sort(
+        const ctx = await ensureWasmEngine();
+        if (ctx) {
+          const filteredIds: number[] = ctx.engine.filter_and_sort(
             query,
             "Title",
             "all",
             settings.titlePreference
           );
 
-          wasmResults = (filtered as any[])
-            .filter(item => item?.meta != null)
-            .map(item => item.meta);
+          const idSet = new Set(filteredIds);
+          wasmResults = ctx.allCached
+            .map(m => m.data)
+            .filter((m): m is Media => m != null && idSet.has(m.media_id));
         }
       } catch (e) {
         console.warn("WASM search execution failed:", e);
@@ -66,15 +80,12 @@ export const MediaService = {
 
     if (animeRes.error) return failure(animeRes.error.message);
 
-    const mapResult = (r: typeof animeRes) =>
-      (r.data || []).map(mapSupabaseMedia).filter((m): m is Media => m !== null);
-
     // 3. Merge: per-type Supabase results first, then WASM fuzzy matches
     const seenIds = new Set<number>();
     const mergedResults: Media[] = [];
 
-    for (const batch of [mapResult(animeRes), mapResult(mangaRes), mapResult(lnRes)]) {
-      for (const m of batch) {
+    for (const r of [animeRes, mangaRes, lnRes]) {
+      for (const m of (r.data ?? []).map(mapSupabaseMedia).filter((m): m is Media => m !== null)) {
         if (!seenIds.has(m.media_id)) {
           mergedResults.push(m);
           seenIds.add(m.media_id);

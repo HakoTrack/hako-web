@@ -86,92 +86,98 @@
   }
 </script>
 
-<div class="bg-card shadow-md" id="post-{post.id}">
-  <div class="flex gap-4 p-5">
-    <div class="shrink-0">
-      <button
-        type="button"
-        onclick={() => navigateToProfile(post.author?.username)}
-      >
-        <img
-          src={HakoImage.get(post.author?.avatar_url)}
-          class="w-10 h-10 rounded-full bg-slate-700 object-cover cursor-pointer hover:opacity-80 transition-opacity"
-          alt="avatar"
-          onerror={(e: Event) => ((e.target as HTMLImageElement).src = "")}
-        />
-      </button>
+<div
+  class="flex rounded-lg border border-(--surface-elevated)/20 bg-card"
+  id="post-{post.id}"
+>
+  <div
+    class="w-44 shrink-0 p-4 flex flex-col items-center gap-2 border-r border-(--surface-elevated)/20"
+  >
+    <button
+      type="button"
+      onclick={() => navigateToProfile(post.author?.username)}
+    >
+      <img
+        src={HakoImage.get(post.author?.avatar_url)}
+        class="w-16 h-16 rounded-full bg-slate-700 object-cover cursor-pointer hover:opacity-80 transition-opacity"
+        alt="avatar"
+        onerror={(e: Event) => ((e.target as HTMLImageElement).src = "")}
+      />
+    </button>
+    <button
+      type="button"
+      onclick={() => navigateToProfile(post.author?.username)}
+      class="text-sm font-bold text-(--hako-fg) hover:text-(--hako-accent) transition-colors text-center truncate max-w-full"
+    >
+      {post.author?.username || "User"}
+    </button>
+    <!-- slot for future: role badge, achievements, stats -->
+  </div>
+
+  <div class="flex-1 min-w-0 p-5">
+    <div
+      class="flex items-center gap-2 mb-3 pb-3 border-b border-(--surface-elevated)/10 text-xs text-slate-500"
+    >
+      <span>{getRelativeTime(post.createdAt)}</span>
+      {#if isEdited}
+        <span class="italic"
+          >(edited {formatEditTimestamp(post.updatedAt)})</span
+        >
+      {/if}
     </div>
 
-    <div class="flex-1 min-w-0">
-      <div class="flex items-center gap-2 mb-2 flex-wrap">
+    {#if isEditing}
+      <textarea
+        bind:value={editContent}
+        class="w-full bg-(--hako-bg) border border-(--surface-elevated) rounded-lg p-3 text-sm text-(--hako-fg) focus:ring-1 focus:ring-(--hako-accent) outline-none min-h-20 resize-y"
+      ></textarea>
+      <div class="flex gap-2 mt-2">
         <button
           type="button"
-          onclick={() => navigateToProfile(post.author?.username)}
-          class="text-sm font-bold text-(--hako-fg) hover:text-(--hako-accent) transition-colors"
+          onclick={saveEdit}
+          class="px-3 py-1 rounded text-xs font-bold bg-(--hako-accent) text-(--hako-bg) hover:opacity-90 transition-all"
         >
-          {post.author?.username || "User"}
+          Save
         </button>
-        <span class="text-xs text-slate-500"
-          >{getRelativeTime(post.createdAt)}</span
+        <button
+          type="button"
+          onclick={cancelEdit}
+          class="px-3 py-1 rounded text-xs font-bold bg-white/5 text-(--hako-fg) border border-white/10 hover:bg-white/10 transition-all"
         >
-        {#if isEdited}
-          <span class="text-xs text-slate-500 italic">
-            (edited {formatEditTimestamp(post.updatedAt)})
-          </span>
-        {/if}
+          Cancel
+        </button>
       </div>
+    {:else}
+      <div class="prose-sm max-w-none">
+        <PostRenderer content={post.content} />
+      </div>
+    {/if}
 
-      {#if isEditing}
-        <textarea
-          bind:value={editContent}
-          class="w-full bg-(--hako-bg) border border-(--surface-elevated) rounded-lg p-3 text-sm text-(--hako-fg) focus:ring-1 focus:ring-(--hako-accent) outline-none min-h-20 resize-y"
-        ></textarea>
-        <div class="flex gap-2 mt-2">
-          <button
-            type="button"
-            onclick={saveEdit}
-            class="px-3 py-1 rounded text-xs font-bold bg-(--hako-accent) text-(--hako-bg) hover:opacity-90 transition-all"
-          >
-            Save
-          </button>
-          <button
-            type="button"
-            onclick={cancelEdit}
-            class="px-3 py-1 rounded text-xs font-bold bg-white/5 text-(--hako-fg) border border-white/10 hover:bg-white/10 transition-all"
-          >
-            Cancel
-          </button>
-        </div>
-      {:else}
-        <div class="prose-sm max-w-none">
-          <PostRenderer content={post.content} />
-        </div>
+    <div
+      class="flex items-center gap-4 mt-4 pt-3 border-t border-(--surface-elevated)/10 text-sm text-slate-500"
+    >
+      <button
+        type="button"
+        onclick={handleLike}
+        disabled={!userId}
+        class="flex items-center gap-1.5 transition-colors cursor-pointer disabled:cursor-default {isLiked
+          ? 'text-(--c9)'
+          : 'hover:text-(--c9)'}"
+      >
+        <i class="fa-solid fa-heart"></i>
+        <span>{likeCount}</span>
+      </button>
+
+      {#if userId && post.authorId === userId}
+        <button
+          type="button"
+          onclick={startEdit}
+          class="flex items-center gap-1.5 hover:text-(--hako-fg) transition-colors cursor-pointer"
+        >
+          <i class="fa-solid fa-pen"></i>
+          <span>Edit</span>
+        </button>
       {/if}
-
-      <div class="flex items-center gap-4 mt-4 text-sm text-slate-500">
-        <button
-          type="button"
-          onclick={handleLike}
-          disabled={!userId}
-          class="flex items-center gap-1.5 transition-colors cursor-pointer disabled:cursor-default {isLiked
-            ? 'text-(--c9)'
-            : 'hover:text-(--c9)'}"
-        >
-          <i class="fa-solid fa-heart"></i>
-          <span>{likeCount}</span>
-        </button>
-
-        {#if userId && post.authorId === userId}
-          <button
-            type="button"
-            onclick={startEdit}
-            class="flex items-center gap-1.5 hover:text-(--hako-fg) transition-colors cursor-pointer"
-          >
-            <i class="fa-solid fa-pen"></i>
-            <span>Edit</span>
-          </button>
-        {/if}
-      </div>
     </div>
   </div>
 </div>

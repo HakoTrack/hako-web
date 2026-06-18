@@ -1,20 +1,38 @@
 import { supabase } from '../../../core/supabase.js';
 import { type Result, success, failure } from '../../../shared/utils/result';
-import { mapSupabaseMedia } from '../../../shared/utils/mediaData';
+import { FORUM_CATEGORIES } from '../../../shared/utils/constants';
 import type { ForumThread, Media } from '../../../shared/types/index';
 
-async function fetchSubjectMedia(mediaId: number | null | undefined): Promise<Media | null | undefined> {
-  if (!mediaId) return undefined;
-  const { data } = await supabase
-    .from('media')
-    .select('*')
-    .eq('id', mediaId)
-    .single();
-  return data ? mapSupabaseMedia(data) : undefined;
-}
-
-function mapThread(t: any, subjectMedia?: Media | null): ForumThread {
+function mapThread(t: any): ForumThread {
   const cat = Array.isArray(t.category) ? t.category[0] : t.category;
+  const media = Array.isArray(t.media) ? t.media[0] : t.media;
+
+  let subjectMedia: Media | undefined;
+  if (media) {
+    subjectMedia = {
+      media_id: media.id,
+      media_type: media.media_type,
+      title: {
+        romaji: media.title_romaji,
+        english: media.title_english,
+        native: media.title_native,
+      },
+      description: '',
+      format: media.format,
+      source: null,
+      status: '',
+      episodes: null,
+      chapters: null,
+      volumes: null,
+      duration: null,
+      season: null,
+      seasonYear: media.season_year,
+      genres: [],
+      tags: [],
+      startDate: { year: null, month: null, day: null },
+      endDate: { year: null, month: null, day: null },
+    };
+  }
 
   return {
     id: t.id,
@@ -24,7 +42,7 @@ function mapThread(t: any, subjectMedia?: Media | null): ForumThread {
     authorId: t.author_id,
     author: t.author ?? { username: 'Unknown', avatar_url: null },
     subjectMediaId: t.media_id,
-    subjectMedia: subjectMedia ?? undefined,
+    subjectMedia,
     isPinned: t.is_pinned,
     isLocked: t.is_locked,
     postCount: t.post_count,
@@ -41,7 +59,8 @@ const THREAD_SELECT = `
   post_count, view_count, last_post_at, created_at, updated_at,
   category:forum_categories!forum_threads_category_id_fkey(id, name, slug),
   author:profiles!forum_threads_author_id_fkey(username, avatar_url),
-  last_post_author:profiles!forum_threads_last_post_author_id_fkey(username, avatar_url)
+  last_post_author:profiles!forum_threads_last_post_author_id_fkey(username, avatar_url),
+  media:media!forum_threads_media_id_fkey(id, media_type, title_romaji, title_english, title_native, format, season_year)
 `;
 
 export const ForumThreadService = {
@@ -49,12 +68,7 @@ export const ForumThreadService = {
     const from = page * pageSize;
     const to = (page + 1) * pageSize - 1;
 
-    const { data: cat } = await supabase
-      .from('forum_categories')
-      .select('id')
-      .eq('slug', categorySlug)
-      .single();
-
+    const cat = FORUM_CATEGORIES.find((c) => c.slug === categorySlug);
     if (!cat) return failure('Category not found');
 
     const { data, error } = await supabase
@@ -79,9 +93,7 @@ export const ForumThreadService = {
 
     if (error) return error.code === 'PGRST116' ? success(null) : failure(error.message);
 
-    const subjectMedia = await fetchSubjectMedia(data.media_id);
-
-    return success(mapThread(data, subjectMedia));
+    return success(mapThread(data));
   },
 
   async getRecentThreads(limit: number = 10): Promise<Result<ForumThread[]>> {

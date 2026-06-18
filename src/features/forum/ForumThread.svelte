@@ -243,7 +243,7 @@
           {@const catColor = FORUM_CATEGORY_COLORS[thread.category.slug] || 'var(--c7)'}
           <span
             class="text-[10px] px-2 py-0.5 rounded-full font-bold uppercase tracking-wider leading-none shrink-0"
-            style="background-color: {catColor}22; color: {catColor};"
+            style="background-color: color-mix(in srgb, {catColor} 13%, transparent); color: {catColor};"
           >
             {thread.category.name}
           </span>
