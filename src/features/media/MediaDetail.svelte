@@ -5,6 +5,7 @@
   } from "../../shared/utils/mediaData";
   import { MediaService } from "./services/mediaService";
   import { getMediaCharacters } from "./services/characterService";
+  import { getMediaStaff } from "./services/staffService";
   import { CacheService } from "../../core/cache";
   import { HakoImage } from "../../shared/utils/images";
   import { get_vibes_wasm } from "$wasm/hako_wasm";
@@ -26,6 +27,7 @@
   let currentActiveTab = $state("overview"); // Tab tracking state
   let bannerError = $state(false);
   let characters = $state<any[]>([]);
+  let staff = $state<any[]>([]);
 
   // Derived title based on user preference
   const displayTitle = $derived.by(() => {
@@ -43,6 +45,42 @@
       isWasmReady = ready;
     });
     return unsub;
+  });
+
+  function isLowLevelRole(role: string): boolean {
+    const r = role.toLowerCase();
+    if (r.includes("animation") && !r.includes("main animator") && !r.includes("lead animator")) return true;
+    if (r.startsWith("adr") || r.includes(" adr ")) return true;
+    if (r.includes("english")) return true;
+    if (r.includes("lyrics") || r.includes("song") || r.includes("insert")) return true;
+    if (r.includes("illustration")) return true;
+    if (r === "graphic design") return true;
+    if (r.includes("in-between") || r.includes("inbetween")) return true;
+    if (r.includes("theme song")) return true;
+    return false;
+  }
+
+  function roleTier(role: string): number {
+    const r = role.toLowerCase();
+    if (r === "director" || r.includes("series director") || r.includes("chief director") || r.includes("assistant director")) return 1;
+    if (r.includes("producer")) return 2;
+    if (r.includes("creator") || r.includes("original")) return 3;
+    if (r.includes("character design")) return 4;
+    return 5;
+  }
+
+  const keyStaff = $derived.by(() => {
+    const best = new Map<number, any>();
+    for (const person of staff) {
+      const existing = best.get(person.id);
+      if (!existing || roleTier(person.role) < roleTier(existing.role)) {
+        best.set(person.id, person);
+      }
+    }
+    return [...best.values()]
+      .filter((person) => !isLowLevelRole(person.role))
+      .sort((a, b) => roleTier(a.role) - roleTier(b.role))
+      .slice(0, 8);
   });
 
   function toTitleCase(str: string | null | undefined): string {
@@ -106,6 +144,7 @@
     media = null;
     relations = [];
     characters = [];
+    staff = [];
     bannerError = false;
     currentActiveTab = "overview";
     isLoading = true;
@@ -114,16 +153,19 @@
 
     (async () => {
       try {
-        const [mediaRes, cachedRelations, characterRes] = await Promise.all([
-          fetchMediaDetails(Number(id)),
-          CacheService.getMediaRelations(id),
-          getMediaCharacters(Number(id)),
-        ]);
+        const [mediaRes, cachedRelations, characterRes, staffRes] =
+          await Promise.all([
+            fetchMediaDetails(Number(id)),
+            CacheService.getMediaRelations(id),
+            getMediaCharacters(Number(id)),
+            getMediaStaff(Number(id)),
+          ]);
 
         if (aborted) return;
 
         media = mediaRes;
         characters = characterRes;
+        staff = staffRes;
 
         if (cachedRelations) {
           relations = sortRelations(cachedRelations);
@@ -548,6 +590,10 @@
                       />
                     </div>
                   </button>
+                {:else}
+                  <p class="col-span-full text-center text-slate-500 py-8 text-sm">
+                    No character data available
+                  </p>
                 {/each}
               </div>
             </div>
@@ -563,9 +609,13 @@
                 >
               </div>
               <div class="grid grid-cols-2 sm:grid-cols-4 gap-4">
-                {#each mockExtraData.staff as person}
-                  <div
-                    class="bg-card rounded-lg overflow-hidden p-3 hover:bg-slate-800/30 transition-colors text-center"
+                {#each keyStaff as person}
+                  <button
+                    onclick={() => {
+                      window.history.pushState({}, "", `/staff/${person.id}`);
+                      window.dispatchEvent(new PopStateEvent("popstate"));
+                    }}
+                    class="bg-card rounded-lg overflow-hidden p-3 hover:bg-slate-800/30 transition-colors text-center cursor-pointer"
                   >
                     <img
                       src={person.image}
@@ -580,7 +630,11 @@
                     <span class="block text-[10px] text-slate-500 truncate"
                       >{person.role}</span
                     >
-                  </div>
+                  </button>
+                {:else}
+                  <p class="col-span-full text-center text-slate-500 py-8 text-sm">
+                    No staff data available
+                  </p>
                 {/each}
               </div>
             </div>
@@ -642,9 +696,13 @@
           <!-- Staff Tab -->
           <div class:hidden={currentActiveTab !== "staff"}>
             <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-6">
-              {#each mockExtraData.staff as person}
-                <div
-                  class="bg-card rounded-xl p-4 hover:bg-slate-800/30 transition-all text-center group"
+              {#each staff as person}
+                <button
+                  onclick={() => {
+                    window.history.pushState({}, "", `/staff/${person.id}`);
+                    window.dispatchEvent(new PopStateEvent("popstate"));
+                  }}
+                  class="bg-card rounded-xl p-4 hover:bg-slate-800/30 transition-all text-center group cursor-pointer"
                 >
                   <div class="relative mb-4">
                     <img
@@ -661,7 +719,7 @@
                   <span class="block text-xs text-slate-500 truncate"
                     >{person.role}</span
                   >
-                </div>
+                </button>
               {/each}
             </div>
           </div>

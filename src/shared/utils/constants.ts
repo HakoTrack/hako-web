@@ -72,6 +72,26 @@ export const VIBE_LABELS_TO_NAMES: Record<string, string> = {
   "\uf118": "Lighthearted",
 };
 
+export const FORUM_CATEGORIES = [
+  { id: 8, name: 'General', slug: 'general', description: 'General discussion about anime, manga, and everything in between.', sortOrder: 1 },
+  { id: 9, name: 'Anime', slug: 'anime', description: 'Talk about anime series, movies, and OVAs.', sortOrder: 2 },
+  { id: 10, name: 'Manga', slug: 'manga', description: 'Discuss manga, manhwa, and manhua.', sortOrder: 3 },
+  { id: 11, name: 'Light Novels', slug: 'light-novels', description: 'Discuss light novels and novel series.', sortOrder: 4 },
+  { id: 12, name: 'Visual Novels', slug: 'visual-novels', description: 'Discuss visual novels and eroge.', sortOrder: 5 },
+  { id: 13, name: 'Recommendations', slug: 'recommendations', description: 'Ask for and share recommendations.', sortOrder: 6 },
+  { id: 14, name: 'Site Feedback', slug: 'site-feedback', description: 'Feedback, bug reports, and suggestions for hako.', sortOrder: 7 },
+];
+
+export const FORUM_CATEGORY_COLORS: Record<string, string> = {
+  general: 'var(--c7)',
+  anime: 'var(--c4)',
+  manga: 'var(--c1)',
+  'light-novels': 'var(--c10)',
+  'visual-novels': 'var(--c5)',
+  recommendations: 'var(--c3)',
+  'site-feedback': 'var(--c6)',
+};
+
 export const getStatusGroups = (type: string) => [
   { id: "current", label: type === "anime" ? "Watching" : "Reading", color: STATUS_COLORS.current },
   { id: "completed", label: "Completed", color: STATUS_COLORS.completed },

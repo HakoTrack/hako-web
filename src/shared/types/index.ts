@@ -81,6 +81,9 @@ export interface StaffMediaAppearance {
 export interface StaffDetail {
   id: number;
   name: string;
+  nameFirst: string;
+  nameMiddle: string;
+  nameLast: string;
   nameNative: string | null;
   biography: string | null;
   image: string;
@@ -90,6 +93,9 @@ export interface StaffDetail {
 export interface CharacterDetail {
   id: number;
   name: string;
+  nameFirst: string;
+  nameMiddle: string;
+  nameLast: string;
   nameNative: string | null;
   biography: string | null;
   aliases: string[];
@@ -158,6 +164,8 @@ export type PostMetadata = z.infer<typeof PostMetadataSchema>;
 export const AuthorSchema = z.object({
   username: z.string(),
   avatar_url: z.string().nullable(),
+  join_date: z.string().nullable().optional(),
+  quote: z.string().nullable().optional(),
 });
 export type Author = z.infer<typeof AuthorSchema>;
 
@@ -192,3 +200,50 @@ export const CommentSchema = z.object({
   author: AuthorSchema.optional(),
 });
 export type Comment = z.infer<typeof CommentSchema>;
+
+// --- Forum Interfaces ---
+export interface ForumCategory {
+  id: number;
+  name: string;
+  slug: string;
+  description: string | null;
+  sortOrder: number;
+  threadCount?: number;
+  lastThread?: {
+    id: number;
+    title: string;
+    lastPostAt: string | null;
+    lastPostAuthor: Author | null;
+  } | null;
+}
+
+export interface ForumThread {
+  id: number;
+  title: string;
+  categoryId: number;
+  category?: ForumCategory;
+  authorId: string;
+  author: Author;
+  subjectMediaId?: number | null;
+  subjectMedia?: Media | null;
+  isPinned: boolean;
+  isLocked: boolean;
+  postCount: number;
+  viewCount: number;
+  lastPostAt: string | null;
+  lastPostAuthor: Author | null;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface ForumPost {
+  id: number;
+  threadId: number;
+  authorId: string;
+  author: Author;
+  content: string;
+  createdAt: string;
+  updatedAt: string;
+  likesCount: number;
+  isLiked: boolean;
+}

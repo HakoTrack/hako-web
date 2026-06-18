@@ -1,15 +1,24 @@
 import { supabase } from '../../../core/supabase';
 import { HakoImage } from '../../../shared/utils/images';
+import { formatName } from '../../../shared/utils/nameUtils';
 import type { CharacterDetail, CharacterMediaAppearance } from '../../../shared/types/index';
 
 interface Character {
   id: number;
   name_full: string;
+  name_first: string | null;
+  name_middle: string | null;
+  name_last: string | null;
+  name_order: string | null;
 }
 
 interface Staff {
   id: number;
   name_full: string;
+  name_first: string | null;
+  name_middle: string | null;
+  name_last: string | null;
+  name_order: string | null;
 }
 
 interface Relation {
@@ -30,7 +39,11 @@ export async function getMediaCharacters(mediaId: number) {
       role,
       characters (
         id,
-        name_full
+        name_full,
+        name_first,
+        name_middle,
+        name_last,
+        name_order
       )
     `)
     .eq('media_id', mediaId);
@@ -47,7 +60,11 @@ export async function getMediaCharacters(mediaId: number) {
       character_id,
       staff (
         id,
-        name_full
+        name_full,
+        name_first,
+        name_middle,
+        name_last,
+        name_order
       )
     `)
     .eq('media_id', mediaId)
@@ -59,14 +76,15 @@ export async function getMediaCharacters(mediaId: number) {
 
   // 3. Merge data
   return (relations || []).map(relation => {
-    const va = staffRoles?.find(sr => sr.character_id === relation.characters.id)?.staff;
+    const c = relation.characters;
+    const va = staffRoles?.find(sr => sr.character_id === c.id)?.staff;
     return {
-      name: relation.characters.name_full,
+      name: formatName(c.name_first, c.name_last, c.name_order, c.name_middle),
       role: relation.role,
-      image: HakoImage.getCharacter(relation.characters.id),
-      id: relation.characters.id,
+      image: HakoImage.getCharacter(c.id),
+      id: c.id,
       va: va ? {
-        name: va.name_full,
+        name: formatName(va.name_first, va.name_last, va.name_order, va.name_middle),
         image: HakoImage.getStaff(va.id)
       } : null
     };
@@ -76,7 +94,7 @@ export async function getMediaCharacters(mediaId: number) {
 export async function getCharacterById(id: number): Promise<CharacterDetail | null> {
   const { data: char, error } = await supabase
     .from('characters')
-    .select('id, name_full, name_native, biography, aliases, aliases_spoiler')
+    .select('id, name_full, name_first, name_middle, name_last, name_order, name_native, biography, aliases, aliases_spoiler')
     .eq('id', id)
     .single();
 
@@ -102,7 +120,11 @@ export async function getCharacterById(id: number): Promise<CharacterDetail | nu
       media_id,
       staff (
         id,
-        name_full
+        name_full,
+        name_first,
+        name_middle,
+        name_last,
+        name_order
       )
     `)
     .eq('character_id', id)
@@ -114,7 +136,7 @@ export async function getCharacterById(id: number): Promise<CharacterDetail | nu
     if (staffMember) {
       vaByMedia[sr.media_id] = {
         id: staffMember.id,
-        name: staffMember.name_full,
+        name: formatName(staffMember.name_first, staffMember.name_last, staffMember.name_order, staffMember.name_middle),
         image: HakoImage.getStaff(staffMember.id),
       };
     }
@@ -149,7 +171,10 @@ export async function getCharacterById(id: number): Promise<CharacterDetail | nu
 
   return {
     id: char.id,
-    name: char.name_full,
+    name: formatName(char.name_first, char.name_last, char.name_order, char.name_middle),
+    nameFirst: char.name_first ?? '',
+    nameMiddle: char.name_middle ?? '',
+    nameLast: char.name_last ?? '',
     nameNative: char.name_native,
     biography: char.biography,
     aliases,

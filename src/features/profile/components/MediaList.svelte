@@ -400,7 +400,7 @@
                   : ''}"
               >
                 <div
-                  class="h-[18px] w-12 bg-(--surface-elevated) animate-pulse rounded mx-auto"
+                  class="h-4.5 w-12 bg-(--surface-elevated) animate-pulse rounded mx-auto"
                 ></div>
               </td>
             </tr>
@@ -729,10 +729,7 @@
                 {group.label}
               </h2>
             </div>
-            <div
-              class="rounded-xl overflow-hidden shadow-sm w-full"
-              bind:clientWidth={gridWidth}
-            >
+            <div class="overflow-hidden w-full" bind:clientWidth={gridWidth}>
               <VirtualScroll
                 enabled={filterStatus === "all" || filterStatus === group.id}
                 items={group.items}

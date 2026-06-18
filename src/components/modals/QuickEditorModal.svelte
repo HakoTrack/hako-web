@@ -19,6 +19,7 @@
     Skeleton,
     Badge,
   } from "$components";
+  import { registerShortcut } from "$core/keys.svelte";
 
   let { entry: initialEntry } = $props<{ entry: any }>();
   let entry = $derived(ui.modalData?.entry || initialEntry);
@@ -171,6 +172,31 @@
   function handleDelete() {
     if (confirm("Delete entry?")) closeModal();
   }
+
+  function goToPage() {
+    let type = entry?.type || "anime";
+    if (type === "light_novel") type = "lightnovel";
+    window.history.pushState({}, "", `/${type}/${entry?.id}`);
+    window.dispatchEvent(new PopStateEvent("popstate"));
+    closeModal();
+  }
+
+  $effect(() => {
+    const cleanups: (() => void)[] = [];
+    cleanups.push(registerShortcut("f", () => toggleFavorite()));
+    cleanups.push(
+      registerShortcut(
+        "Enter",
+        (e) => {
+          e.preventDefault();
+          save();
+        },
+        true,
+      ),
+    );
+    cleanups.push(registerShortcut("g", () => goToPage()));
+    return () => cleanups.forEach((fn) => fn());
+  });
 </script>
 
 <!-- svelte-ignore a11y_click_events_have_key_events -->
@@ -220,13 +246,7 @@
     <!-- svelte-ignore a11y_consider_explicit_label -->
     <div class="absolute top-4 right-4 flex items-center gap-2">
       <button
-        onclick={() => {
-          let type = entry.type || "anime";
-          if (type === "light_novel") type = "lightnovel";
-          window.history.pushState({}, "", `/${type}/${entry.id}`);
-          window.dispatchEvent(new PopStateEvent("popstate"));
-          closeModal();
-        }}
+        onclick={goToPage}
         class="text-(--hako-fg)/70 hover:text-(--hako-fg) p-2 cursor-pointer"
         title="Go to page"
       >

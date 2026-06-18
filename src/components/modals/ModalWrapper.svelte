@@ -4,15 +4,18 @@
 
   let Component = $derived(MODAL_REGISTRY[ui.activeModal]);
 
-  function handleKeydown(e) {
-    if (ui.activeModal && e.key === "Escape") {
-      e.stopPropagation();
-      closeModal();
+  $effect(() => {
+    function handler(e) {
+      if (e.key === "Escape" && ui.activeModal) {
+        e.stopPropagation();
+        closeModal();
+      }
     }
-  }
+    window.addEventListener("keydown", handler, { capture: true });
+    return () =>
+      window.removeEventListener("keydown", handler, { capture: true });
+  });
 </script>
-
-<svelte:window on:keydown={handleKeydown} />
 
 {#if ui.activeModal && Component}
   <!-- svelte-ignore a11y_click_events_have_key_events -->
