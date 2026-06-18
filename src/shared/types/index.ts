@@ -164,6 +164,8 @@ export type PostMetadata = z.infer<typeof PostMetadataSchema>;
 export const AuthorSchema = z.object({
   username: z.string(),
   avatar_url: z.string().nullable(),
+  join_date: z.string().nullable().optional(),
+  quote: z.string().nullable().optional(),
 });
 export type Author = z.infer<typeof AuthorSchema>;
 

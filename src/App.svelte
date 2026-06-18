@@ -4,7 +4,6 @@
   import Footer from "./components/Footer.svelte";
   import Landing from "./features/landing/Landing.svelte";
   import Forum from "./features/forum/Forum.svelte";
-  import TestPage from "./features/test/TestPage.svelte";
   import ModalWrapper from "./components/modals/ModalWrapper.svelte";
   import { AuthService } from "./core/auth";
   import { ProfileService } from "./features/profile/services/profileService";
@@ -232,10 +231,6 @@
         <Landing />
       {:else if currentPath === "/forum"}
         <Forum />
-      {:else if currentPath === "/test"}
-        <div class="p-6">
-          <TestPage />
-        </div>
       {:else if activeRoute}
         {@const Component = activeRoute.component}
         <Component

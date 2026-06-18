@@ -154,7 +154,7 @@
           const newPost = payload.new;
           const { data: author } = await supabase
             .from("profiles")
-            .select("username, avatar_url")
+            .select("username, avatar_url, join_date, quote")
             .eq("id", newPost.author_id)
             .single();
 
@@ -162,7 +162,7 @@
             id: newPost.id,
             threadId: newPost.thread_id,
             authorId: newPost.author_id,
-            author: author ?? { username: "Unknown", avatar_url: null },
+            author: author ?? { username: "Unknown", avatar_url: null, join_date: null, quote: null },
             content: newPost.content,
             createdAt: newPost.created_at,
             updatedAt: newPost.updated_at,

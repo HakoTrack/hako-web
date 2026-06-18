@@ -11,7 +11,7 @@ export const ForumPostService = {
       .from('forum_posts')
       .select(`
         id, thread_id, author_id, content, created_at, updated_at,
-        author:profiles!forum_posts_author_id_fkey(username, avatar_url),
+        author:profiles!forum_posts_author_id_fkey(username, avatar_url, join_date, quote),
         likes_count:forum_post_likes(count)
       `)
       .eq('thread_id', threadId)
@@ -38,7 +38,7 @@ export const ForumPostService = {
       id: p.id,
       threadId: p.thread_id,
       authorId: p.author_id,
-      author: p.author ?? { username: 'Unknown', avatar_url: null },
+      author: p.author ?? { username: 'Unknown', avatar_url: null, join_date: null, quote: null },
       content: p.content,
       createdAt: p.created_at,
       updatedAt: p.updated_at,
@@ -55,7 +55,7 @@ export const ForumPostService = {
       .insert({ thread_id: threadId, author_id: userId, content })
       .select(`
         id, thread_id, author_id, content, created_at, updated_at,
-        author:profiles!forum_posts_author_id_fkey(username, avatar_url)
+        author:profiles!forum_posts_author_id_fkey(username, avatar_url, join_date, quote)
       `)
       .single();
 
@@ -70,7 +70,7 @@ export const ForumPostService = {
       id: data.id,
       threadId: data.thread_id,
       authorId: data.author_id,
-      author: author ?? { username: 'Unknown', avatar_url: null },
+      author: author ?? { username: 'Unknown', avatar_url: null, join_date: null, quote: null },
       content: data.content,
       createdAt: data.created_at,
       updatedAt: data.updated_at,

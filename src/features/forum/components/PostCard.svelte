@@ -1,19 +1,25 @@
 <script lang="ts">
   import { HakoImage } from "../../../shared/utils/images";
   import PostRenderer from "../../../shared/components/PostRenderer.svelte";
+  import Dropdown from "../../../shared/components/Dropdown.svelte";
   import { ForumInteractionService } from "../services/forumInteractionService";
   import type { ForumPost } from "../../../shared/types";
 
-  let { post, userId, onPostEdited } = $props<{
+  let { post, userId, onPostEdited, role, postCount } = $props<{
     post: ForumPost;
     userId: string | null | undefined;
     onPostEdited?: (postId: number, content: string) => void;
+    role?: string;
+    postCount?: number;
   }>();
 
   let isLiked = $state(post.isLiked);
   let likeCount = $state(post.likesCount);
   let isEditing = $state(false);
   let editContent = $state(post.content);
+
+  let joinDate = $derived(post.author?.join_date);
+  let signature = $derived(post.author?.quote);
 
   $effect(() => {
     isLiked = post.isLiked;
@@ -45,6 +51,14 @@
       hour: "2-digit",
       minute: "2-digit",
     });
+  }
+
+  function formatJoinDate(
+    dateStr: string | null | undefined,
+  ): string | undefined {
+    if (!dateStr) return undefined;
+    const d = new Date(dateStr);
+    return d.toLocaleString("en-US", { month: "short", year: "numeric" });
   }
 
   async function handleLike() {
@@ -84,14 +98,22 @@
     onPostEdited?.(post.id, editContent.trim());
     isEditing = false;
   }
+
+  function getDropdownItems() {
+    const items: { icon: string; label: string; action: () => void }[] = [];
+    if (userId && post.authorId === userId) {
+      items.push({ icon: "fa-pen", label: "Edit", action: startEdit });
+    }
+    return items;
+  }
 </script>
 
 <div
-  class="flex rounded-lg border border-(--surface-elevated)/20 bg-card"
+  class="flex rounded-lg border border-(--surface-elevated)/20 bg-card overflow-hidden"
   id="post-{post.id}"
 >
   <div
-    class="w-44 shrink-0 p-4 flex flex-col items-center gap-2 border-r border-(--surface-elevated)/20"
+    class="w-40 shrink-0 p-4 flex flex-col items-center gap-1.5 bg-(--hako-bg)/30 text-center"
   >
     <button
       type="button"
@@ -99,7 +121,7 @@
     >
       <img
         src={HakoImage.get(post.author?.avatar_url)}
-        class="w-16 h-16 rounded-full bg-slate-700 object-cover cursor-pointer hover:opacity-80 transition-opacity"
+        class="w-14 h-14 rounded-full bg-slate-700 object-cover cursor-pointer hover:opacity-80 transition-opacity"
         alt="avatar"
         onerror={(e: Event) => ((e.target as HTMLImageElement).src = "")}
       />
@@ -111,73 +133,104 @@
     >
       {post.author?.username || "User"}
     </button>
-    <!-- slot for future: role badge, achievements, stats -->
-  </div>
-
-  <div class="flex-1 min-w-0 p-5">
-    <div
-      class="flex items-center gap-2 mb-3 pb-3 border-b border-(--surface-elevated)/10 text-xs text-slate-500"
-    >
-      <span>{getRelativeTime(post.createdAt)}</span>
-      {#if isEdited}
-        <span class="italic"
-          >(edited {formatEditTimestamp(post.updatedAt)})</span
-        >
-      {/if}
-    </div>
-
-    {#if isEditing}
-      <textarea
-        bind:value={editContent}
-        class="w-full bg-(--hako-bg) border border-(--surface-elevated) rounded-lg p-3 text-sm text-(--hako-fg) focus:ring-1 focus:ring-(--hako-accent) outline-none min-h-20 resize-y"
-      ></textarea>
-      <div class="flex gap-2 mt-2">
-        <button
-          type="button"
-          onclick={saveEdit}
-          class="px-3 py-1 rounded text-xs font-bold bg-(--hako-accent) text-(--hako-bg) hover:opacity-90 transition-all"
-        >
-          Save
-        </button>
-        <button
-          type="button"
-          onclick={cancelEdit}
-          class="px-3 py-1 rounded text-xs font-bold bg-white/5 text-(--hako-fg) border border-white/10 hover:bg-white/10 transition-all"
-        >
-          Cancel
-        </button>
-      </div>
-    {:else}
-      <div class="prose-sm max-w-none">
-        <PostRenderer content={post.content} />
+    {#if role}
+      <span
+        class="text-[10px] px-2 py-0.5 rounded-full font-bold uppercase tracking-wider"
+        style="background-color: color-mix(in srgb, var(--c4) 20%, transparent); color: var(--c4);"
+        >{role}</span
+      >
+    {/if}
+    {#if postCount != null || joinDate}
+      <div
+        class="flex flex-col items-center gap-0.5 mt-1 text-[11px] text-slate-500"
+      >
+        {#if postCount != null}
+          <span>Posts: {postCount}</span>
+        {/if}
+        {#if joinDate}
+          <span>Joined: {formatJoinDate(joinDate)}</span>
+        {/if}
       </div>
     {/if}
+  </div>
 
-    <div
-      class="flex items-center gap-4 mt-4 pt-3 border-t border-(--surface-elevated)/10 text-sm text-slate-500"
-    >
-      <button
-        type="button"
-        onclick={handleLike}
-        disabled={!userId}
-        class="flex items-center gap-1.5 transition-colors cursor-pointer disabled:cursor-default {isLiked
-          ? 'text-(--c9)'
-          : 'hover:text-(--c9)'}"
+  <div class="flex-1 min-w-0 flex flex-col">
+    <div class="p-4">
+      <div
+        class="flex items-center justify-between gap-2 mb-3 text-xs text-slate-500"
       >
-        <i class="fa-solid fa-heart"></i>
-        <span>{likeCount}</span>
-      </button>
+        <span>
+          {getRelativeTime(post.createdAt)}
+          {#if isEdited}
+            <span class="italic"
+              >&middot; edited {formatEditTimestamp(post.updatedAt)}</span
+            >
+          {/if}
+        </span>
+        {#if getDropdownItems().length > 0}
+          <Dropdown items={getDropdownItems()}>
+            <button
+              type="button"
+              class="flex items-center justify-center w-7 h-7 rounded-md hover:bg-white/10 transition-colors cursor-pointer"
+            >
+              <i class="fa-solid fa-ellipsis-vertical text-xs"></i>
+            </button>
+          </Dropdown>
+        {/if}
+      </div>
 
-      {#if userId && post.authorId === userId}
+      {#if isEditing}
+        <textarea
+          bind:value={editContent}
+          class="w-full bg-(--hako-bg) border border-(--surface-elevated) rounded-lg p-3 text-sm text-(--hako-fg) focus:ring-1 focus:ring-(--hako-accent) outline-none min-h-20 resize-y"
+        ></textarea>
+        <div class="flex gap-2 mt-2">
+          <button
+            type="button"
+            onclick={saveEdit}
+            class="px-3 py-1 rounded text-xs font-bold bg-(--hako-accent) text-(--hako-bg) hover:opacity-90 transition-all"
+          >
+            Save
+          </button>
+          <button
+            type="button"
+            onclick={cancelEdit}
+            class="px-3 py-1 rounded text-xs font-bold bg-white/5 text-(--hako-fg) border border-white/10 hover:bg-white/10 transition-all"
+          >
+            Cancel
+          </button>
+        </div>
+      {:else}
+        <div class="prose-sm max-w-none">
+          <PostRenderer content={post.content} />
+        </div>
+      {/if}
+
+      <div
+        class="flex items-center gap-4 mt-4 pt-3 border-t border-(--surface-elevated)/10 text-sm text-slate-500"
+      >
         <button
           type="button"
-          onclick={startEdit}
-          class="flex items-center gap-1.5 hover:text-(--hako-fg) transition-colors cursor-pointer"
+          onclick={handleLike}
+          disabled={!userId}
+          class="flex items-center gap-1.5 transition-colors cursor-pointer disabled:cursor-default {isLiked
+            ? 'text-(--c9)'
+            : 'hover:text-(--c9)'}"
         >
-          <i class="fa-solid fa-pen"></i>
-          <span>Edit</span>
+          <i class="fa-solid fa-heart"></i>
+          <span>{likeCount}</span>
         </button>
-      {/if}
+      </div>
     </div>
+
+    {#if signature}
+      <div class="px-4 py-2 border-t border-(--surface-elevated)/10">
+        <p
+          class="text-[11px] text-slate-500 italic leading-tight truncate max-w-full"
+        >
+          {signature}
+        </p>
+      </div>
+    {/if}
   </div>
 </div>
