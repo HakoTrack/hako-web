@@ -2,6 +2,7 @@ import { supabase } from '../../../core/supabase';
 import { type Result, success, failure } from '../../../shared/utils/result';
 import type { Media } from '../../../shared/types/index';
 import { mapSupabaseMedia } from '../../../shared/utils/mediaData';
+import { GENRES } from '../../../shared/utils/constants';
 
 export interface BrowseFilters {
   genre: string;
@@ -11,13 +12,7 @@ export interface BrowseFilters {
   format: string;
 }
 
-// authorative list of genres and common tags to avoid db scans
-export const GENRES = [
-  "Action", "Adventure", "Comedy", "Drama", "Ecchi", "Fantasy", "Horror",
-  "Mahou Shoujo", "Mecha", "Music", "Mystery", "Psychological", "Romance",
-  "Sci-Fi", "Slice of Life", "Sports", "Supernatural", "Thriller"
-];
-
+// authorative list of tags to avoid db scans
 export const COMMON_TAGS = [
   "Anti-Hero", "Boys' Love", "CGDCT", "Coming of Age", "Cyberpunk",
   "Delinquents", "Demons", "Detective", "Dystopian", "Educational",
@@ -38,7 +33,6 @@ export const FORMATS_BY_TYPE: Record<string, string[]> = {
 
 export const BrowseService = {
   async getFilteredMedia(mediaType: string, filters: BrowseFilters, page: number = 0, pageSize: number = 60): Promise<Result<Media[]>> {
-    const hasGenre = !!filters.genre;
     const hasTag = !!filters.tag;
 
     let query = supabase
@@ -46,7 +40,7 @@ export const BrowseService = {
       .select(`
         id, title_romaji, title_english, title_native, format,
         episodes, chapters, volumes, duration, season, season_year,
-        genres${hasGenre ? '!inner' : ''} (genre),
+        genre_ids,
         tags${hasTag ? '!inner' : ''} (tag, rank),
         start_year, start_month, start_day,
         end_year, end_month, end_day
@@ -54,7 +48,10 @@ export const BrowseService = {
       .eq('media_type', mediaType);
 
     if (filters.genre) {
-      query = query.eq('genres.genre', filters.genre);
+      const genreId = GENRES.indexOf(filters.genre) + 1;
+      if (genreId > 0) {
+        query = query.filter('genre_ids', 'cs', `[${genreId}]`);
+      }
     }
 
     if (filters.tag) {

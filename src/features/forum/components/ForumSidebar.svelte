@@ -5,11 +5,13 @@
   let {
     categories = [],
     recentThreads = [],
+    recentLoading = true,
     activeCategoryId = null,
     onCategorySelect,
   } = $props<{
     categories?: ForumCategory[];
     recentThreads?: ForumThread[];
+    recentLoading?: boolean;
     activeCategoryId?: number | null;
     onCategorySelect?: (catId: number | null) => void;
   }>();
@@ -83,15 +85,24 @@
     </div>
   </div>
 
-  {#if recentThreads.length > 0}
-    <div class="bg-card p-5 shadow-md">
-      <h3
-        class="text-sm font-bold text-(--hako-fg) mb-3 flex items-center gap-2"
-      >
-        <i class="fa-solid fa-clock text-(--hako-accent)"></i>
-        Recent Activity
-      </h3>
-      <div class="space-y-2">
+  <div class="bg-card p-5 shadow-md">
+    <h3 class="text-sm font-bold text-(--hako-fg) mb-3 flex items-center gap-2">
+      <i class="fa-solid fa-clock text-(--hako-accent)"></i>
+      Recent Activity
+    </h3>
+    <div class="space-y-2">
+      {#if recentLoading}
+        {#each [1, 2, 3, 4, 5] as _}
+          <div class="px-3 py-2 rounded-lg">
+            <div
+              class="h-5 bg-(--surface-elevated)/30 rounded animate-pulse mb-0.5"
+            ></div>
+            <div
+              class="h-4 bg-(--surface-elevated)/20 rounded animate-pulse w-1/2"
+            ></div>
+          </div>
+        {/each}
+      {:else}
         {#each recentThreads as thread}
           <button
             type="button"
@@ -106,7 +117,7 @@
             </div>
           </button>
         {/each}
-      </div>
+      {/if}
     </div>
-  {/if}
+  </div>
 </div>

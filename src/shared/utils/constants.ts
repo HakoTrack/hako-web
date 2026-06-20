@@ -13,25 +13,25 @@ export const ROLES: Record<
   owner: {
     label: "総帥",
     romaji: "Sousui",
-    color: "bg-red-500",
+    color: "bg-[var(--c5)]/20 text-[var(--c5)]",
     title: "Owner",
   },
   admin: {
     label: "師匠",
     romaji: "Shishou",
-    color: "bg-indigo-500",
+    color: "bg-[var(--c4)]/20 text-[var(--c4)]",
     title: "Admin",
   },
   moderator: {
     label: "先生",
     romaji: "Sensei",
-    color: "bg-emerald-500",
+    color: "bg-[var(--c2)]/20 text-[var(--c2)]",
     title: "Moderator",
   },
   contributor: {
     label: "先輩",
     romaji: "Senpai",
-    color: "bg-blue-500",
+    color: "bg-[var(--c3)]/20 text-[var(--c3)]",
     title: "Contributor",
   },
 };
@@ -72,6 +72,12 @@ export const VIBE_LABELS_TO_NAMES: Record<string, string> = {
   "\uf118": "Lighthearted",
 };
 
+export const GENRES = [
+  "Action", "Adventure", "Comedy", "Drama", "Ecchi", "Fantasy", "Horror",
+  "Mahou Shoujo", "Mecha", "Music", "Mystery", "Psychological", "Romance",
+  "Sci-Fi", "Slice of Life", "Sports", "Supernatural", "Thriller", "Hentai"
+];
+
 export const FORUM_CATEGORIES = [
   { id: 8, name: 'General', slug: 'general', description: 'General discussion about anime, manga, and everything in between.', sortOrder: 1 },
   { id: 9, name: 'Anime', slug: 'anime', description: 'Talk about anime series, movies, and OVAs.', sortOrder: 2 },
@@ -79,7 +85,7 @@ export const FORUM_CATEGORIES = [
   { id: 11, name: 'Light Novels', slug: 'light-novels', description: 'Discuss light novels and novel series.', sortOrder: 4 },
   { id: 12, name: 'Visual Novels', slug: 'visual-novels', description: 'Discuss visual novels and eroge.', sortOrder: 5 },
   { id: 13, name: 'Recommendations', slug: 'recommendations', description: 'Ask for and share recommendations.', sortOrder: 6 },
-  { id: 14, name: 'Site Feedback', slug: 'site-feedback', description: 'Feedback, bug reports, and suggestions for hako.', sortOrder: 7 },
+  { id: 14, name: 'Site Feedback', slug: 'site-feedback', description: 'Feedback, bug reports, and suggestions for Hako.', sortOrder: 7 },
 ];
 
 export const FORUM_CATEGORY_COLORS: Record<string, string> = {

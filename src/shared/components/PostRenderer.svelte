@@ -1,8 +1,32 @@
 <script lang="ts">
   import { parseMarkdown } from "../utils/markdown";
+  import hljs from "highlight.js/lib/core";
+  import javascript from "highlight.js/lib/languages/javascript";
+  import typescript from "highlight.js/lib/languages/typescript";
+  import python from "highlight.js/lib/languages/python";
+  import rust from "highlight.js/lib/languages/rust";
+  import css from "highlight.js/lib/languages/css";
+  import xml from "highlight.js/lib/languages/xml";
+  import json from "highlight.js/lib/languages/json";
+  import bash from "highlight.js/lib/languages/bash";
+  import svelte from "highlightjs-svelte/dist/index.mjs";
 
-  let { content } = $props<{ content: string }>();
-  let htmlContent = $derived(parseMarkdown(content));
+  hljs.registerLanguage("javascript", javascript);
+  hljs.registerLanguage("typescript", typescript);
+  hljs.registerLanguage("python", python);
+  hljs.registerLanguage("rust", rust);
+  hljs.registerLanguage("css", css);
+  hljs.registerLanguage("xml", xml);
+  hljs.registerLanguage("json", json);
+  hljs.registerLanguage("bash", bash);
+  svelte(hljs);
+
+  let { content, avatars = {} as Record<string, string> } = $props<{
+    content: string;
+    avatars?: Record<string, string>;
+  }>();
+  let htmlContent = $derived(parseMarkdown(content, avatars));
+  let containerEl: HTMLDivElement;
   let activeImage = $state<string | null>(null);
 
   function handleKeydown(event: KeyboardEvent) {
@@ -19,6 +43,17 @@
     }
   });
 
+  $effect(() => {
+    htmlContent;
+    if (containerEl) {
+      queueMicrotask(() => {
+        containerEl.querySelectorAll<HTMLElement>("pre code").forEach((el) => {
+          hljs.highlightElement(el);
+        });
+      });
+    }
+  });
+
   // Handle image clicks via event delegation
   function handleContainerClick(event: MouseEvent) {
     const target = event.target as HTMLElement;
@@ -30,12 +65,13 @@
 
 <!-- svelte-ignore a11y_click_events_have_key_events -->
 <!-- svelte-ignore a11y_no_noninteractive_element_interactions -->
-<p
+<div
+  bind:this={containerEl}
   class="whitespace-pre-wrap text-sm leading-relaxed text-(--hako-fg)"
   onclick={handleContainerClick}
 >
   {@html htmlContent}
-</p>
+</div>
 
 {#if activeImage}
   <!-- svelte-ignore a11y_click_events_have_key_events -->

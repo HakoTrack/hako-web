@@ -2,6 +2,8 @@
   import { HakoImage } from "../../../shared/utils/images";
   import { MediaService } from "../../media/services/mediaService";
   import MediaSubject from "./MediaSubject.svelte";
+  import Select from "../../../shared/components/Select.svelte";
+  import TextInput from "../../../shared/components/TextInput.svelte";
   import type { ForumCategory, Media } from "../../../shared/types";
 
   let { categories, onCreateThread, onCancel } = $props<{
@@ -32,6 +34,17 @@
       content.trim().length > 0 &&
       selectedCategoryId !== null,
   );
+
+  let categoryItems = $derived(
+    categories.map((c: ForumCategory) => ({ value: String(c.id), label: c.name })),
+  );
+
+  let categoryValue = $state("");
+
+  function handleCategoryChange(v: any) {
+    categoryValue = v;
+    selectedCategoryId = v ? Number(v) : null;
+  }
 
   function handleSearchInput() {
     clearTimeout(searchTimeout);
@@ -93,104 +106,86 @@
 
   <div class="space-y-4">
     <div>
-      <label
-        class="block text-xs font-bold text-slate-400 uppercase tracking-wider mb-1.5"
-      >
-        Category
-        <select
-          bind:value={selectedCategoryId}
-          class="w-full bg-(--hako-bg) border border-(--surface-elevated) rounded-lg px-3 py-2.5 text-sm text-(--hako-fg) focus:ring-1 focus:ring-(--hako-accent) outline-none mt-1"
+      <TextInput bind:value={title} placeholder="Thread title..." label="Title" />
+    </div>
+
+    <div class="grid grid-cols-2 gap-4">
+      <Select
+        items={categoryItems}
+        value={categoryValue}
+        onchange={handleCategoryChange}
+        label="Category"
+      />
+
+      <div>
+        <label
+          class="block text-xs font-bold text-slate-400 uppercase tracking-wider mb-1.5"
         >
-          <option value={null} disabled>Select a category...</option>
-          {#each categories as cat}
-            <option value={cat.id}>{cat.name}</option>
-          {/each}
-        </select>
-      </label>
-    </div>
-
-    <div>
-      <label
-        class="block text-xs font-bold text-slate-400 uppercase tracking-wider mb-1.5"
-      >
-        Subject (optional)
-        <div class="relative mt-1">
-          {#if selectedMedia}
-            <MediaSubject media={selectedMedia} onRemove={removeMedia} />
-          {:else}
-            <input
-              type="text"
-              bind:value={searchQuery}
-              oninput={handleSearchInput}
-              onfocus={() => {
-                if (searchResults.length > 0) showResults = true;
-              }}
-              onblur={() => setTimeout(() => (showResults = false), 200)}
-              placeholder="Search media to tag as subject..."
-              class="w-full bg-(--hako-bg) border border-(--surface-elevated) rounded-lg px-3 py-2.5 text-sm text-(--hako-fg) focus:ring-1 focus:ring-(--hako-accent) outline-none"
-            />
-            {#if showResults && searchQuery.length >= 2}
-              <div
-                class="absolute z-20 mt-1 w-full bg-(--surface) border border-(--surface-elevated) rounded-lg shadow-xl max-h-60 overflow-y-auto"
-              >
-                {#if isSearching}
-                  <div class="p-3 text-center text-sm text-slate-500">
-                    <i class="fa-solid fa-circle-notch fa-spin mr-2"
-                    ></i>Searching...
-                  </div>
-                {:else if searchResults.length === 0}
-                  <div class="p-3 text-center text-sm text-slate-500">
-                    No results found.
-                  </div>
-                {:else}
-                  {#each searchResults as result}
-                    <button
-                      type="button"
-                      onclick={() => selectMedia(result)}
-                      class="w-full flex items-center gap-3 px-3 py-2 hover:bg-(--surface-elevated)/30 transition-colors text-left"
-                    >
-                      <img
-                        src={HakoImage.getCover(result.media_id, "small")}
-                        class="w-8 h-11 rounded object-cover bg-slate-700 shrink-0"
-                        alt=""
-                        onerror={(e: Event) =>
-                          ((e.target as HTMLImageElement).style.display =
-                            "none")}
-                      />
-                      <div class="min-w-0">
-                        <div class="text-sm text-(--hako-fg) truncate">
-                          {result.title.romaji ||
-                            result.title.english ||
-                            "Untitled"}
+          Subject (optional)
+          <div class="relative mt-1">
+            {#if selectedMedia}
+              <MediaSubject media={selectedMedia} onRemove={removeMedia} />
+            {:else}
+              <input
+                type="text"
+                bind:value={searchQuery}
+                oninput={handleSearchInput}
+                onfocus={() => {
+                  if (searchResults.length > 0) showResults = true;
+                }}
+                onblur={() => setTimeout(() => (showResults = false), 200)}
+                placeholder="Search media..."
+                class="w-full bg-(--hako-bg) border border-(--surface-elevated) rounded-lg px-3 py-2.5 text-sm text-(--hako-fg) focus:ring-1 focus:ring-(--hako-accent) outline-none"
+              />
+              {#if showResults && searchQuery.length >= 2}
+                <div
+                  class="absolute z-20 mt-1 w-full bg-(--surface) border border-(--surface-elevated) rounded-lg shadow-xl max-h-60 overflow-y-auto"
+                >
+                  {#if isSearching}
+                    <div class="p-3 text-center text-sm text-slate-500">
+                      <i class="fa-solid fa-circle-notch fa-spin mr-2"
+                      ></i>Searching...
+                    </div>
+                  {:else if searchResults.length === 0}
+                    <div class="p-3 text-center text-sm text-slate-500">
+                      No results found.
+                    </div>
+                  {:else}
+                    {#each searchResults as result}
+                      <button
+                        type="button"
+                        onclick={() => selectMedia(result)}
+                        class="w-full flex items-center gap-3 px-3 py-2 hover:bg-(--surface-elevated)/30 transition-colors text-left"
+                      >
+                        <img
+                          src={HakoImage.getCover(result.media_id, "small")}
+                          class="w-8 h-11 rounded object-cover bg-slate-700 shrink-0"
+                          alt=""
+                          onerror={(e: Event) =>
+                            ((e.target as HTMLImageElement).style.display =
+                              "none")}
+                        />
+                        <div class="min-w-0">
+                          <div class="text-sm text-(--hako-fg) truncate">
+                            {result.title.romaji ||
+                              result.title.english ||
+                              "Untitled"}
+                          </div>
+                          <div class="text-xs text-slate-500">
+                            {result.format || ""}
+                            {#if result.seasonYear}
+                              &middot; {result.seasonYear}{/if}
+                          </div>
                         </div>
-                        <div class="text-xs text-slate-500">
-                          {result.format || ""}
-                          {#if result.seasonYear}
-                            &middot; {result.seasonYear}{/if}
-                        </div>
-                      </div>
-                    </button>
-                  {/each}
-                {/if}
-              </div>
+                      </button>
+                    {/each}
+                  {/if}
+                </div>
+              {/if}
             {/if}
-          {/if}
-        </div>
-      </label>
-    </div>
-
-    <div>
-      <label
-        class="block text-xs font-bold text-slate-400 uppercase tracking-wider mb-1.5"
-      >
-        Title
-        <input
-          type="text"
-          bind:value={title}
-          placeholder="Thread title..."
-          class="w-full bg-(--hako-bg) border border-(--surface-elevated) rounded-lg px-3 py-2.5 text-sm text-(--hako-fg) focus:ring-1 focus:ring-(--hako-accent) outline-none mt-1"
-        />
-      </label>
+          </div>
+        </label>
+      </div>
     </div>
 
     <div>

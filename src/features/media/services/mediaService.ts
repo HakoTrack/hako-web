@@ -1,6 +1,6 @@
 import { supabase } from '../../../core/supabase.js';
 import { type Result, success, failure } from '../../../shared/utils/result';
-import { type Media } from '../../../shared/types/index';
+import { type Media, type MediaCompanies, type Company } from '../../../shared/types/index';
 import { mapSupabaseMedia } from '../../../shared/utils/mediaData';
 import { CacheService } from '../../../core/cache';
 import { settings } from '../../../core/settings.svelte';
@@ -69,7 +69,7 @@ export const MediaService = {
     }
 
     // 2. Query Supabase per type (trigram indexes make these fast)
-    const SELECT = `*, genres (genre), tags (tag, rank)`;
+    const SELECT = `*, genre_ids, tags (tag, rank)`;
     const filter = `title_english.ilike.%${query}%,title_native.ilike.%${query}%,title_romaji.ilike.%${query}%`;
 
     const [animeRes, mangaRes, lnRes] = await Promise.all([
@@ -140,5 +140,31 @@ export const MediaService = {
 
     if (error) return failure(error.message);
     return success(data || []);
+  },
+
+  async getMediaCompanies(mediaId: number): Promise<MediaCompanies> {
+    const { data, error } = await supabase
+      .from('media_companies')
+      .select(`
+        type,
+        company:company_id (
+          id,
+          name
+        )
+      `)
+      .eq('media_id', mediaId);
+
+    if (error || !data) return { studio: null, producers: [] };
+
+    const result: MediaCompanies = { studio: null, producers: [] };
+    for (const row of data) {
+      const c = row.company as unknown as Company;
+      if (row.type === 'animation_studio') {
+        result.studio = c;
+      } else {
+        result.producers.push(c);
+      }
+    }
+    return result;
   },
 };

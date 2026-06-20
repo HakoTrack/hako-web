@@ -3,13 +3,24 @@
   import PostRenderer from "../../../shared/components/PostRenderer.svelte";
   import Dropdown from "../../../shared/components/Dropdown.svelte";
   import { ForumInteractionService } from "../services/forumInteractionService";
+  import { ROLES } from "../../../shared/utils/constants";
   import type { ForumPost } from "../../../shared/types";
 
-  let { post, userId, onPostEdited, role, postCount } = $props<{
+  let {
+    post,
+    userId,
+    onPostEdited,
+    onReply,
+    onQuote,
+    allPosts = [],
+    postCount,
+  } = $props<{
     post: ForumPost;
     userId: string | null | undefined;
     onPostEdited?: (postId: number, content: string) => void;
-    role?: string;
+    onReply?: (post: ForumPost) => void;
+    onQuote?: (post: ForumPost, content: string) => void;
+    allPosts?: ForumPost[];
     postCount?: number;
   }>();
 
@@ -20,6 +31,7 @@
 
   let joinDate = $derived(post.author?.join_date);
   let signature = $derived(post.author?.quote);
+  let roleInfo = $derived(post.author?.role ? ROLES[post.author.role] : null);
 
   $effect(() => {
     isLiked = post.isLiked;
@@ -27,6 +39,23 @@
   });
 
   let isEdited = $derived(post.updatedAt !== post.createdAt);
+
+  let replyTargets = $derived(
+    post.replyToIds
+      .map((id: number) => {
+        const p = allPosts.find((p: ForumPost) => p.id === id);
+        return p ? { id: p.id, username: p.author?.username } : null;
+      })
+      .filter(Boolean) as { id: number; username: string | undefined }[],
+  );
+
+  let avatars = $derived(
+    Object.fromEntries(
+      allPosts
+        .filter((p: ForumPost) => p.author?.username)
+        .map((p: ForumPost) => [p.author!.username, p.author?.avatar_url || ""]),
+    ),
+  );
 
   function getRelativeTime(timestamp: string): string {
     const rtf = new Intl.RelativeTimeFormat("en", { numeric: "auto" });
@@ -84,6 +113,20 @@
     window.dispatchEvent(new PopStateEvent("popstate"));
   }
 
+  function scrollToPost(id: number) {
+    const el = document.getElementById(`post-${id}`);
+    if (el) el.scrollIntoView({ behavior: "smooth", block: "start" });
+  }
+
+  function handleReply() {
+    onReply?.(post);
+  }
+
+  function handleQuote() {
+    const markdown = `[quote=${post.author?.username || "User"}, post=${post.id}]\n${post.content}\n[/quote]`;
+    onQuote?.(post, markdown);
+  }
+
   function startEdit() {
     editContent = post.content;
     isEditing = true;
@@ -109,7 +152,7 @@
 </script>
 
 <div
-  class="flex rounded-lg border border-(--surface-elevated)/20 bg-card overflow-hidden"
+  class="flex rounded-lg border border-(--surface-elevated)/20 bg-card overflow-hidden scroll-mt-20"
   id="post-{post.id}"
 >
   <div
@@ -133,11 +176,10 @@
     >
       {post.author?.username || "User"}
     </button>
-    {#if role}
+    {#if roleInfo}
       <span
-        class="text-[10px] px-2 py-0.5 rounded-full font-bold uppercase tracking-wider"
-        style="background-color: color-mix(in srgb, var(--c4) 20%, transparent); color: var(--c4);"
-        >{role}</span
+        class="text-[10px] px-2 py-0.5 rounded-full font-bold uppercase tracking-wider {roleInfo.color}"
+        >{roleInfo.romaji}</span
       >
     {/if}
     {#if postCount != null || joinDate}
@@ -169,6 +211,7 @@
         </span>
         {#if getDropdownItems().length > 0}
           <Dropdown items={getDropdownItems()}>
+            <!-- svelte-ignore a11y_consider_explicit_label -->
             <button
               type="button"
               class="flex items-center justify-center w-7 h-7 rounded-md hover:bg-white/10 transition-colors cursor-pointer"
@@ -178,6 +221,20 @@
           </Dropdown>
         {/if}
       </div>
+
+      {#if replyTargets.length > 0}
+        <div class="flex flex-wrap gap-1.5 mb-2">
+          {#each replyTargets as target}
+            <button
+              type="button"
+              onclick={() => scrollToPost(target.id)}
+              class="text-[11px] text-slate-500 hover:text-(--hako-accent) transition-colors cursor-pointer"
+            >
+              <i class="fa-solid fa-arrow-up mr-0.5"></i>{target.username}
+            </button>
+          {/each}
+        </div>
+      {/if}
 
       {#if isEditing}
         <textarea
@@ -202,7 +259,7 @@
         </div>
       {:else}
         <div class="prose-sm max-w-none">
-          <PostRenderer content={post.content} />
+          <PostRenderer content={post.content} {avatars} />
         </div>
       {/if}
 
@@ -220,6 +277,24 @@
           <i class="fa-solid fa-heart"></i>
           <span>{likeCount}</span>
         </button>
+        {#if userId}
+          <button
+            type="button"
+            onclick={handleReply}
+            class="flex items-center gap-1.5 text-slate-500 hover:text-(--hako-accent) transition-colors cursor-pointer"
+          >
+            <i class="fa-solid fa-reply"></i>
+            <span class="text-xs">Reply</span>
+          </button>
+          <button
+            type="button"
+            onclick={handleQuote}
+            class="flex items-center gap-1.5 text-slate-500 hover:text-(--hako-accent) transition-colors cursor-pointer"
+          >
+            <i class="fa-solid fa-quote-right"></i>
+            <span class="text-xs">Quote</span>
+          </button>
+        {/if}
       </div>
     </div>
 

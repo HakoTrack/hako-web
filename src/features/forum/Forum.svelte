@@ -21,6 +21,7 @@
   );
   let threads = $state<ForumThread[]>([]);
   let recentThreads = $state<ForumThread[]>([]);
+  let recentLoading = $state(true);
   let user = $state<{ id: string } | null>(null);
   let isLoading = $state(true);
   let showNewThread = $state(false);
@@ -77,6 +78,7 @@
 
     if (countResult.success) categories = countResult.data;
     if (recentResult.success) recentThreads = recentResult.data;
+    recentLoading = false;
 
     await loadThreads(null);
   });
@@ -126,6 +128,7 @@
       <ForumSidebar
         {categories}
         {recentThreads}
+        {recentLoading}
         activeCategoryId={activeCategory}
         onCategorySelect={handleCategorySelect}
       />

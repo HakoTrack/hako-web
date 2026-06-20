@@ -166,6 +166,7 @@ export const AuthorSchema = z.object({
   avatar_url: z.string().nullable(),
   join_date: z.string().nullable().optional(),
   quote: z.string().nullable().optional(),
+  role: z.string().nullable().optional(),
 });
 export type Author = z.infer<typeof AuthorSchema>;
 
@@ -246,4 +247,15 @@ export interface ForumPost {
   updatedAt: string;
   likesCount: number;
   isLiked: boolean;
+  replyToIds: number[];
+}
+
+export interface Company {
+  id: number;
+  name: string;
+}
+
+export interface MediaCompanies {
+  studio: Company | null;
+  producers: Company[];
 }
