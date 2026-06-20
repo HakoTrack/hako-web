@@ -55,14 +55,14 @@
 </script>
 
 <div
-  class="flex items-center gap-4 px-5 py-5 bg-card transition-colors cursor-pointer rounded-lg hover:brightness-120"
+  class="flex items-start gap-4 p-4 bg-card transition-colors cursor-pointer rounded-lg hover:brightness-120"
   onclick={() => navigateTo(`/forum/${thread.id}`)}
   role="link"
   tabindex="0"
   onkeydown={(e) => e.key === "Enter" && navigateTo(`/forum/${thread.id}`)}
 >
-  <div class="flex-1 min-w-0">
-    <div class="flex items-center gap-2">
+  <div class="flex-1 min-w-0 flex flex-col gap-0.5">
+    <div class="flex items-center gap-2 mb-1">
       {#if thread.isPinned}
         <i class="fa-solid fa-thumbtack text-xs text-(--hako-accent) shrink-0"
         ></i>
@@ -73,6 +73,9 @@
       <span class="text-sm font-bold text-(--hako-fg) truncate">
         {thread.title}
       </span>
+    </div>
+
+    <div class="flex items-center gap-2 mb-1">
       {#if thread.category}
         <span
           class="text-[10px] px-2 py-0.5 rounded-full font-bold uppercase tracking-wider shrink-0"
@@ -96,7 +99,7 @@
       {/if}
     </div>
 
-    <div class="flex items-center gap-2 mt-1 text-xs text-slate-500">
+    <div class="flex items-center gap-2 text-xs text-slate-500">
       <span>by {thread.author?.username || "User"}</span>
       <span>•</span>
       <span>{thread.postCount} posts</span>
@@ -108,18 +111,20 @@
   <div class="shrink-0 min-w-30 hidden sm:block">
     {#if thread.lastPostAt}
       <div class="flex items-center gap-2 justify-end">
+        <div class="text-xs text-right leading-tight w-24">
+          <div class="truncate text-(--hako-fg)">
+            {thread.lastPostAuthor?.username || "User"}
+          </div>
+          <div class="text-slate-500 truncate">
+            {getRelativeTime(thread.lastPostAt)}
+          </div>
+        </div>
         <img
           src={HakoImage.get(thread.lastPostAuthor?.avatar_url)}
           class="w-6 h-6 rounded-full bg-slate-700 object-cover shrink-0"
           alt=""
           onerror={(e: Event) => ((e.target as HTMLImageElement).src = "")}
         />
-        <div class="text-xs text-right leading-tight">
-          <div class="text-(--hako-fg) truncate max-w-24">
-            {thread.lastPostAuthor?.username || "User"}
-          </div>
-          <div class="text-slate-500">{getRelativeTime(thread.lastPostAt)}</div>
-        </div>
       </div>
     {:else}
       <span class="text-xs text-slate-500">No replies</span>

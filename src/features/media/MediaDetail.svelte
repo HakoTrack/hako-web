@@ -14,7 +14,7 @@
   import MediaCover from "../../shared/components/MediaCover.svelte";
   import Badge from "../../shared/components/Badge.svelte";
   import TasteProfile from "../profile/components/TasteProfile.svelte";
-  import type { Media } from "../../shared/types/index";
+  import type { Media, MediaCompanies } from "../../shared/types/index";
 
   let { mediaId, type = "anime" } = $props<{
     mediaId: string;
@@ -28,6 +28,7 @@
   let bannerError = $state(false);
   let characters = $state<any[]>([]);
   let staff = $state<any[]>([]);
+  let companies = $state<MediaCompanies>({ studio: null, producers: [] });
 
   // Derived title based on user preference
   const displayTitle = $derived.by(() => {
@@ -153,12 +154,13 @@
 
     (async () => {
       try {
-        const [mediaRes, cachedRelations, characterRes, staffRes] =
+        const [mediaRes, cachedRelations, characterRes, staffRes, companiesRes] =
           await Promise.all([
             fetchMediaDetails(Number(id)),
             CacheService.getMediaRelations(id),
             getMediaCharacters(Number(id)),
             getMediaStaff(Number(id)),
+            MediaService.getMediaCompanies(Number(id)),
           ]);
 
         if (aborted) return;
@@ -166,6 +168,7 @@
         media = mediaRes;
         characters = characterRes;
         staff = staffRes;
+        companies = companiesRes;
 
         if (cachedRelations) {
           relations = sortRelations(cachedRelations);
@@ -202,118 +205,6 @@
     { id: "stats", label: "Stats", icon: "fa-chart-simple" },
   ];
 
-  // Placeholder data for the new sections
-  const mockExtraData = {
-    studio: "Kyoto Animation",
-    producers: ["Pony Canyon", "Lantis", "ABC Animation"],
-    favorites: 12450,
-    tags: [
-      { name: "Coming of Age", rank: 95 },
-      { name: "Music", rank: 88 },
-      { name: "School", rank: 82 },
-      { name: "Slice of Life", rank: 75 },
-      { name: "Post-Apocalyptic", rank: 68 },
-      { name: "Melancholy", rank: 62 },
-    ],
-    relations: [
-      {
-        id: 101,
-        title: "Hako: The Movie",
-        type: "Sequel",
-        format: "Movie",
-        image: "https://placehold.co/100x150/151f2e/ffffff?text=Movie",
-      },
-      {
-        id: 102,
-        title: "Hako: Side Story",
-        type: "Side Story",
-        format: "OVA",
-        image: "https://placehold.co/100x150/151f2e/ffffff?text=OVA",
-      },
-      {
-        id: 103,
-        title: "Hako: Early Days",
-        type: "Prequel",
-        format: "TV",
-        image: "https://placehold.co/100x150/151f2e/ffffff?text=Prequel",
-      },
-    ],
-    characters: [
-      {
-        name: "Hako-chan",
-        role: "Main",
-        image: "https://placehold.co/100x150/151f2e/ffffff?text=Hako",
-        va: {
-          name: "Aoi Koga",
-          image: "https://placehold.co/100x150/0b1622/ffffff?text=VA1",
-        },
-      },
-      {
-        name: "Sora-kun",
-        role: "Main",
-        image: "https://placehold.co/100x150/151f2e/ffffff?text=Sora",
-        va: {
-          name: "Natsuki Hanae",
-          image: "https://placehold.co/100x150/0b1622/ffffff?text=VA2",
-        },
-      },
-      {
-        name: "Rin",
-        role: "Supporting",
-        image: "https://placehold.co/100x150/151f2e/ffffff?text=Rin",
-        va: {
-          name: "Rie Takahashi",
-          image: "https://placehold.co/100x150/0b1622/ffffff?text=VA3",
-        },
-      },
-      {
-        name: "Ken",
-        role: "Supporting",
-        image: "https://placehold.co/100x150/151f2e/ffffff?text=Ken",
-        va: {
-          name: "Mamoru Miyano",
-          image: "https://placehold.co/100x150/0b1622/ffffff?text=VA4",
-        },
-      },
-    ],
-    staff: [
-      {
-        name: "Naoko Yamada",
-        role: "Director",
-        image: "https://placehold.co/100x100/151f2e/ffffff?text=Staff1",
-      },
-      {
-        name: "Reiko Yoshida",
-        role: "Series Composition",
-        image: "https://placehold.co/100x100/151f2e/ffffff?text=Staff2",
-      },
-      {
-        name: "Futoshi Nishiya",
-        role: "Character Design",
-        image: "https://placehold.co/100x100/151f2e/ffffff?text=Staff3",
-      },
-      {
-        name: "Kensuke Ushio",
-        role: "Music",
-        image: "https://placehold.co/100x100/151f2e/ffffff?text=Staff4",
-      },
-    ],
-    stats: {
-      medianScore: 84,
-      distribution: [
-        { score: 10, count: 120 },
-        { score: 20, count: 450 },
-        { score: 30, count: 800 },
-        { score: 40, count: 1500 },
-        { score: 50, count: 3200 },
-        { score: 60, count: 5600 },
-        { score: 70, count: 12000 },
-        { score: 80, count: 18000 },
-        { score: 90, count: 14000 },
-        { score: 100, count: 9000 },
-      ],
-    },
-  };
 </script>
 
 {#if isLoading}
@@ -459,7 +350,7 @@
               <div class="flex items-center gap-2 text-pink-500 mb-1">
                 <i class="fa-solid fa-heart"></i>
                 <span class="text-xl font-bold"
-                  >{mockExtraData.favorites.toLocaleString()}</span
+                   >{(12450).toLocaleString()}</span
                 >
               </div>
               <span
@@ -740,7 +631,7 @@
             <div class="bg-card p-8 rounded-xl shadow-lg space-y-10">
               <div class="flex flex-col items-center text-center">
                 <span class="text-6xl font-black text-accent mb-2"
-                  >{mockExtraData.stats.medianScore}%</span
+                  >84%</span
                 >
                 <span
                   class="text-sm text-slate-400 uppercase tracking-widest font-bold"
@@ -755,7 +646,7 @@
                   Score Distribution
                 </h4>
                 <div class="flex items-end gap-1 h-48 group px-4">
-                  {#each mockExtraData.stats.distribution as dist}
+                  {#each [{ score: 10, count: 120 }, { score: 20, count: 450 }, { score: 30, count: 800 }, { score: 40, count: 1500 }, { score: 50, count: 3200 }, { score: 60, count: 5600 }, { score: 70, count: 12000 }, { score: 80, count: 18000 }, { score: 90, count: 14000 }, { score: 100, count: 9000 }] as dist}
                     <div
                       class="flex-1 flex flex-col items-center gap-3 group/bar"
                     >
@@ -847,16 +738,16 @@
 
                 <div class="flex justify-between">
                   <span>Studio</span><span class="text-accent font-medium"
-                    >{mockExtraData.studio}</span
+                    >{companies.studio?.name || "—"}</span
                   >
                 </div>
                 <div class="space-y-1">
                   <span class="text-slate-500 text-xs">Producers</span>
                   <div class="flex flex-wrap gap-1">
-                    {#each mockExtraData.producers as producer}
+                    {#each companies.producers as producer (producer.id)}
                       <span
                         class="text-[10px] text-slate-400 bg-slate-800/50 px-2 py-0.5 rounded border border-slate-700/50"
-                        >{producer}</span
+                        >{producer.name}</span
                       >
                     {/each}
                   </div>
@@ -868,7 +759,7 @@
             <div class="bg-card p-6 rounded-xl shadow-lg">
               <h3 class="text-(--hako-fg) font-bold mb-4">Tags</h3>
               <div class="space-y-3">
-                {#each mockExtraData.tags as tag}
+                {#each [{ name: "Coming of Age", rank: 95 }, { name: "Music", rank: 88 }, { name: "School", rank: 82 }, { name: "Slice of Life", rank: 75 }, { name: "Post-Apocalyptic", rank: 68 }, { name: "Melancholy", rank: 62 }] as tag}
                   <div class="group cursor-default">
                     <div class="flex justify-between text-[11px] mb-1.5">
                       <span

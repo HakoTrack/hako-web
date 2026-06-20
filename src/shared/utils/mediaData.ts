@@ -1,5 +1,6 @@
 import { supabase } from '../../core/supabase';
 import { CacheService } from '../../core/cache';
+import { GENRES } from './constants';
 import type { Media, ListEntry } from '../types/index';
 
 // --- Utilities ---
@@ -35,7 +36,7 @@ export function mapSupabaseMedia(media: any): Media | null {
     duration: media.duration || null,
     season: media.season || null,
     seasonYear: media.season_year || null,
-    genres: media.genres?.map((g: any) => g.genre) || [],
+    genres: media.genre_ids?.map((id: number) => GENRES[id - 1]) || [],
     tags: media.tags?.map((t: any) => ({ name: t.tag, rank: t.rank })) || [],
     startDate: { year: media.start_year, month: media.start_month, day: media.start_day },
     endDate: { year: media.end_year, month: media.end_month, day: media.end_day }
@@ -217,7 +218,7 @@ export async function fetchMediaSummaryWithGenres(
       const { data } = await supabase
         .from("media")
         .select(
-          "id, title_romaji, title_english, title_native, genres (genre), tags (tag, rank), episodes, chapters, volumes, format, duration, start_year, start_month, start_day",
+          "id, title_romaji, title_english, title_native, genre_ids, tags (tag, rank), episodes, chapters, volumes, format, duration, start_year, start_month, start_day",
         )
         .in("id", chunk);
 
@@ -231,7 +232,7 @@ export async function fetchMediaSummaryWithGenres(
               english: item.title_english,
               native: item.title_native,
             },
-            genres: item.genres?.map((g: any) => g.genre) || [],
+            genres: item.genre_ids?.map((id: number) => GENRES[id - 1]) || [],
             tags:
               item.tags?.map((t: any) => ({ name: t.tag, rank: t.rank })) || [],
             episodes: item.episodes,
@@ -269,7 +270,7 @@ export async function fetchMediaSummaryWithDescription(id: number): Promise<Medi
       title_english,
       title_native,
       description,
-      genres (genre),
+      genre_ids,
       episodes,
       chapters,
       volumes
@@ -287,7 +288,7 @@ export async function fetchMediaSummaryWithDescription(id: number): Promise<Medi
       native: data.title_native
     },
     description: data.description,
-    genres: data.genres?.map((g: any) => g.genre) || [],
+    genres: data.genre_ids?.map((id: number) => GENRES[id - 1]) || [],
     episodes: data.episodes,
     chapters: data.chapters,
     volumes: data.volumes
@@ -308,7 +309,7 @@ export async function fetchMediaDetails(id: number): Promise<Media | null> {
     .select(`
       id, title_romaji, title_english, title_native, description, format, source, status,
       episodes, chapters, volumes, duration, season, season_year,
-      genres (genre),
+      genre_ids,
       tags (tag, rank),
       start_year, start_month, start_day,
       end_year, end_month, end_day

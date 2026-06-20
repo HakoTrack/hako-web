@@ -10,8 +10,8 @@ export const ForumPostService = {
     const { data, error } = await supabase
       .from('forum_posts')
       .select(`
-        id, thread_id, author_id, content, created_at, updated_at,
-        author:profiles!forum_posts_author_id_fkey(username, avatar_url, join_date, quote),
+        id, thread_id, author_id, content, reply_to_ids, created_at, updated_at,
+        author:profiles!forum_posts_author_id_fkey(username, avatar_url, join_date, quote, user_roles(role)),
         likes_count:forum_post_likes(count)
       `)
       .eq('thread_id', threadId)
@@ -34,28 +34,40 @@ export const ForumPostService = {
       }
     }
 
-    const posts: ForumPost[] = (data || []).map((p: any) => ({
-      id: p.id,
-      threadId: p.thread_id,
-      authorId: p.author_id,
-      author: p.author ?? { username: 'Unknown', avatar_url: null, join_date: null, quote: null },
-      content: p.content,
-      createdAt: p.created_at,
-      updatedAt: p.updated_at,
-      likesCount: p.likes_count?.[0]?.count ?? 0,
-      isLiked: likedPostIds.has(p.id),
-    }));
+    const posts: ForumPost[] = (data || []).map((p: any) => {
+      const author = p.author
+        ? {
+            username: p.author.username,
+            avatar_url: p.author.avatar_url,
+            join_date: p.author.join_date,
+            quote: p.author.quote,
+            role: (p.author.user_roles as any)?.role || null,
+          }
+        : { username: 'Unknown', avatar_url: null, join_date: null, quote: null, role: null };
+      return {
+        id: p.id,
+        threadId: p.thread_id,
+        authorId: p.author_id,
+        author,
+        content: p.content,
+        replyToIds: p.reply_to_ids || [],
+        createdAt: p.created_at,
+        updatedAt: p.updated_at,
+        likesCount: p.likes_count?.[0]?.count ?? 0,
+        isLiked: likedPostIds.has(p.id),
+      };
+    });
 
     return success(posts);
   },
 
-  async createPost(userId: string, threadId: number, content: string): Promise<Result<ForumPost>> {
+  async createPost(userId: string, threadId: number, content: string, replyToIds: number[] = []): Promise<Result<ForumPost>> {
     const { data, error } = await supabase
       .from('forum_posts')
-      .insert({ thread_id: threadId, author_id: userId, content })
+      .insert({ thread_id: threadId, author_id: userId, content, reply_to_ids: replyToIds.length ? replyToIds : null })
       .select(`
-        id, thread_id, author_id, content, created_at, updated_at,
-        author:profiles!forum_posts_author_id_fkey(username, avatar_url, join_date, quote)
+        id, thread_id, author_id, content, reply_to_ids, created_at, updated_at,
+        author:profiles!forum_posts_author_id_fkey(username, avatar_url, join_date, quote, user_roles(role))
       `)
       .single();
 
@@ -65,13 +77,23 @@ export const ForumPostService = {
     await supabase.rpc('increment_thread_post_count', { p_thread_id: threadId });
 
     const author = Array.isArray(data.author) ? data.author[0] : data.author;
+    const mappedAuthor = author
+      ? {
+          username: author.username,
+          avatar_url: author.avatar_url,
+          join_date: author.join_date,
+          quote: author.quote,
+          role: (author.user_roles as any)?.role || null,
+        }
+      : { username: 'Unknown', avatar_url: null, join_date: null, quote: null, role: null };
 
     return success({
       id: data.id,
       threadId: data.thread_id,
       authorId: data.author_id,
-      author: author ?? { username: 'Unknown', avatar_url: null, join_date: null, quote: null },
+      author: mappedAuthor,
       content: data.content,
+      replyToIds: data.reply_to_ids || [],
       createdAt: data.created_at,
       updatedAt: data.updated_at,
       likesCount: 0,

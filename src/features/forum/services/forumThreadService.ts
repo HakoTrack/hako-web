@@ -3,6 +3,15 @@ import { type Result, success, failure } from '../../../shared/utils/result';
 import { FORUM_CATEGORIES } from '../../../shared/utils/constants';
 import type { ForumThread, Media } from '../../../shared/types/index';
 
+function mapAuthor(a: any): any {
+  if (!a) return null;
+  return {
+    username: a.username,
+    avatar_url: a.avatar_url,
+    role: (a.user_roles as any)?.role || null,
+  };
+}
+
 function mapThread(t: any): ForumThread {
   const cat = Array.isArray(t.category) ? t.category[0] : t.category;
   const media = Array.isArray(t.media) ? t.media[0] : t.media;
@@ -40,7 +49,7 @@ function mapThread(t: any): ForumThread {
     categoryId: t.category_id,
     category: cat ? { id: cat.id, name: cat.name, slug: cat.slug, description: null, sortOrder: 0 } : undefined,
     authorId: t.author_id,
-    author: t.author ?? { username: 'Unknown', avatar_url: null },
+    author: mapAuthor(t.author) ?? { username: 'Unknown', avatar_url: null, role: null },
     subjectMediaId: t.media_id,
     subjectMedia,
     isPinned: t.is_pinned,
@@ -48,7 +57,7 @@ function mapThread(t: any): ForumThread {
     postCount: t.post_count,
     viewCount: t.view_count,
     lastPostAt: t.last_post_at,
-    lastPostAuthor: t.last_post_author ?? null,
+    lastPostAuthor: mapAuthor(t.last_post_author),
     createdAt: t.created_at,
     updatedAt: t.updated_at,
   };
@@ -58,8 +67,8 @@ const THREAD_SELECT = `
   id, title, category_id, author_id, media_id, is_pinned, is_locked,
   post_count, view_count, last_post_at, created_at, updated_at,
   category:forum_categories!forum_threads_category_id_fkey(id, name, slug),
-  author:profiles!forum_threads_author_id_fkey(username, avatar_url),
-  last_post_author:profiles!forum_threads_last_post_author_id_fkey(username, avatar_url),
+  author:profiles!forum_threads_author_id_fkey(username, avatar_url, user_roles(role)),
+  last_post_author:profiles!forum_threads_last_post_author_id_fkey(username, avatar_url, user_roles(role)),
   media:media!forum_threads_media_id_fkey(id, media_type, title_romaji, title_english, title_native, format, season_year)
 `;
 
@@ -134,5 +143,26 @@ export const ForumThreadService = {
 
   async incrementViewCount(threadId: number): Promise<void> {
     await supabase.rpc('increment_thread_view_count', { p_thread_id: threadId });
+  },
+
+  async getThreadParticipants(threadId: number): Promise<{ count: number; avatars: { username: string; avatar_url: string | null }[] }> {
+    const { data } = await supabase
+      .from('forum_posts')
+      .select('author_id')
+      .eq('thread_id', threadId);
+
+    if (!data || data.length === 0) return { count: 0, avatars: [] };
+
+    const uniqueIds = [...new Set(data.map((d: any) => d.author_id))];
+    const { data: profiles } = await supabase
+      .from('profiles')
+      .select('username, avatar_url')
+      .in('id', uniqueIds)
+      .limit(5);
+
+    return {
+      count: uniqueIds.length,
+      avatars: (profiles || []).filter((p: any) => p.avatar_url),
+    };
   },
 };

@@ -4,7 +4,8 @@
   import SegmentedControl from "../../shared/components/SegmentedControl.svelte";
   import MediaCover from "../../shared/components/MediaCover.svelte";
   import { MediaService } from "../media/services/mediaService";
-  import type { Media } from "../../shared/types";
+  import { ForumThreadService } from "../forum/services/forumThreadService";
+  import type { Media, ForumThread } from "../../shared/types";
 
   let { user } = $props();
   let feedFilter = $state("all");
@@ -22,6 +23,9 @@
     light_novel: Array(5).fill({ isLoading: true }),
   });
 
+  let recentThreads = $state<ForumThread[]>([]);
+  let threadsLoading = $state(true);
+
   onMount(async () => {
     const types = ["anime", "manga", "light_novel"];
     const results = await Promise.all(
@@ -35,9 +39,34 @@
     results.forEach((r) => {
       recentlyAdded[r.type as keyof typeof recentlyAdded] = r.media;
     });
+
+    const threadResult = await ForumThreadService.getRecentThreads(5);
+    if (threadResult.success) {
+      recentThreads = threadResult.data;
+    }
+    threadsLoading = false;
   });
 
   const placeholderMedia = [1, 2, 3, 4, 5];
+
+  function navigateTo(url: string) {
+    window.history.pushState({}, "", url);
+    window.dispatchEvent(new PopStateEvent("popstate"));
+  }
+
+  function timeAgo(dateStr: string | null): string {
+    if (!dateStr) return "";
+    const now = Date.now();
+    const then = new Date(dateStr).getTime();
+    const diff = now - then;
+    const mins = Math.floor(diff / 60000);
+    const hrs = Math.floor(diff / 3600000);
+    const days = Math.floor(diff / 86400000);
+    if (mins < 60) return `${mins}m`;
+    if (hrs < 24) return `${hrs}h`;
+    if (days < 30) return `${days}d`;
+    return new Date(dateStr).toLocaleDateString();
+  }
 </script>
 
 <div class="max-w-300 mx-auto py-12 px-4 grid grid-cols-[1.5fr_2fr] gap-8">
@@ -137,6 +166,64 @@
           </div>
         </div>
       </div>
+    </div>
+
+    <div class="bg-card p-6 shadow-md">
+      <h3 class="text-(--hako-fg) font-bold mb-4 flex items-center">
+        <i class="fa-solid fa-comments text-accent mr-2"></i> Recent Forum Activity
+      </h3>
+      {#if threadsLoading}
+        <div class="space-y-3">
+          {#each { length: 5 } as _}
+            <div class="animate-pulse space-y-1.5">
+              <div class="h-3 bg-(--c0) rounded w-3/4"></div>
+              <div class="h-2.5 bg-(--c0) rounded w-1/2"></div>
+            </div>
+          {/each}
+        </div>
+      {:else if recentThreads.length === 0}
+        <p class="text-slate-500 text-sm">No recent threads.</p>
+      {:else}
+        <div class="space-y-1">
+          {#each recentThreads as thread}
+            <button
+              type="button"
+              onclick={() => navigateTo(`/forum/${thread.id}`)}
+              class="w-full text-left block px-3 py-2 rounded-lg hover:bg-white/5 transition-colors cursor-pointer group"
+            >
+              <div class="flex items-start justify-between gap-3">
+                <div class="min-w-0 flex-1">
+                  <p
+                    class="text-sm text-(--hako-fg) truncate group-hover:text-(--hako-accent) transition-colors"
+                  >
+                    {thread.title}
+                  </p>
+                  <div class="flex items-center gap-2 mt-0.5">
+                    <span class="text-xs text-slate-500">
+                      {thread.author?.username ?? "Unknown"}
+                    </span>
+                    <span class="text-[10px] text-slate-600">&#183;</span>
+                    <span class="text-xs text-slate-500">
+                      {thread.category?.name ?? "General"}
+                    </span>
+                  </div>
+                </div>
+                <span
+                  class="shrink-0 text-[10px] text-slate-600 mt-0.5"
+                >
+                  {timeAgo(thread.lastPostAt ?? thread.createdAt)}
+                </span>
+              </div>
+            </button>
+          {/each}
+        </div>
+        <a
+          href="/forum"
+          class="block mt-3 text-xs text-(--hako-accent) hover:opacity-80 transition-opacity text-center"
+        >
+          View all &rarr;
+        </a>
+      {/if}
     </div>
   </aside>
 
