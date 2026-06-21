@@ -125,9 +125,9 @@
                         <div
                           class="text-[10px] text-slate-500 truncate mt-0.5 flex flex-wrap gap-1.5"
                         >
-                          {#each media.genres.slice(0, 5) as genre}
+                          {#each (media.genres ?? []).slice(0, 5) as genre}
                             <span>{genre}</span>
-                            {#if genre !== media.genres.slice(0, 5).at(-1)}
+                            {#if genre !== (media.genres ?? []).slice(0, 5).at(-1)}
                               <span class="opacity-30">•</span>
                             {/if}
                           {/each}
