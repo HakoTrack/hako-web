@@ -50,6 +50,7 @@
   let recommendQuery = $state("");
   let recommendResults = $state<any[]>([]);
   let showAllRecs = $state(false);
+  let showAllRelations = $state(false);
   let currentUser = $state<{ id: string } | null>(null);
   let tagDefs = $state<
     Record<number, { name: string; category: string; parentName: string | null }>
@@ -520,9 +521,19 @@
 
             {#if relations.length > 0}
               <div class="space-y-4">
-                <h3 class="text-(--hako-fg) font-bold">Relations</h3>
+                <div class="flex justify-between items-center">
+                  <h3 class="text-(--hako-fg) font-bold">Relations</h3>
+                  {#if relations.length > 8 && !showAllRelations}
+                    <button
+                      onclick={() => (showAllRelations = true)}
+                      class="text-xs text-(--c5) hover:underline cursor-pointer"
+                    >
+                      View all ({relations.length})
+                    </button>
+                  {/if}
+                </div>
                 <div class="flex flex-wrap gap-4">
-                  {#each relations as relation}
+                  {#each (showAllRelations ? relations : relations.slice(0, 8)) as relation}
                     <div class="relative group shrink-0">
                       <MediaCover
                         mediaId={relation.related_media.id}
