@@ -21,11 +21,26 @@ export default defineConfig({
   build: {
     target: 'esnext',
   },
+  server: {
+    proxy: {
+      '/extras': {
+        target: 'https://assets.hako.moe',
+        changeOrigin: true,
+      },
+    },
+  },
+  preview: {
+    proxy: {
+      '/extras': {
+        target: 'https://assets.hako.moe',
+        changeOrigin: true,
+      },
+    },
+  },
   plugins: [
     wasm(),
     svelte({
       onwarn: (warning, handler) => {
-        // List of warning codes to ignore
         const ignoredCodes = [
           'a11y_no_static_element_interactions',
           'a11y_click_events_have_key_equivalents',
@@ -34,15 +49,10 @@ export default defineConfig({
           'a11y_consider_explicit_label',
         ];
 
-        // Debugging: Log all intercepted warning codes
-        console.log(`Svelte warning intercepted: ${warning.code}`);
-
-        // If the warning code is in our ignored list, do nothing (effectively ignore it)
         if (ignoredCodes.includes(warning.code)) {
           return;
         }
 
-        // For all other warnings, call the default handler
         handler(warning);
       },
     }),
@@ -88,24 +98,19 @@ export default defineConfig({
         ],
       },
       workbox: {
-        navigateFallback: 'index.html',
-        globPatterns: ['**/*.{js,css,html,ico,woff2,ttf}'],
-        clientsClaim: true,
-        skipWaiting: true,
         runtimeCaching: [
           {
-            // Unified cache strategy for all image assets
             urlPattern: /\.(?:png|jpg|jpeg|svg|gif|webp|avif)(?:\?.*)?$/i,
             handler: 'CacheFirst',
             options: {
               cacheName: 'image-cache-v5',
               expiration: {
                 maxEntries: 5000,
-                maxAgeSeconds: 30 * 24 * 60 * 60, // 30 days
+                maxAgeSeconds: 30 * 24 * 60 * 60,
               },
               cacheableResponse: {
-                statuses: [0, 200] // 0 handles opaque cross-origin responses
-              }
+                statuses: [0, 200],
+              },
             },
           },
         ],

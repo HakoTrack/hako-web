@@ -60,5 +60,19 @@ export const HakoImage = {
     link.as = 'image';
     link.href = url;
     document.head.appendChild(link);
-  }
+  },
+
+  /**
+   * Helper for extras (alternate covers, character art, etc.): /extras/{mediaId}/{category}/{filename}
+   */
+  getExtras: function (mediaId: number | string, category: string, filename: string): string {
+    return `${ASSET_DOMAIN}/extras/${mediaId}/${category}/${filename}`;
+  },
+
+  /**
+   * Helper for alternate covers with pre-generated sizes: /extras/{mediaId}/alternate-covers/{variant}/{size}.webp
+   */
+  getAlternateCover: function (mediaId: number | string, variant: string, size: 'small' | 'medium' | 'large' = 'medium'): string {
+    return `${ASSET_DOMAIN}/extras/${mediaId}/alternate-covers/${variant}/${size}.webp`;
+  },
 };

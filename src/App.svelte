@@ -159,7 +159,9 @@
 
     const { data } = supabase.auth.onAuthStateChange((event, session) => {
       user = session?.user ?? null;
-      handleRouting();
+      if (window.location.pathname !== currentPath) {
+        handleRouting();
+      }
     });
     authSubscription = data.subscription;
 
@@ -177,6 +179,7 @@
   let activeRoute = $derived(
     routes.find((r) => currentPath.startsWith(r.path)),
   );
+  let RouteComponent = $derived(activeRoute?.component);
 
   function handleSearchSelect(media) {
     const fmt = media.format?.toLowerCase();
@@ -232,8 +235,7 @@
       {:else if currentPath === "/forum"}
         <Forum />
       {:else if activeRoute}
-        {@const Component = activeRoute.component}
-        <Component
+        <RouteComponent
           {...activeRoute.props(
             currentPath,
             user,
