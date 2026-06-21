@@ -125,6 +125,7 @@ export interface Media {
   seasonYear: number | null;
   genres: string[];
   tags: Array<{ name: string; rank: number }>;
+  tags_v2: Array<{ id: number; spoiler: boolean }>;
   startDate: { year: number | null; month: number | null; day: number | null };
   endDate: { year: number | null; month: number | null; day: number | null };
 }

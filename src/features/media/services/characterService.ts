@@ -84,6 +84,7 @@ export async function getMediaCharacters(mediaId: number) {
       image: HakoImage.getCharacter(c.id),
       id: c.id,
       va: va ? {
+        id: va.id,
         name: formatName(va.name_first, va.name_last, va.name_order, va.name_middle),
         image: HakoImage.getStaff(va.id)
       } : null

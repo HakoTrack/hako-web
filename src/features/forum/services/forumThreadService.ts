@@ -38,6 +38,7 @@ function mapThread(t: any): ForumThread {
       seasonYear: media.season_year,
       genres: [],
       tags: [],
+      tags_v2: [],
       startDate: { year: null, month: null, day: null },
       endDate: { year: null, month: null, day: null },
     };
@@ -109,6 +110,20 @@ export const ForumThreadService = {
     const { data, error } = await supabase
       .from('forum_threads')
       .select(THREAD_SELECT)
+      .order('last_post_at', { ascending: false, nullsFirst: false })
+      .limit(limit);
+
+    if (error) return failure(error.message);
+
+    return success((data || []).map((t: any) => mapThread(t)));
+  },
+
+  async getThreadsByMediaId(mediaId: number, limit: number = 20): Promise<Result<ForumThread[]>> {
+    const { data, error } = await supabase
+      .from('forum_threads')
+      .select(THREAD_SELECT)
+      .eq('media_id', mediaId)
+      .order('is_pinned', { ascending: false })
       .order('last_post_at', { ascending: false, nullsFirst: false })
       .limit(limit);
 
