@@ -16,9 +16,7 @@
   <div class="flex justify-between items-center">
     <h3 class="text-(--hako-fg) font-bold">Staff</h3>
     {#if onViewAll}
-      <button
-        onclick={onViewAll}
-        class="text-xs text-(--c8) hover:text-accent font-medium transition-colors"
+      <button onclick={onViewAll} class="text-xs text-slate-500 font-medium"
         >View all</button
       >
     {/if}

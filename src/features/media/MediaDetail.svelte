@@ -19,13 +19,14 @@
   } from "$shared/utils";
   import { CacheService, getDisplayTitle, settings } from "$core";
   import { MediaCover, Badge, InitialAvatar } from "$shared/components";
-  import TasteProfile from "$features/profile/components/TasteProfile.svelte";
   import { computeMockVibes } from "./mockVibeCalc";
   import { RecommendationService, type MediaRecommendation } from "./services";
   import { AuthService } from "$core/auth";
   import type { Media, MediaCompanies, ForumThread } from "$shared/types";
   import { ForumThreadService } from "$features/forum/services/forumThreadService";
   import ThreadRow from "$features/forum/components/ThreadRow.svelte";
+  import MediaRecommendations from "./MediaRecommendations.svelte";
+  import MediaSidebar from "./MediaSidebar.svelte";
 
   let { mediaId, type = "anime" } = $props<{
     mediaId: string;
@@ -46,14 +47,13 @@
   let themes = $state<AnimeTheme[]>([]);
   let forumThreads = $state<ForumThread[]>([]);
   let recommendations = $state<MediaRecommendation[]>([]);
-  let isRecommending = $state(false);
-  let recommendQuery = $state("");
-  let recommendResults = $state<any[]>([]);
-  let showAllRecs = $state(false);
   let showAllRelations = $state(false);
   let currentUser = $state<{ id: string } | null>(null);
   let tagDefs = $state<
-    Record<number, { name: string; category: string; parentName: string | null }>
+    Record<
+      number,
+      { name: string; category: string; parentName: string | null }
+    >
   >({});
 
   function goto(path: string) {
@@ -61,40 +61,27 @@
     window.dispatchEvent(new PopStateEvent("popstate"));
   }
 
-  async function handleVote(recommendationId: number, vote: 1 | -1) {
-    const rec = recommendations.find((r) => r.id === recommendationId);
-    if (!rec || !currentUser) return;
-
-    if (rec.userVote === vote) {
-      await RecommendationService.removeVote(recommendationId, currentUser.id);
-    } else {
-      await RecommendationService.vote(recommendationId, currentUser.id, vote);
-    }
-
-    const result = await RecommendationService.getRecommendations(
-      Number(id),
-      currentUser.id,
-    );
-    if (result.success) recommendations = result.data;
-  }
-
-  async function handleRecommend(mediaId: number) {
-    if (!currentUser) return;
-    const result = await RecommendationService.createRecommendation(
-      Number(id),
-      mediaId,
-      currentUser.id,
-    );
-    if (result.success) {
-      isRecommending = false;
-      recommendQuery = "";
-      recommendResults = [];
-      const recResult = await RecommendationService.getRecommendations(
-        Number(id),
-        currentUser.id,
-      );
-      if (recResult.success) recommendations = recResult.data;
-    }
+  function getSiteConfig(site: string): { icon: string; color: string } {
+    const lower = site.toLowerCase();
+    if (lower.includes("twitter") || lower.includes("x.com")) return { icon: "fa-brands fa-x-twitter", color: "#000000" };
+    if (lower.includes("youtube")) return { icon: "svg-youtube", color: "#FF0000" };
+    if (lower.includes("crunchyroll")) return { icon: "svg-crunchyroll", color: "#F47521" };
+    if (lower.includes("wikipedia")) return { icon: "fa-brands fa-wikipedia-w", color: "#636466" };
+    if (lower.includes("facebook")) return { icon: "fa-brands fa-facebook", color: "#1877F2" };
+    if (lower.includes("instagram")) return { icon: "fa-brands fa-instagram", color: "#E4405F" };
+    if (lower.includes("amazon")) return { icon: "fa-brands fa-amazon", color: "#FF9900" };
+    if (lower.includes("tiktok")) return { icon: "fa-brands fa-tiktok", color: "#000000" };
+    if (lower.includes("discord")) return { icon: "fa-brands fa-discord", color: "#5865F2" };
+    if (lower.includes("reddit")) return { icon: "fa-brands fa-reddit", color: "#FF4500" };
+    if (lower.includes("twitch")) return { icon: "fa-brands fa-twitch", color: "#9146FF" };
+    if (lower.includes("tumblr")) return { icon: "fa-brands fa-tumblr", color: "#36465D" };
+    if (lower.includes("netflix")) return { icon: "fa-solid fa-film", color: "#E50914" };
+    if (lower.includes("hulu")) return { icon: "fa-solid fa-film", color: "#1CE783" };
+    if (lower.includes("hidive")) return { icon: "fa-solid fa-film", color: "#00A2FF" };
+    if (lower.includes("funimation")) return { icon: "fa-solid fa-film", color: "#5B158B" };
+    if (lower.includes("anilist") || lower.includes("myanimelist") || lower.includes("anidb") || lower.includes("mal")) return { icon: "fa-solid fa-database", color: "#02A9FF" };
+    if (lower.includes("official")) return { icon: "fa-solid fa-globe", color: "#64748B" };
+    return { icon: "fa-solid fa-link", color: "#64748B" };
   }
 
   const displayTitle = $derived.by(() => {
@@ -105,10 +92,7 @@
     return "";
   });
 
-  const CATEGORY_CONFIG: Record<
-    string,
-    { label: string; color: string }
-  > = {
+  const CATEGORY_CONFIG: Record<string, { label: string; color: string }> = {
     subgenre: { label: "Genre", color: "var(--c5)" },
     theme: { label: "Theme", color: "var(--c1)" },
     setting: { label: "Setting", color: "var(--c3)" },
@@ -161,21 +145,19 @@
   function toTitleCase(str: string | null | undefined): string {
     if (!str) return "N/A";
     return str
-      .split("_")
-      .map((word) => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase())
-      .join(" ");
+      .toLowerCase()
+      .replace(/_/g, " ")
+      .replace(/\b\w/g, (c) => c.toUpperCase());
   }
 
   function getEffectiveRelationLabel(relationType: string): string {
-    if (relationType === "ADAPTATION" && media?.source !== "ORIGINAL") {
-      return "Source";
-    }
     return toTitleCase(relationType);
   }
 
-  function getEffectiveSource(media: Media): string {
-    if (media.source !== "OTHER") return toTitleCase(media.source);
-
+  const effectiveSource = $derived.by(() => {
+    if (!media) return "";
+    const m = media;
+    if (m.source !== "OTHER") return toTitleCase(m.source);
     const ANIME_FORMATS = new Set([
       "TV",
       "TV_SHORT",
@@ -190,10 +172,11 @@
       const format = rel.related_media?.format;
       return type === "ADAPTATION" && ANIME_FORMATS.has(format);
     });
-    return hasAnimeRelation ? "Anime" : toTitleCase(media.source);
-  }
+    return hasAnimeRelation ? "Anime" : toTitleCase(m.source);
+  });
 
   const RELATION_PRIORITY: Record<string, number> = {
+    SOURCE: 1,
     ADAPTATION: 1,
     PREQUEL: 2,
     SIDE_STORY: 3,
@@ -301,21 +284,6 @@
     };
   });
 
-  $effect(() => {
-    const q = recommendQuery;
-    if (!q || q.length < 2) {
-      recommendResults = [];
-      return;
-    }
-
-    const timer = setTimeout(async () => {
-      const result = await RecommendationService.searchMedia(q);
-      if (result.success) recommendResults = result.data;
-    }, 200);
-
-    return () => clearTimeout(timer);
-  });
-
   const tabs = [
     { id: "overview", label: "Overview", icon: "fa-info-circle" },
     { id: "characters", label: "Characters", icon: "fa-users" },
@@ -329,17 +297,37 @@
   <div class="animate-in fade-in duration-300">
     <div class="w-full h-100 bg-(--surface-elevated) animate-pulse"></div>
     <div class="max-w-375 mx-auto px-4 sm:px-6 lg:px-8">
-      <div class="relative -mt-20 flex items-end space-x-6 pb-8">
+      <div class="relative -mt-20 flex items-end space-x-6 pb-6">
         <div
-          class="w-50 h-72 bg-(--surface) rounded-xl animate-pulse shrink-0"
+          class="w-40 lg:w-50 aspect-[17/23] bg-(--surface) rounded animate-pulse shrink-0"
         ></div>
-        <div class="mb-2 space-y-4 w-full">
-          <div class="h-8 w-2/3 bg-(--surface) rounded animate-pulse"></div>
+        <div class="mb-2 w-full">
+          <div
+            class="h-8 w-2/3 bg-(--surface) rounded animate-pulse mb-2"
+          ></div>
+          <div class="flex flex-wrap items-center gap-x-4 gap-y-1 mb-3">
+            <div class="h-4 w-16 bg-(--surface) rounded animate-pulse"></div>
+            <div class="h-4 w-12 bg-(--surface) rounded animate-pulse"></div>
+            <div class="h-4 w-20 bg-(--surface) rounded animate-pulse"></div>
+            <div class="h-4 w-24 bg-(--surface) rounded animate-pulse"></div>
+            <div class="h-4 w-16 bg-(--surface) rounded animate-pulse"></div>
+          </div>
           <div class="flex gap-2">
-            <div class="w-20 h-6 bg-(--surface) rounded animate-pulse"></div>
-            <div class="w-20 h-6 bg-(--surface) rounded animate-pulse"></div>
+            <Badge loading variant="genre" />
+            <Badge loading variant="genre" />
+            <Badge loading variant="genre" />
           </div>
         </div>
+      </div>
+      <div class="flex gap-1 mb-6 pb-1 border-b border-(--c0)">
+        {#each tabs as tab}
+          <div
+            class="flex items-center gap-2 px-4 py-2.5 text-sm font-medium whitespace-nowrap opacity-30"
+          >
+            <i class="fa-solid {tab.icon} text-xs"></i>
+            {tab.label}
+          </div>
+        {/each}
       </div>
       <div class="flex flex-col lg:flex-row gap-8 mb-12">
         <main class="grow min-h-100 pb-12 space-y-6">
@@ -458,13 +446,13 @@
               </div>
             </div>
             <div class="flex flex-col items-end shrink-0 ml-4">
-              <div class="flex items-center gap-3">
+              <div class="flex items-center gap-6">
                 <div class="text-center">
                   <div class="text-2xl font-black text-(--c5)">8.5</div>
                   <div
                     class="text-[10px] text-(--c8) uppercase tracking-widest font-bold"
                   >
-                    Score
+                    Mean
                   </div>
                 </div>
                 <div class="text-center">
@@ -485,10 +473,37 @@
                   <div
                     class="text-[10px] text-(--c8) uppercase tracking-widest font-bold"
                   >
-                    Fav
+                    Favorites
                   </div>
                 </div>
               </div>
+              {#if media.externalLinks.length > 0}
+                <div class="flex flex-wrap gap-2 mt-4 justify-end">
+                  {#each media.externalLinks as link}
+                    {@const cfg = getSiteConfig(link.site)}
+                    <a
+                      href={link.url}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      title={link.site}
+                      class="inline-flex items-center justify-center w-9 h-9 rounded-full transition-transform hover:scale-110"
+                      style="background-color: {cfg.color}"
+                    >
+                      {#if cfg.icon === 'svg-youtube'}
+                        <svg class="w-[18px] h-[18px] text-white" viewBox="0 0 24 24" fill="currentColor">
+                          <path d="M23.498 6.186a3.016 3.016 0 0 0-2.122-2.136C19.505 3.545 12 3.545 12 3.545s-7.505 0-9.377.505A3.017 3.017 0 0 0 .502 6.186C0 8.07 0 12 0 12s0 3.93.502 5.814a3.016 3.016 0 0 0 2.122 2.136c1.871.505 9.376.505 9.376.505s7.505 0 9.377-.505a3.015 3.015 0 0 0 2.122-2.136C24 15.93 24 12 24 12s0-3.93-.502-5.814zM9.545 15.568V8.432L15.818 12l-6.273 3.568z"/>
+                        </svg>
+                      {:else if cfg.icon === 'svg-crunchyroll'}
+                        <svg class="w-[18px] h-[18px] text-white" viewBox="0 0 24 24" fill="currentColor">
+                          <path d="M2.909 13.436C2.914 7.61 7.642 2.893 13.468 2.898c5.576.005 10.137 4.339 10.51 9.819q.021-.351.022-.706C24.007 5.385 18.64.006 12.012 0S.007 5.36 0 11.988 5.36 23.994 11.988 24q.412 0 .815-.027c-5.526-.338-9.9-4.928-9.894-10.538Zm16.284.155a4.1 4.1 0 0 1-4.095-4.103 4.1 4.1 0 0 1 2.712-3.855 8.95 8.95 0 0 0-4.187-1.037 9.007 9.007 0 1 0 8.997 9.016q-.001-.847-.15-1.651a4.1 4.1 0 0 1-3.278 1.63Z"/>
+                        </svg>
+                      {:else}
+                        <i class="{cfg.icon} text-sm text-white"></i>
+                      {/if}
+                    </a>
+                  {/each}
+                </div>
+              {/if}
             </div>
           </div>
         </div>
@@ -533,7 +548,7 @@
                   {/if}
                 </div>
                 <div class="flex flex-wrap gap-4">
-                  {#each (showAllRelations ? relations : relations.slice(0, 8)) as relation}
+                  {#each showAllRelations ? relations : relations.slice(0, 8) as relation}
                     <div class="relative group shrink-0">
                       <MediaCover
                         mediaId={relation.related_media.id}
@@ -641,125 +656,13 @@
                   Coming soon
                 </p>
               </div>
-              <div class="space-y-4">
-                <div class="flex justify-between items-center">
-                  <h3 class="text-(--hako-fg) font-bold">
-                    User Recommendations
-                  </h3>
-                  <div class="flex items-center gap-3">
-                    <button
-                      onclick={() => (isRecommending = true)}
-                      class="text-xs text-slate-500 hover:text-accent font-medium transition-colors flex items-center gap-1"
-                    >
-                      <i class="fa-solid fa-plus"></i> Add
-                    </button>
-                    {#if recommendations.length > 4 && !showAllRecs}
-                      <button
-                        onclick={() => (showAllRecs = true)}
-                        class="text-xs text-slate-500 hover:text-accent font-medium transition-colors"
-                      >
-                        View all
-                      </button>
-                    {/if}
-                  </div>
-                </div>
-                {#if recommendations.length === 0}
-                  <p class="text-center text-slate-500 py-6 text-sm">
-                    No recommendations yet
-                  </p>
-                {:else}
-                  <div class="flex flex-wrap gap-3">
-                    {#each showAllRecs ? recommendations : recommendations.slice(0, 4) as rec (rec.id)}
-                      <div class="relative group shrink-0">
-                        <MediaCover
-                          mediaId={rec.recommendedMediaId}
-                          type={mediaType}
-                          size="medium"
-                        />
-                        <div
-                          class="absolute bottom-0 left-0 right-0 bg-(--hako-bg)/80 p-2 text-(--hako-fg) opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none rounded-lg"
-                        >
-                          <div
-                            class="flex items-center justify-between text-xs font-bold pointer-events-auto"
-                          >
-                            <!-- svelte-ignore a11y_consider_explicit_label -->
-                            <button
-                              onclick={(e) => {
-                                e.stopPropagation();
-                                handleVote(rec.id, 1);
-                              }}
-                              class="cursor-pointer hover:text-(--c10) transition-colors {rec.userVote ===
-                              1
-                                ? 'text-(--c2)'
-                                : ''}"
-                            >
-                              <i class="fa-solid fa-thumbs-up"></i>
-                            </button>
-                            <span>{rec.score}</span>
-                            <!-- svelte-ignore a11y_consider_explicit_label -->
-                            <button
-                              onclick={(e) => {
-                                e.stopPropagation();
-                                handleVote(rec.id, -1);
-                              }}
-                              class="cursor-pointer hover:text-(--c1) transition-colors {rec.userVote ===
-                              -1
-                                ? 'text-(--c1)'
-                                : ''}"
-                            >
-                              <i class="fa-solid fa-thumbs-down"></i>
-                            </button>
-                          </div>
-                        </div>
-                      </div>
-                    {/each}
-                  </div>
-                {/if}
-              </div>
+              <MediaRecommendations
+                bind:recommendations
+                {mediaType}
+                {currentUser}
+                mediaId={Number(id)}
+              />
             </div>
-
-            {#if isRecommending}
-              <div class="bg-card p-4 rounded-xl shadow-lg space-y-3">
-                <div class="flex justify-between items-center">
-                  <h3 class="text-(--hako-fg) font-bold text-sm">
-                    Recommend a Title
-                  </h3>
-                  <!-- svelte-ignore a11y_consider_explicit_label -->
-                  <button
-                    onclick={() => {
-                      isRecommending = false;
-                      recommendQuery = "";
-                      recommendResults = [];
-                    }}
-                    class="text-xs text-slate-500 hover:text-(--hako-fg)"
-                  >
-                    <i class="fa-solid fa-times"></i>
-                  </button>
-                </div>
-                <input
-                  type="text"
-                  bind:value={recommendQuery}
-                  placeholder="Search for a title..."
-                  class="w-full px-3 py-2 rounded-lg bg-(--surface-elevated) text-sm text-(--hako-fg) border border-(--c0) outline-none focus:border-(--c5) transition-colors"
-                />
-                {#if recommendResults.length > 0}
-                  <div class="max-h-48 overflow-y-auto space-y-1">
-                    {#each recommendResults as result}
-                      <button
-                        onclick={() => handleRecommend(result.id)}
-                        class="w-full text-left px-3 py-2 rounded-lg text-sm text-(--hako-fg) hover:bg-(--surface-elevated) transition-colors truncate"
-                      >
-                        {result.title}
-                      </button>
-                    {/each}
-                  </div>
-                {:else if recommendQuery.length >= 2 && recommendResults.length === 0}
-                  <p class="text-xs text-slate-500 text-center py-2">
-                    No results found
-                  </p>
-                {/if}
-              </div>
-            {/if}
 
             <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
               <div class="space-y-3">
@@ -889,159 +792,14 @@
         </main>
 
         <aside class="lg:w-72 shrink-0">
-          <div class="top-24 space-y-6">
-            <div class="bg-card p-5 rounded-xl shadow-lg">
-              <h3 class="text-(--hako-fg) font-bold mb-3 text-sm">Info</h3>
-              <div class="space-y-2.5 text-sm text-slate-300">
-                <div class="flex justify-between">
-                  <span class="text-(--c8)">Source</span>
-                  <span class="text-(--hako-fg)"
-                    >{getEffectiveSource(media)}</span
-                  >
-                </div>
-                <div class="flex justify-between">
-                  <span class="text-(--c8)">Format</span>
-                  <span class="text-(--hako-fg)">{media.format}</span>
-                </div>
-                <div class="flex justify-between">
-                  <span class="text-(--c8)"
-                    >{type === "anime" ? "Episodes" : "Chapters"}</span
-                  >
-                  <span class="text-(--hako-fg)">
-                    {type === "anime"
-                      ? media.episodes || "N/A"
-                      : media.chapters || "N/A"}
-                  </span>
-                </div>
-                <div class="flex justify-between">
-                  <span class="text-(--c8)">Duration</span>
-                  <span class="text-(--hako-fg)"
-                    >{media.duration || "N/A"}{type === "anime"
-                      ? " mins"
-                      : ""}</span
-                  >
-                </div>
-                <div class="space-y-0.5">
-                  <div class="flex justify-between">
-                    <span class="text-(--c8)">Season</span>
-                    <span class="text-(--hako-fg)"
-                      >{toTitleCase(media.season)}
-                      {media.seasonYear || ""}</span
-                    >
-                  </div>
-                  {#if media.startDate?.year || media.endDate?.year}
-                    <div class="text-[10px] text-slate-500 text-right">
-                      {media.startDate?.year
-                        ? `${String(media.startDate.month).padStart(2, "0")}/${String(media.startDate.day).padStart(2, "0")}/${media.startDate.year}`
-                        : "???"}
-                      -
-                      {media.endDate?.year
-                        ? `${String(media.endDate.month).padStart(2, "0")}/${String(media.endDate.day).padStart(2, "0")}/${media.endDate.year}`
-                        : "Present"}
-                    </div>
-                  {/if}
-                </div>
-                <hr class="border-(--c0) my-3" />
-                <div class="flex justify-between">
-                  <span class="text-(--c8)">Studio</span>
-                  <span class="text-(--c5) font-medium"
-                    >{companies.studio?.name || "—"}</span
-                  >
-                </div>
-                {#if companies.producers.length > 0}
-                  <div class="space-y-1">
-                    <span class="text-(--c8) text-xs">Producers</span>
-                    <div class="flex flex-wrap gap-1">
-                      {#each companies.producers as producer (producer.id)}
-                        <span
-                          class="text-[10px] text-slate-400 bg-slate-800/50 px-2 py-0.5 rounded border border-slate-700/50"
-                          >{producer.name}</span
-                        >
-                      {/each}
-                    </div>
-                  </div>
-                {/if}
-              </div>
-            </div>
-
-            <TasteProfile {vibes} />
-
-            <div class="bg-card p-5 rounded-xl shadow-lg">
-              <h3 class="text-(--hako-fg) font-bold mb-3 text-sm">Tags</h3>
-              <div class="space-y-4">
-                {#each categorizedTags as group}
-                  <div>
-                    <h4
-                      class="text-[10px] font-semibold uppercase tracking-wider mb-1.5"
-                      style="color: {group.color}"
-                    >
-                      {group.label}
-                    </h4>
-                    <div class="flex flex-wrap gap-1">
-                      {#each group.tags as tag}
-                        <span
-                          class="px-2 py-0.5 rounded text-[11px] font-medium border {tag.spoiler
-                            ? 'blur-sm hover:blur-none cursor-pointer transition-all duration-200'
-                            : ''}"
-                          style="border-color: {group.color}30; color: {group.color}; background: {group.color}10"
-                        >
-                          {tag.name}
-                          {#if tag.parent}
-                            <span class="opacity-50 ml-0.5">· {tag.parent}</span
-                            >
-                          {/if}
-                        </span>
-                      {/each}
-                    </div>
-                  </div>
-                {/each}
-              </div>
-            </div>
-
-            <div class="bg-card p-5 rounded-xl shadow-lg">
-              <h3 class="text-(--hako-fg) font-bold mb-3 text-sm">Stats</h3>
-              <div class="space-y-3">
-                <div class="flex justify-between items-center">
-                  <span class="text-(--c8) text-sm">Mean Score</span>
-                  <span class="text-lg font-black text-(--c5)">8.5</span>
-                </div>
-                <div class="flex justify-between items-center">
-                  <span class="text-(--c8) text-sm">Median Score</span>
-                  <span class="text-lg font-black text-(--c5)">82</span>
-                </div>
-                <hr class="border-(--c0)" />
-                <div class="flex justify-between items-center">
-                  <span class="text-(--c8) text-sm">Favorites</span>
-                  <span class="flex items-center gap-1 text-pink-500 font-bold">
-                    <i class="fa-solid fa-heart text-xs"></i>
-                    12.4k
-                  </span>
-                </div>
-                <hr class="border-(--c0)" />
-                <div>
-                  <span class="text-(--c8) text-xs font-medium block mb-2"
-                    >Score Distribution</span
-                  >
-                  <div class="flex items-end gap-px h-20">
-                    {#each [{ score: 10, count: 120 }, { score: 20, count: 450 }, { score: 30, count: 800 }, { score: 40, count: 1500 }, { score: 50, count: 3200 }, { score: 60, count: 5600 }, { score: 70, count: 12000 }, { score: 80, count: 18000 }, { score: 90, count: 14000 }, { score: 100, count: 9000 }] as dist}
-                      <div
-                        class="flex-1 flex flex-col items-center justify-end h-full gap-0.5"
-                      >
-                        <div
-                          class="w-full rounded-t opacity-70 hover:opacity-100 transition-opacity"
-                          style="height: {(dist.count / 18000) *
-                            100}%; background: var(--c5)"
-                        ></div>
-                        <span class="text-[8px] text-(--c8) font-bold"
-                          >{dist.score}</span
-                        >
-                      </div>
-                    {/each}
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
+          <MediaSidebar
+            {media}
+            {type}
+            {companies}
+            {vibes}
+            {categorizedTags}
+            {effectiveSource}
+          />
         </aside>
       </div>
     </div>

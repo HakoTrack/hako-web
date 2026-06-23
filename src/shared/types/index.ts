@@ -126,6 +126,7 @@ export interface Media {
   genres: string[];
   tags: Array<{ name: string; rank: number }>;
   tags_v2: Array<{ id: number; spoiler: boolean }>;
+  externalLinks: Array<{ url: string; site: string }>;
   startDate: { year: number | null; month: number | null; day: number | null };
   endDate: { year: number | null; month: number | null; day: number | null };
 }
