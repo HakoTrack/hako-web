@@ -33,7 +33,7 @@ interface HakoDB extends DBSchema {
 }
 
 const DB_NAME = 'HakoDB_v2';
-const DB_VERSION = 12.0;
+const DB_VERSION = 13.0;
 
 
 const dbPromise = openDB<HakoDB>(DB_NAME, DB_VERSION, {

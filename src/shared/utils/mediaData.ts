@@ -3,6 +3,8 @@ import { CacheService } from '../../core/cache';
 import { GENRES } from './constants';
 import type { Media, ListEntry } from '../types/index';
 
+const MEDIA_CACHE_VERSION = 1;
+
 // --- Utilities ---
 
 export function formatDescription(description: string | null | undefined): string {
@@ -39,6 +41,7 @@ export function mapSupabaseMedia(media: any): Media | null {
     genres: media.genre_ids?.map((id: number) => GENRES[id - 1]) || [],
     tags: media.tags?.map((t: any) => ({ name: t.tag, rank: t.rank })) || [],
     tags_v2: media.tags_v2 || [],
+    externalLinks: media.external_links || [],
     startDate: { year: media.start_year, month: media.start_month, day: media.start_day },
     endDate: { year: media.end_year, month: media.end_month, day: media.end_day }
   };
@@ -237,6 +240,7 @@ export async function fetchMediaSummaryWithGenres(
             tags:
               item.tags?.map((t: any) => ({ name: t.tag, rank: t.rank })) || [],
             tags_v2: [],
+            externalLinks: [],
             episodes: item.episodes,
             chapters: item.chapters,
             volumes: item.volumes,
@@ -298,6 +302,7 @@ export async function fetchMediaSummaryWithDescription(id: number): Promise<Medi
     genres: data.genre_ids?.map((id: number) => GENRES[id - 1]) || [],
     tags: [],
     tags_v2: [],
+    externalLinks: [],
     startDate: { year: null, month: null, day: null },
     endDate: { year: null, month: null, day: null }
   } as Media;
@@ -308,9 +313,9 @@ export async function fetchMediaSummaryWithDescription(id: number): Promise<Medi
  */
 export async function fetchMediaDetails(id: number): Promise<Media | null> {
   const cached = await CacheService.getMedia(id.toString());
-  // Unwrap from SyncCache and validate
+  // Unwrap from SyncCache and validate (check schema version to bust stale entries)
   const media = cached?.data;
-  if (media && 'description' in media && media.description !== "" && 'tags' in media && media.tags.length > 0 && 'tags_v2' in media) return media;
+  if (media && media._cacheVersion === MEDIA_CACHE_VERSION) return media;
 
   const { data } = await supabase
     .from('media')
@@ -320,6 +325,7 @@ export async function fetchMediaDetails(id: number): Promise<Media | null> {
       genre_ids,
       tags (tag, rank),
       tags_v2,
+      external_links,
       start_year, start_month, start_day,
       end_year, end_month, end_day
     `)
@@ -329,7 +335,10 @@ export async function fetchMediaDetails(id: number): Promise<Media | null> {
   if (!data) return null;
 
   const fetchedMedia = mapSupabaseMedia(data);
-  if (fetchedMedia) await CacheService.setMedia(id.toString(), { data: fetchedMedia, lastSync: new Date().toISOString() });
+  if (fetchedMedia) {
+    (fetchedMedia as any)._cacheVersion = MEDIA_CACHE_VERSION;
+    await CacheService.setMedia(id.toString(), { data: fetchedMedia, lastSync: new Date().toISOString() });
+  }
   return fetchedMedia;
 }
 

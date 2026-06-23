@@ -227,7 +227,7 @@
 
   <main
     id="app-view"
-    class="grow flex flex-col relative z-10 bg-(--hako-bg) pb-40"
+    class="grow flex flex-col relative z-10 bg-(--hako-bg) {!isLanding && !isSignup ? 'pb-40' : ''}"
   >
     <div class="grow">
       {#if currentPath === "/"}

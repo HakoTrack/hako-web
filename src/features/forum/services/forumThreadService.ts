@@ -39,6 +39,7 @@ function mapThread(t: any): ForumThread {
       genres: [],
       tags: [],
       tags_v2: [],
+      externalLinks: [],
       startDate: { year: null, month: null, day: null },
       endDate: { year: null, month: null, day: null },
     };
