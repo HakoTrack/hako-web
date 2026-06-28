@@ -474,7 +474,7 @@
         </div>
       </div>
 
-      <div class="bg-card rounded-xl overflow-hidden shadow-sm">
+      <div class="bg-card rounded-xl overflow-hidden shadow-sm p-2">
         <div class="p-4">
           <h3
             class="text-xs font-bold uppercase tracking-widest text-(--hako-fg) flex items-center"
@@ -485,10 +485,10 @@
         <div class="flex flex-col">
           <button
             onclick={() => setFilter("all", true)}
-            class="flex items-center justify-between px-4 py-3 text-sm font-medium transition-all border-l-4 ring-0 outline-none {filterStatus ===
+            class="flex items-center justify-between px-4 py-3 text-sm font-medium ring-0 outline-none cursor-pointer {filterStatus ===
             'all'
-              ? 'text-(--hako-fg) bg-(--surface-elevated) border-(--hako-accent)'
-              : 'text-slate-400 hover:text-(--hako-fg) border-transparent hover:bg-card'}"
+              ? 'text-(--hako-fg) bg-(--surface-elevated) rounded-lg'
+              : 'text-slate-400 hover:text-(--hako-fg)'}"
           >
             <div class="flex items-center">
               <span class="w-2 h-2 rounded-full mr-3 bg-(--c7)"></span>
@@ -499,10 +499,10 @@
           {#each statusGroups as group}
             <button
               onclick={() => setFilter(group.id, true)}
-              class="flex items-center justify-between px-4 py-3 text-sm font-medium ring-0 outline-none {filterStatus ===
+              class="flex items-center justify-between px-4 py-3 text-sm font-medium ring-0 outline-none cursor-pointer {filterStatus ===
               group.id
-                ? 'text-(--hako-fg) bg-(--surface-elevated) border-l-4 border-(--hako-accent)'
-                : 'text-slate-400 hover:text-(--c15) border-l-4 border-transparent hover:bg-card'}"
+                ? 'text-(--hako-fg) bg-(--surface-elevated) rounded-lg'
+                : 'text-slate-400 hover:text-(--c15)'}"
             >
               <div class="flex items-center">
                 <span

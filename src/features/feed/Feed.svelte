@@ -31,7 +31,6 @@
     const results = await Promise.all(
       types.map(async (type) => {
         const result = await MediaService.getRecentlyAdded(type, 5);
-        console.log(`Fetched ${type}:`, result);
         return { type, media: result.success ? result.data : [] };
       }),
     );
@@ -70,7 +69,7 @@
 </script>
 
 <div class="max-w-300 mx-auto py-12 px-4 grid grid-cols-[1.5fr_2fr] gap-8">
-  <aside class="space-y-8">
+  <aside class="space-y-8 min-w-0">
     <div class="bg-card p-6 shadow-md">
       <h3 class="text-(--hako-fg) font-bold mb-4 flex items-center">
         <i class="fa-solid fa-fire text-accent mr-2"></i> Trending
@@ -199,18 +198,16 @@
                     {thread.title}
                   </p>
                   <div class="flex items-center gap-2 mt-0.5">
-                    <span class="text-xs text-slate-500">
-                      {thread.author?.username ?? "Unknown"}
-                    </span>
+                    <span class="text-xs text-slate-500"
+                      >{thread.author?.username ?? "Unknown"}</span
+                    >
                     <span class="text-[10px] text-slate-600">&#183;</span>
-                    <span class="text-xs text-slate-500">
-                      {thread.category?.name ?? "General"}
-                    </span>
+                    <span class="text-xs text-slate-500"
+                      >{thread.category?.name ?? "General"}</span
+                    >
                   </div>
                 </div>
-                <span
-                  class="shrink-0 text-[10px] text-slate-600 mt-0.5"
-                >
+                <span class="shrink-0 text-[10px] text-slate-600 mt-0.5">
                   {timeAgo(thread.lastPostAt ?? thread.createdAt)}
                 </span>
               </div>
@@ -227,7 +224,7 @@
     </div>
   </aside>
 
-  <main>
+  <main class="min-w-0">
     <div class="flex items-center justify-between mb-8">
       <h1 class="text-3xl font-bold text-(--hako-fg)">Activity Feed</h1>
       <div class="flex items-center space-x-4">

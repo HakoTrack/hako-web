@@ -258,6 +258,6 @@ export interface Company {
 }
 
 export interface MediaCompanies {
-  studio: Company | null;
+  studios: Company[];
   producers: Company[];
 }

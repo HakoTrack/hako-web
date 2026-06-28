@@ -43,7 +43,7 @@
   let bannerError = $state(false);
   let characters = $state<any[]>([]);
   let staff = $state<any[]>([]);
-  let companies = $state<MediaCompanies>({ studio: null, producers: [] });
+  let companies = $state<MediaCompanies>({ studios: [], producers: [] });
   let themes = $state<AnimeTheme[]>([]);
   let forumThreads = $state<ForumThread[]>([]);
   let recommendations = $state<MediaRecommendation[]>([]);
@@ -97,6 +97,7 @@
     theme: { label: "Theme", color: "var(--c1)" },
     setting: { label: "Setting", color: "var(--c3)" },
     content: { label: "Content", color: "var(--c2)" },
+    cast_trait: { label: "Cast Trait", color: "var(--c4)" },
   };
 
   const categorizedTags = $derived.by(() => {
@@ -133,7 +134,7 @@
       if (def.parentName) tag.parent = def.parentName;
       groups[def.category].tags.push(tag);
     }
-    const order = ["subgenre", "theme", "setting", "content"];
+    const order = ["subgenre", "theme", "setting", "content", "cast_trait"];
     return order.map((cat) => groups[cat]).filter(Boolean);
   });
 
@@ -184,11 +185,23 @@
     SEQUEL: 4,
   };
 
+  const MEDIA_TYPE_ORDER: Record<string, number> = {
+    anime: 1,
+    manga: 2,
+    light_novel: 3,
+  };
+
   function sortRelations(rels: any[]): any[] {
     return [...rels].sort((a, b) => {
       const pA = RELATION_PRIORITY[a.relation_type] || 99;
       const pB = RELATION_PRIORITY[b.relation_type] || 99;
-      return pA - pB;
+      if (pA !== pB) return pA - pB;
+
+      const tA = MEDIA_TYPE_ORDER[a.related_media?.media_type] || 99;
+      const tB = MEDIA_TYPE_ORDER[b.related_media?.media_type] || 99;
+      if (tA !== tB) return tA - tB;
+
+      return (a.related_media?.id || 0) - (b.related_media?.id || 0);
     });
   }
 
@@ -238,7 +251,7 @@
           if (!aborted) tagDefs = defs;
         }
 
-        if (cachedRelations) {
+        if (cachedRelations && cachedRelations[0]?.related_media?.media_type) {
           relations = sortRelations(cachedRelations);
         } else {
           const relRes = await MediaService.getMediaRelations(Number(id));
@@ -435,8 +448,8 @@
                 {#if media.season && media.seasonYear}
                   <span>{toTitleCase(media.season)} {media.seasonYear}</span>
                 {/if}
-                {#if companies.studio}
-                  <span class="text-(--c5)">{companies.studio.name}</span>
+                {#if companies.studios.length > 0}
+                  <span class="text-(--c5)">{companies.studios.map(s => s.name).join(", ")}</span>
                 {/if}
               </div>
               <div class="flex flex-wrap gap-2">
@@ -609,29 +622,31 @@
                           >
                         </div>
                       </div>
-                      <div class="flex gap-2 text-right min-w-0 items-end">
-                        <div class="flex flex-col min-w-0 text-right">
-                          <!-- svelte-ignore a11y_click_events_have_key_events -->
-                          <!-- svelte-ignore a11y_no_static_element_interactions -->
-                          <span
-                            class="text-sm text-(--hako-fg) font-bold truncate cursor-pointer"
+                      {#if char.va}
+                        <div class="flex gap-2 text-right min-w-0 items-end">
+                          <div class="flex flex-col min-w-0 text-right">
+                            <!-- svelte-ignore a11y_click_events_have_key_events -->
+                            <!-- svelte-ignore a11y_no_static_element_interactions -->
+                            <span
+                              class="text-sm text-(--hako-fg) font-bold truncate cursor-pointer"
+                              onclick={(e) => {
+                                e.stopPropagation();
+                                goto(`/staff/${char.va.id}`);
+                              }}>{char.va.name}</span
+                            >
+                            <span class="text-xs text-slate-500">Japanese</span>
+                          </div>
+                          <InitialAvatar
+                            src={char.va.image}
+                            name={char.va.name}
+                            class="w-10 h-14 object-cover rounded shadow-md shrink-0 cursor-pointer"
                             onclick={(e) => {
                               e.stopPropagation();
-                              if (char.va?.id) goto(`/staff/${char.va.id}`);
-                            }}>{char.va?.name || "—"}</span
-                          >
-                          <span class="text-xs text-slate-500">Japanese</span>
+                              goto(`/staff/${char.va.id}`);
+                            }}
+                          />
                         </div>
-                        <InitialAvatar
-                          src={char.va?.image}
-                          name={char.va?.name || "?"}
-                          class="w-10 h-14 object-cover rounded shadow-md shrink-0 cursor-pointer"
-                          onclick={(e) => {
-                            e.stopPropagation();
-                            if (char.va?.id) goto(`/staff/${char.va.id}`);
-                          }}
-                        />
-                      </div>
+                      {/if}
                     </div>
                   {:else}
                     <p class="text-center text-slate-500 py-4 text-sm">
@@ -735,29 +750,31 @@
                       >
                     </div>
                   </div>
-                  <div class="flex gap-3 text-right min-w-0 items-end">
-                    <div class="flex flex-col min-w-0 text-right">
-                      <!-- svelte-ignore a11y_click_events_have_key_events -->
-                      <!-- svelte-ignore a11y_no_static_element_interactions -->
-                      <span
-                        class="text-sm text-(--hako-fg) font-bold truncate cursor-pointer"
+                  {#if char.va}
+                    <div class="flex gap-3 text-right min-w-0 items-end">
+                      <div class="flex flex-col min-w-0 text-right">
+                        <!-- svelte-ignore a11y_click_events_have_key_events -->
+                        <!-- svelte-ignore a11y_no_static_element_interactions -->
+                        <span
+                          class="text-sm text-(--hako-fg) font-bold truncate cursor-pointer"
+                          onclick={(e) => {
+                            e.stopPropagation();
+                            goto(`/staff/${char.va.id}`);
+                          }}>{char.va.name}</span
+                        >
+                        <span class="text-xs text-slate-500">Japanese</span>
+                      </div>
+                      <InitialAvatar
+                        src={char.va.image}
+                        name={char.va.name}
+                        class="w-12 h-16 object-cover rounded shadow-md shrink-0 cursor-pointer"
                         onclick={(e) => {
                           e.stopPropagation();
-                          if (char.va?.id) goto(`/staff/${char.va.id}`);
-                        }}>{char.va?.name || "Unknown VA"}</span
-                      >
-                      <span class="text-xs text-slate-500">Japanese</span>
+                          goto(`/staff/${char.va.id}`);
+                        }}
+                      />
                     </div>
-                    <InitialAvatar
-                      src={char.va?.image}
-                      name={char.va?.name || "?"}
-                      class="w-12 h-16 object-cover rounded shadow-md shrink-0 cursor-pointer"
-                      onclick={(e) => {
-                        e.stopPropagation();
-                        if (char.va?.id) goto(`/staff/${char.va.id}`);
-                      }}
-                    />
-                  </div>
+                  {/if}
                 </div>
               {:else}
                 <p

@@ -3,7 +3,7 @@ import { CacheService } from '../../core/cache';
 import { GENRES } from './constants';
 import type { Media, ListEntry } from '../types/index';
 
-const MEDIA_CACHE_VERSION = 1;
+const MEDIA_CACHE_VERSION = 3;
 
 // --- Utilities ---
 
@@ -156,7 +156,7 @@ export async function fetchMediaSummaries(
       const chunk = uncachedIds.slice(i, i + CHUNK_SIZE);
       const { data } = await supabase
         .from("media")
-        .select("id, title_romaji, title_english, title_native")
+        .select("id, title_romaji, title_english, title_native, media_type, format, episodes, chapters, volumes")
         .in("id", chunk);
 
       if (data) {
@@ -170,6 +170,11 @@ export async function fetchMediaSummaries(
               english: item.title_english,
               native: item.title_native,
             },
+            media_type: item.media_type,
+            format: item.format,
+            episodes: item.episodes,
+            chapters: item.chapters,
+            volumes: item.volumes,
           };
           result[item.id.toString()] = summary;
           cachePromises.push(CacheService.setMedia(item.id.toString(), { data: summary, lastSync: new Date().toISOString() }));
@@ -313,9 +318,18 @@ export async function fetchMediaSummaryWithDescription(id: number): Promise<Medi
  */
 export async function fetchMediaDetails(id: number): Promise<Media | null> {
   const cached = await CacheService.getMedia(id.toString());
-  // Unwrap from SyncCache and validate (check schema version to bust stale entries)
   const media = cached?.data;
-  if (media && media._cacheVersion === MEDIA_CACHE_VERSION) return media;
+
+  if (media && media._cacheVersion === MEDIA_CACHE_VERSION) {
+    // Always fetch fresh tags_v2 separately so tag edits don't require a cache bump
+    const { data: tagData } = await supabase
+      .from('media')
+      .select('tags_v2')
+      .eq('id', id)
+      .single();
+    if (tagData) media.tags_v2 = tagData.tags_v2;
+    return media;
+  }
 
   const { data } = await supabase
     .from('media')
