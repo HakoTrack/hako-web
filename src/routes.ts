@@ -9,7 +9,6 @@ import SignupPage from "./features/auth/SignupPage.svelte";
 import Browse from "./features/browse/Browse.svelte";
 
 import ForumThread from "./features/forum/ForumThread.svelte";
-import ScheduleDesign from "./features/design/ScheduleDesign.svelte";
 
 export interface Route {
   path: string;
@@ -18,11 +17,6 @@ export interface Route {
 }
 
 export const routes: Route[] = [
-  {
-    path: "/design/schedule",
-    component: ScheduleDesign,
-    props: () => ({})
-  },
   {
     path: "/character/",
     component: CharacterDetail,
