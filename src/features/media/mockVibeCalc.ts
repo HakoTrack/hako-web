@@ -67,10 +67,21 @@ const TAG_WEIGHTS: Record<string, TagWeight> = {
   War: { Visceral: 9, Interpersonal: 6, Cerebral: 5 },
   "Female Harem": { Interpersonal: 3, Emotive: 2 },
   Betrayal: { Emotive: 8, Interpersonal: 7, Cerebral: 3 },
+  "Idol Culture": { Emotive: 8, Interpersonal: 6, Cerebral: 4 },
   Forgiveness: { Interpersonal: 8, Emotive: 7, Lighthearted: 4 },
   School: { Interpersonal: 1 },
+  "Female Protagonist": { Interpersonal: 2 },
+  Idol: { Interpersonal: 3, Emotive: 3, Lighthearted: 2 },
+  "Primarily Adult Cast": { Interpersonal: 2, Cerebral: 1 },
+  Drugs: { Visceral: 4, Emotive: 3, Cerebral: 2 },
+  Suicide: { Emotive: 8, Cerebral: 4 },
   Tsundere: { Interpersonal: 4, Emotive: 3, Lighthearted: 3 },
   Kuudere: { Interpersonal: 3, Cerebral: 3, Emotive: 2 },
+  Iyashikei: { Emotive: 9, Lighthearted: 7, Interpersonal: 5, Cerebral: 1 },
+  Aquatic: { Lighthearted: 2 },
+  "Small Town": { Interpersonal: 2, Lighthearted: 1 },
+  "Science Fantasy": { Speculative: 6, Cerebral: 3 },
+  CGDCT: { Lighthearted: 7, Emotive: 5, Interpersonal: 3 },
 };
 
 const PILLARS = [

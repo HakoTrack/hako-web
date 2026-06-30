@@ -4,5 +4,5 @@ export { getMediaStaff } from './staffService';
 export { getAnimeThemes, type AnimeTheme } from './animethemesService';
 export { groupStaff, filterTopStaff, sortStaffGroups } from './staffUtils';
 export { getExtrasCategories, type ExtrasCategory } from './extrasService';
-export { RecommendationService, type MediaRecommendation } from './recommendationService';
+export { RecommendationService, type MediaRecommendation, type VibeRecommendation } from './recommendationService';
 export type { StaffGroup } from './staffUtils';

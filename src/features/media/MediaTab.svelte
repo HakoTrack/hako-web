@@ -205,7 +205,7 @@
             <img
               src={HakoImage.getAlternateCover(mediaId, variant, "medium")}
               alt=""
-              class="shrink-0 w-36 aspect-[2/3] object-cover rounded-lg bg-(--surface-elevated) cursor-pointer"
+              class="shrink-0 w-36 aspect-2/3 object-cover rounded-lg bg-(--surface-elevated) cursor-pointer"
               loading="lazy"
               onclick={() =>
                 openLightbox(buildVariantUrls(category.variants!), i)}
@@ -218,7 +218,7 @@
             <img
               src={HakoImage.getExtras(mediaId, category.folder, file)}
               alt=""
-              class="shrink-0 w-36 aspect-[2/3] object-cover rounded-lg bg-(--surface-elevated) cursor-pointer"
+              class="shrink-0 w-36 aspect-2/3 object-cover rounded-lg bg-(--surface-elevated) cursor-pointer"
               loading="lazy"
               onclick={() =>
                 openLightbox(

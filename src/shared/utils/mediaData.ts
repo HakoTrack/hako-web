@@ -41,6 +41,7 @@ export function mapSupabaseMedia(media: any): Media | null {
     genres: media.genre_ids?.map((id: number) => GENRES[id - 1]) || [],
     tags: media.tags?.map((t: any) => ({ name: t.tag, rank: t.rank })) || [],
     tags_v2: media.tags_v2 || [],
+    vibe_vector: media.vibe_vector || {},
     externalLinks: media.external_links || [],
     startDate: { year: media.start_year, month: media.start_month, day: media.start_day },
     endDate: { year: media.end_year, month: media.end_month, day: media.end_day }
@@ -321,13 +322,16 @@ export async function fetchMediaDetails(id: number): Promise<Media | null> {
   const media = cached?.data;
 
   if (media && media._cacheVersion === MEDIA_CACHE_VERSION) {
-    // Always fetch fresh tags_v2 separately so tag edits don't require a cache bump
+    // Always fetch fresh tags_v2 + vibe_vector separately so tag edits don't require a cache bump
     const { data: tagData } = await supabase
       .from('media')
-      .select('tags_v2')
+      .select('tags_v2, vibe_vector')
       .eq('id', id)
       .single();
-    if (tagData) media.tags_v2 = tagData.tags_v2;
+    if (tagData) {
+      media.tags_v2 = tagData.tags_v2;
+      media.vibe_vector = tagData.vibe_vector || {};
+    }
     return media;
   }
 
@@ -339,6 +343,7 @@ export async function fetchMediaDetails(id: number): Promise<Media | null> {
       genre_ids,
       tags (tag, rank),
       tags_v2,
+      vibe_vector,
       external_links,
       start_year, start_month, start_day,
       end_year, end_month, end_day

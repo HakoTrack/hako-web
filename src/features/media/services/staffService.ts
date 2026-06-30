@@ -3,29 +3,42 @@ import { HakoImage } from '../../../shared/utils/images';
 import { formatName } from '../../../shared/utils/nameUtils';
 import type { StaffDetail, StaffMediaAppearance } from '../../../shared/types/index';
 
-export async function getMediaStaff(mediaId: number) {
-  const { data: roles, error } = await supabase
-    .from('staff_roles')
-    .select(`
-      role,
-      staff (
-        id,
-        name_full,
-        name_first,
-        name_middle,
-        name_last,
-        name_order
-      )
-    `)
-    .eq('media_id', mediaId)
-    .is('character_id', null);
+const STAFF_PAGE_SIZE = 1000;
 
-  if (error) {
-    console.error('Error fetching media staff:', error);
-    return [];
+export async function getMediaStaff(mediaId: number) {
+  const all: any[] = [];
+
+  for (let page = 0; ; page++) {
+    const from = page * STAFF_PAGE_SIZE;
+    const to = from + STAFF_PAGE_SIZE - 1;
+
+    const { data: roles, error } = await supabase
+      .from('staff_roles')
+      .select(`
+        role,
+        staff (
+          id,
+          name_full,
+          name_first,
+          name_middle,
+          name_last,
+          name_order
+        )
+      `)
+      .eq('media_id', mediaId)
+      .is('character_id', null)
+      .range(from, to);
+
+    if (error) {
+      console.error('Error fetching media staff:', error);
+      return [];
+    }
+
+    all.push(...(roles || []));
+    if (!roles || roles.length < STAFF_PAGE_SIZE) break;
   }
 
-  return (roles || [])
+  return all
     .map((r: any) => {
       const s = r.staff;
       if (!s) return null;

@@ -39,7 +39,9 @@
     <div class="space-y-2.5 text-sm text-slate-300">
       <div class="flex justify-between">
         <span class="text-(--c8)">Type</span>
-        <span class="text-(--hako-fg)">{type === "light_novel" ? "Light Novel" : toTitleCase(type)}</span>
+        <span class="text-(--hako-fg)"
+          >{type === "light_novel" ? "Light Novel" : toTitleCase(type)}</span
+        >
       </div>
       <div class="flex justify-between">
         <span class="text-(--c8)">Format</span>
@@ -66,14 +68,14 @@
       {#if type === "anime"}
         <div class="flex justify-between">
           <span class="text-(--c8)">Duration</span>
-          <span class="text-(--hako-fg)"
-            >{media.duration || "N/A"} mins</span
-          >
+          <span class="text-(--hako-fg)">{media.duration || "N/A"} mins</span>
         </div>
       {/if}
       <div class="space-y-0.5">
         <div class="flex justify-between">
-          <span class="text-(--c8)">{type === "anime" ? "Season" : "Publishing"}</span>
+          <span class="text-(--c8)"
+            >{type === "anime" ? "Season" : "Publishing"}</span
+          >
           <span class="text-(--hako-fg)">
             {#if type === "anime"}
               {toTitleCase(media.season)} {media.seasonYear || ""}
@@ -100,7 +102,11 @@
           <div class="text-right">
             {#if companies.studios.length > 0}
               {#each companies.studios as studio (studio.id)}
-                <div class="text-(--c5) font-medium">{studio.name}</div>
+                <div
+                  class="text-xs text-(--hako-accent) font-medium bg-(--hako-accent)/10 border rounded-full px-2 py-0.5"
+                >
+                  {studio.name}
+                </div>
               {/each}
             {:else}
               <span class="text-(--c5) font-medium">—</span>
@@ -109,11 +115,11 @@
         </div>
         {#if companies.producers.length > 0}
           <div class="space-y-1">
-            <span class="text-(--c8) text-xs">Producers</span>
+            <span class="text-(--c8)">Producers</span>
             <div class="flex flex-wrap gap-1">
               {#each companies.producers as producer (producer.id)}
                 <span
-                  class="text-[10px] text-slate-400 bg-slate-800/50 px-2 py-0.5 rounded border border-slate-700/50"
+                  class="text-xs text-(--c12) bg-(--c12)/10 rounded-full border px-2 py-0.5"
                   >{producer.name}</span
                 >
               {/each}

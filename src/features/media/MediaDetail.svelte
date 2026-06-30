@@ -19,10 +19,18 @@
   } from "$shared/utils";
   import { CacheService, getDisplayTitle, settings } from "$core";
   import { MediaCover, Badge, InitialAvatar } from "$shared/components";
-  import { computeMockVibes } from "./mockVibeCalc";
-  import { RecommendationService, type MediaRecommendation } from "./services";
+  import {
+    RecommendationService,
+    type MediaRecommendation,
+    type VibeRecommendation,
+  } from "./services";
   import { AuthService } from "$core/auth";
-  import type { Media, MediaCompanies, ForumThread } from "$shared/types";
+  import type {
+    Media,
+    MediaCompanies,
+    ForumThread,
+    VibeResult,
+  } from "$shared/types";
   import { ForumThreadService } from "$features/forum/services/forumThreadService";
   import ThreadRow from "$features/forum/components/ThreadRow.svelte";
   import MediaRecommendations from "./MediaRecommendations.svelte";
@@ -47,6 +55,7 @@
   let themes = $state<AnimeTheme[]>([]);
   let forumThreads = $state<ForumThread[]>([]);
   let recommendations = $state<MediaRecommendation[]>([]);
+  let vibeRecommendations = $state<VibeRecommendation[]>([]);
   let showAllRelations = $state(false);
   let currentUser = $state<{ id: string } | null>(null);
   let tagDefs = $state<
@@ -63,24 +72,47 @@
 
   function getSiteConfig(site: string): { icon: string; color: string } {
     const lower = site.toLowerCase();
-    if (lower.includes("twitter") || lower.includes("x.com")) return { icon: "fa-brands fa-x-twitter", color: "#000000" };
-    if (lower.includes("youtube")) return { icon: "svg-youtube", color: "#FF0000" };
-    if (lower.includes("crunchyroll")) return { icon: "svg-crunchyroll", color: "#F47521" };
-    if (lower.includes("wikipedia")) return { icon: "fa-brands fa-wikipedia-w", color: "#636466" };
-    if (lower.includes("facebook")) return { icon: "fa-brands fa-facebook", color: "#1877F2" };
-    if (lower.includes("instagram")) return { icon: "fa-brands fa-instagram", color: "#E4405F" };
-    if (lower.includes("amazon")) return { icon: "fa-brands fa-amazon", color: "#FF9900" };
-    if (lower.includes("tiktok")) return { icon: "fa-brands fa-tiktok", color: "#000000" };
-    if (lower.includes("discord")) return { icon: "fa-brands fa-discord", color: "#5865F2" };
-    if (lower.includes("reddit")) return { icon: "fa-brands fa-reddit", color: "#FF4500" };
-    if (lower.includes("twitch")) return { icon: "fa-brands fa-twitch", color: "#9146FF" };
-    if (lower.includes("tumblr")) return { icon: "fa-brands fa-tumblr", color: "#36465D" };
-    if (lower.includes("netflix")) return { icon: "fa-solid fa-film", color: "#E50914" };
-    if (lower.includes("hulu")) return { icon: "fa-solid fa-film", color: "#1CE783" };
-    if (lower.includes("hidive")) return { icon: "fa-solid fa-film", color: "#00A2FF" };
-    if (lower.includes("funimation")) return { icon: "fa-solid fa-film", color: "#5B158B" };
-    if (lower.includes("anilist") || lower.includes("myanimelist") || lower.includes("anidb") || lower.includes("mal")) return { icon: "fa-solid fa-database", color: "#02A9FF" };
-    if (lower.includes("official")) return { icon: "fa-solid fa-globe", color: "#64748B" };
+    if (lower.includes("twitter") || lower.includes("x.com"))
+      return { icon: "fa-brands fa-x-twitter", color: "#000000" };
+    if (lower.includes("youtube"))
+      return { icon: "svg-youtube", color: "#FF0000" };
+    if (lower.includes("crunchyroll"))
+      return { icon: "svg-crunchyroll", color: "#F47521" };
+    if (lower.includes("wikipedia"))
+      return { icon: "fa-brands fa-wikipedia-w", color: "#636466" };
+    if (lower.includes("facebook"))
+      return { icon: "fa-brands fa-facebook", color: "#1877F2" };
+    if (lower.includes("instagram"))
+      return { icon: "fa-brands fa-instagram", color: "#E4405F" };
+    if (lower.includes("amazon"))
+      return { icon: "fa-brands fa-amazon", color: "#FF9900" };
+    if (lower.includes("tiktok"))
+      return { icon: "fa-brands fa-tiktok", color: "#000000" };
+    if (lower.includes("discord"))
+      return { icon: "fa-brands fa-discord", color: "#5865F2" };
+    if (lower.includes("reddit"))
+      return { icon: "fa-brands fa-reddit", color: "#FF4500" };
+    if (lower.includes("twitch"))
+      return { icon: "fa-brands fa-twitch", color: "#9146FF" };
+    if (lower.includes("tumblr"))
+      return { icon: "fa-brands fa-tumblr", color: "#36465D" };
+    if (lower.includes("netflix"))
+      return { icon: "fa-solid fa-film", color: "#E50914" };
+    if (lower.includes("hulu"))
+      return { icon: "fa-solid fa-film", color: "#1CE783" };
+    if (lower.includes("hidive"))
+      return { icon: "fa-solid fa-film", color: "#00A2FF" };
+    if (lower.includes("funimation"))
+      return { icon: "fa-solid fa-film", color: "#5B158B" };
+    if (
+      lower.includes("anilist") ||
+      lower.includes("myanimelist") ||
+      lower.includes("anidb") ||
+      lower.includes("mal")
+    )
+      return { icon: "fa-solid fa-database", color: "#02A9FF" };
+    if (lower.includes("official"))
+      return { icon: "fa-solid fa-globe", color: "#64748B" };
     return { icon: "fa-solid fa-link", color: "#64748B" };
   }
 
@@ -138,7 +170,34 @@
     return order.map((cat) => groups[cat]).filter(Boolean);
   });
 
-  let vibes = $derived(computeMockVibes(categorizedTags));
+  function vibeVectorToResult(
+    v: Record<string, number> | undefined | null,
+  ): VibeResult | null {
+    if (!v || Object.keys(v).length === 0) return null;
+    const scores = {
+      Speculative: v.Speculative ?? 0,
+      Visceral: v.Visceral ?? 0,
+      Cerebral: v.Cerebral ?? 0,
+      Emotive: v.Emotive ?? 0,
+      Interpersonal: v.Interpersonal ?? 0,
+      Lighthearted: v.Lighthearted ?? 0,
+    };
+    const sorted = (
+      [
+        "Speculative",
+        "Visceral",
+        "Cerebral",
+        "Emotive",
+        "Interpersonal",
+        "Lighthearted",
+      ] as const
+    )
+      .map((name) => ({ name: name.toLowerCase(), score: scores[name] }))
+      .sort((a, b) => b.score - a.score);
+    return { scores, sorted } as unknown as VibeResult;
+  }
+
+  let vibes = $derived(vibeVectorToResult(media?.vibe_vector));
 
   const groupedStaff = $derived(groupStaff(staff));
   const keyStaff = $derived(filterTopStaff(groupedStaff));
@@ -289,6 +348,11 @@
             if (!aborted && result.success) recommendations = result.data;
           },
         );
+        RecommendationService.getVibeRecommendations(Number(id)).then(
+          (result) => {
+            if (!aborted && result.success) vibeRecommendations = result.data;
+          },
+        );
       });
     })();
 
@@ -312,7 +376,7 @@
     <div class="max-w-375 mx-auto px-4 sm:px-6 lg:px-8">
       <div class="relative -mt-20 flex items-end space-x-6 pb-6">
         <div
-          class="w-40 lg:w-50 aspect-[17/23] bg-(--surface) rounded animate-pulse shrink-0"
+          class="w-40 lg:w-50 aspect-17/23 bg-(--surface) rounded animate-pulse shrink-0"
         ></div>
         <div class="mb-2 w-full">
           <div
@@ -449,7 +513,9 @@
                   <span>{toTitleCase(media.season)} {media.seasonYear}</span>
                 {/if}
                 {#if companies.studios.length > 0}
-                  <span class="text-(--c5)">{companies.studios.map(s => s.name).join(", ")}</span>
+                  <span class="text-(--c5)"
+                    >{companies.studios.map((s) => s.name).join(", ")}</span
+                  >
                 {/if}
               </div>
               <div class="flex flex-wrap gap-2">
@@ -502,13 +568,25 @@
                       class="inline-flex items-center justify-center w-9 h-9 rounded-full transition-transform hover:scale-110"
                       style="background-color: {cfg.color}"
                     >
-                      {#if cfg.icon === 'svg-youtube'}
-                        <svg class="w-[18px] h-[18px] text-white" viewBox="0 0 24 24" fill="currentColor">
-                          <path d="M23.498 6.186a3.016 3.016 0 0 0-2.122-2.136C19.505 3.545 12 3.545 12 3.545s-7.505 0-9.377.505A3.017 3.017 0 0 0 .502 6.186C0 8.07 0 12 0 12s0 3.93.502 5.814a3.016 3.016 0 0 0 2.122 2.136c1.871.505 9.376.505 9.376.505s7.505 0 9.377-.505a3.015 3.015 0 0 0 2.122-2.136C24 15.93 24 12 24 12s0-3.93-.502-5.814zM9.545 15.568V8.432L15.818 12l-6.273 3.568z"/>
+                      {#if cfg.icon === "svg-youtube"}
+                        <svg
+                          class="w-[18px] h-[18px] text-white"
+                          viewBox="0 0 24 24"
+                          fill="currentColor"
+                        >
+                          <path
+                            d="M23.498 6.186a3.016 3.016 0 0 0-2.122-2.136C19.505 3.545 12 3.545 12 3.545s-7.505 0-9.377.505A3.017 3.017 0 0 0 .502 6.186C0 8.07 0 12 0 12s0 3.93.502 5.814a3.016 3.016 0 0 0 2.122 2.136c1.871.505 9.376.505 9.376.505s7.505 0 9.377-.505a3.015 3.015 0 0 0 2.122-2.136C24 15.93 24 12 24 12s0-3.93-.502-5.814zM9.545 15.568V8.432L15.818 12l-6.273 3.568z"
+                          />
                         </svg>
-                      {:else if cfg.icon === 'svg-crunchyroll'}
-                        <svg class="w-[18px] h-[18px] text-white" viewBox="0 0 24 24" fill="currentColor">
-                          <path d="M2.909 13.436C2.914 7.61 7.642 2.893 13.468 2.898c5.576.005 10.137 4.339 10.51 9.819q.021-.351.022-.706C24.007 5.385 18.64.006 12.012 0S.007 5.36 0 11.988 5.36 23.994 11.988 24q.412 0 .815-.027c-5.526-.338-9.9-4.928-9.894-10.538Zm16.284.155a4.1 4.1 0 0 1-4.095-4.103 4.1 4.1 0 0 1 2.712-3.855 8.95 8.95 0 0 0-4.187-1.037 9.007 9.007 0 1 0 8.997 9.016q-.001-.847-.15-1.651a4.1 4.1 0 0 1-3.278 1.63Z"/>
+                      {:else if cfg.icon === "svg-crunchyroll"}
+                        <svg
+                          class="w-[18px] h-[18px] text-white"
+                          viewBox="0 0 24 24"
+                          fill="currentColor"
+                        >
+                          <path
+                            d="M2.909 13.436C2.914 7.61 7.642 2.893 13.468 2.898c5.576.005 10.137 4.339 10.51 9.819q.021-.351.022-.706C24.007 5.385 18.64.006 12.012 0S.007 5.36 0 11.988 5.36 23.994 11.988 24q.412 0 .815-.027c-5.526-.338-9.9-4.928-9.894-10.538Zm16.284.155a4.1 4.1 0 0 1-4.095-4.103 4.1 4.1 0 0 1 2.712-3.855 8.95 8.95 0 0 0-4.187-1.037 9.007 9.007 0 1 0 8.997 9.016q-.001-.847-.15-1.651a4.1 4.1 0 0 1-3.278 1.63Z"
+                          />
                         </svg>
                       {:else}
                         <i class="{cfg.icon} text-sm text-white"></i>
@@ -667,9 +745,29 @@
                 <h3 class="text-(--hako-fg) font-bold">
                   Vibe-Driven Recommendations
                 </h3>
-                <p class="text-center text-slate-500 py-6 text-sm">
-                  Coming soon
-                </p>
+                {#if vibeRecommendations.length === 0}
+                  <p class="text-center text-slate-500 py-6 text-sm">
+                    No vibe matches found
+                  </p>
+                {:else}
+                  <div class="grid grid-cols-5 gap-3">
+                    {#each vibeRecommendations.slice(0, 5) as rec (rec.media_id)}
+                      <div class="relative group shrink-0">
+                        <MediaCover
+                          mediaId={rec.media_id}
+                          {type}
+                          size="medium"
+                          onClick={() => goto(`/${type}/${rec.media_id}`)}
+                        />
+                        <div
+                          class="absolute -top-1 -right-1 bg-(--surface-elevated) text-(--hako-accent) text-[10px] font-bold px-1.5 py-0.5 rounded-full shadow-lg"
+                        >
+                          {Math.round(rec.similarity * 100)}%
+                        </div>
+                      </div>
+                    {/each}
+                  </div>
+                {/if}
               </div>
               <MediaRecommendations
                 bind:recommendations

@@ -118,7 +118,12 @@
     }
 
     const mediaIds = list.map((e) => e.media_id);
-    const listMap = new Map(list.map((e: any) => [e.media_id, { progress: e.progress, status: e.status }]));
+    const listMap = new Map(
+      list.map((e: any) => [
+        e.media_id,
+        { progress: e.progress, status: e.status },
+      ]),
+    );
 
     const { data: schedules } = await supabase
       .from("airing_schedules")
@@ -136,7 +141,10 @@
 
     if (schedules) {
       scheduleEntries = schedules.map((s: any) => {
-        const entry = listMap.get(s.media_id) || { progress: 0, status: "current" };
+        const entry = listMap.get(s.media_id) || {
+          progress: 0,
+          status: "current",
+        };
         return {
           id: s.id,
           episode: s.episode,
@@ -249,7 +257,10 @@
     activeItemId = null;
   }
 
-  async function incrementScheduleProgress(e: MouseEvent, entry: ScheduleEntry) {
+  async function incrementScheduleProgress(
+    e: MouseEvent,
+    entry: ScheduleEntry,
+  ) {
     e.preventDefault();
     e.stopPropagation();
     const user = await AuthService.getCurrentUser();
@@ -266,7 +277,10 @@
       total: total,
     };
 
-    const oldEntry = { media_id: entry.media_id, metadata: { episodes: entry.episodes } };
+    const oldEntry = {
+      media_id: entry.media_id,
+      metadata: { episodes: entry.episodes },
+    };
 
     const result = await ListService.updateListEntry(
       user.id,
@@ -278,7 +292,9 @@
     if (result.success) {
       entry.progress = newProgress;
       if (updates.status === "completed") {
-        scheduleEntries = scheduleEntries.filter((s) => s.media_id !== entry.media_id);
+        scheduleEntries = scheduleEntries.filter(
+          (s) => s.media_id !== entry.media_id,
+        );
       }
     } else {
       console.error("Failed to update progress:", result.error);
@@ -348,7 +364,7 @@
                   <div class="grid grid-cols-2 gap-2">
                     {#each { length: 4 } as _}
                       <div
-                        class="aspect-[17/23] bg-(--surface-elevated) rounded"
+                        class="aspect-17/23 bg-(--surface-elevated) rounded"
                       ></div>
                     {/each}
                   </div>
@@ -366,13 +382,16 @@
                   </h4>
                   <div class="grid grid-cols-2 gap-2">
                     {#each entries as entry}
+                      <!-- svelte-ignore a11y_click_events_have_key_events -->
+                      <!-- svelte-ignore a11y_no_static_element_interactions -->
                       <div
                         class="relative w-28 cursor-pointer group"
                         onclick={() => {
                           onClose();
                           navigateTo(`/anime/${entry.media_id}`);
                         }}
-                        onmouseenter={() => (hoveredScheduleId = entry.media_id)}
+                        onmouseenter={() =>
+                          (hoveredScheduleId = entry.media_id)}
                         onmouseleave={() => (hoveredScheduleId = null)}
                       >
                         <MediaCover
@@ -386,17 +405,15 @@
                           class="absolute bottom-1 left-1 right-1 bg-(--hako-bg)/80 p-2 rounded-lg pointer-events-none"
                         >
                           {#if hoveredScheduleId === entry.media_id}
-                            <div
-                              class="flex items-center justify-between"
-                            >
-                              <span
-                                class="text-xs font-bold tabular-nums"
-                              >
+                            <div class="flex items-center justify-between">
+                              <span class="text-xs font-bold tabular-nums">
                                 {episodeLabel(entry)}
                               </span>
+                              <!-- svelte-ignore a11y_consider_explicit_label -->
                               <button
                                 type="button"
-                                onclick={(e) => incrementScheduleProgress(e, entry)}
+                                onclick={(e) =>
+                                  incrementScheduleProgress(e, entry)}
                                 class="shrink-0 w-6 h-6 rounded-full flex items-center justify-center bg-accent/10 text-accent hover:bg-accent hover:text-white transition-all pointer-events-auto"
                               >
                                 <i class="fa-solid fa-plus text-[10px]"></i>
@@ -406,7 +423,9 @@
                             <div class="text-xs font-bold tabular-nums">
                               {episodeLabel(entry)}
                             </div>
-                            <div class="text-[10px] text-(--hako-accent) tabular-nums">
+                            <div
+                              class="text-[10px] text-(--hako-accent) tabular-nums"
+                            >
                               {countdown(entry.airing_at)}
                             </div>
                           {/if}
