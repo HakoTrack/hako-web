@@ -22,6 +22,7 @@
     prefetchedMedia?: Media | null;
     isLoading?: boolean;
     onClick?: () => void;
+    noHoverScale?: boolean;
   }
 
   let {
@@ -36,6 +37,7 @@
     prefetchedMedia = null,
     isLoading = false,
     onClick,
+    noHoverScale = false,
   }: Props = $props();
 
   const sizeClasses: Record<string, string> = {
@@ -128,7 +130,7 @@
     {#if !isLoading}
       <img
         src={HakoImage.getCover(mediaId, size === "large" ? "large" : "medium")}
-        class="w-full h-full object-cover rounded shadow group-hover:scale-105 transition-transform {loaded
+        class="w-full h-full object-cover rounded shadow {noHoverScale ? '' : 'group-hover:scale-105 transition-transform'} {loaded
           ? 'opacity-100'
           : 'opacity-0'} transition-opacity"
         {alt}

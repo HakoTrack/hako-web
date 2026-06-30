@@ -38,12 +38,18 @@
     <h3 class="text-(--hako-fg) font-bold mb-3 text-sm">Info</h3>
     <div class="space-y-2.5 text-sm text-slate-300">
       <div class="flex justify-between">
-        <span class="text-(--c8)">Source</span>
-        <span class="text-(--hako-fg)">{effectiveSource}</span>
+        <span class="text-(--c8)">Type</span>
+        <span class="text-(--hako-fg)"
+          >{type === "light_novel" ? "Light Novel" : toTitleCase(type)}</span
+        >
       </div>
       <div class="flex justify-between">
         <span class="text-(--c8)">Format</span>
         <span class="text-(--hako-fg)">{media.format}</span>
+      </div>
+      <div class="flex justify-between">
+        <span class="text-(--c8)">Source</span>
+        <span class="text-(--hako-fg)">{effectiveSource}</span>
       </div>
       <div class="flex justify-between">
         <span class="text-(--c8)"
@@ -53,19 +59,30 @@
           {type === "anime" ? media.episodes || "N/A" : media.chapters || "N/A"}
         </span>
       </div>
-      <div class="flex justify-between">
-        <span class="text-(--c8)">Duration</span>
-        <span class="text-(--hako-fg)"
-          >{media.duration || "N/A"}{type === "anime" ? " mins" : ""}</span
-        >
-      </div>
+      {#if type !== "anime"}
+        <div class="flex justify-between">
+          <span class="text-(--c8)">Volumes</span>
+          <span class="text-(--hako-fg)">{media.volumes || "N/A"}</span>
+        </div>
+      {/if}
+      {#if type === "anime"}
+        <div class="flex justify-between">
+          <span class="text-(--c8)">Duration</span>
+          <span class="text-(--hako-fg)">{media.duration || "N/A"} mins</span>
+        </div>
+      {/if}
       <div class="space-y-0.5">
         <div class="flex justify-between">
-          <span class="text-(--c8)">Season</span>
-          <span class="text-(--hako-fg)"
-            >{toTitleCase(media.season)}
-            {media.seasonYear || ""}</span
+          <span class="text-(--c8)"
+            >{type === "anime" ? "Season" : "Publishing"}</span
           >
+          <span class="text-(--hako-fg)">
+            {#if type === "anime"}
+              {toTitleCase(media.season)} {media.seasonYear || ""}
+            {:else}
+              —
+            {/if}
+          </span>
         </div>
         {#if media.startDate?.year || media.endDate?.year}
           <div class="text-[10px] text-slate-500 text-right">
@@ -79,25 +96,36 @@
           </div>
         {/if}
       </div>
-      <hr class="border-(--c0) my-3" />
-      <div class="flex justify-between">
-        <span class="text-(--c8)">Studio</span>
-        <span class="text-(--c5) font-medium"
-          >{companies.studio?.name || "—"}</span
-        >
-      </div>
-      {#if companies.producers.length > 0}
-        <div class="space-y-1">
-          <span class="text-(--c8) text-xs">Producers</span>
-          <div class="flex flex-wrap gap-1">
-            {#each companies.producers as producer (producer.id)}
-              <span
-                class="text-[10px] text-slate-400 bg-slate-800/50 px-2 py-0.5 rounded border border-slate-700/50"
-                >{producer.name}</span
-              >
-            {/each}
+      {#if type === "anime"}
+        <div class="flex justify-between">
+          <span class="text-(--c8)">Studios</span>
+          <div class="text-right">
+            {#if companies.studios.length > 0}
+              {#each companies.studios as studio (studio.id)}
+                <div
+                  class="text-xs text-(--hako-accent) font-medium bg-(--hako-accent)/10 border rounded-full px-2 py-0.5"
+                >
+                  {studio.name}
+                </div>
+              {/each}
+            {:else}
+              <span class="text-(--c5) font-medium">—</span>
+            {/if}
           </div>
         </div>
+        {#if companies.producers.length > 0}
+          <div class="space-y-1">
+            <span class="text-(--c8)">Producers</span>
+            <div class="flex flex-wrap gap-1">
+              {#each companies.producers as producer (producer.id)}
+                <span
+                  class="text-xs text-(--c12) bg-(--c12)/10 rounded-full border px-2 py-0.5"
+                  >{producer.name}</span
+                >
+              {/each}
+            </div>
+          </div>
+        {/if}
       {/if}
     </div>
   </div>

@@ -13,7 +13,7 @@ export function isLowLevelRole(role: string): boolean {
 
 export function roleTier(role: string): number {
   const r = role.toLowerCase();
-  if (r === "story & art" || r === "story and art" || r === "original creator" || r === "creator") return 1;
+  if (r === "story & art" || r === "story and art" || r === "original creator" || r === "original plan" || r === "creator") return 1;
 
   if (r === "director" || r === "chief director" || r === "series director" || r === "executive producer") return 2;
 

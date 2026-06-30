@@ -133,7 +133,8 @@ export const MediaService = {
           title_romaji,
           title_english,
           title_native,
-          format
+          format,
+          media_type
         )
       `)
       .eq('media_id', mediaId);
@@ -154,13 +155,13 @@ export const MediaService = {
       `)
       .eq('media_id', mediaId);
 
-    if (error || !data) return { studio: null, producers: [] };
+    if (error || !data) return { studios: [], producers: [] };
 
-    const result: MediaCompanies = { studio: null, producers: [] };
+    const result: MediaCompanies = { studios: [], producers: [] };
     for (const row of data) {
       const c = row.company as unknown as Company;
       if (row.type === 'animation_studio') {
-        result.studio = c;
+        result.studios.push(c);
       } else {
         result.producers.push(c);
       }

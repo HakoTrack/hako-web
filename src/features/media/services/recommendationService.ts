@@ -9,6 +9,11 @@ export interface MediaRecommendation {
   userVote: number | null;
 }
 
+export interface VibeRecommendation {
+  media_id: number;
+  similarity: number;
+}
+
 export const RecommendationService = {
   async getRecommendations(mediaId: number, userId?: string | null): Promise<Result<MediaRecommendation[]>> {
     const { data, error } = await supabase.rpc('get_media_recommendations', {
@@ -69,6 +74,17 @@ export const RecommendationService = {
     return success((data || []).map((m: any) => ({
       id: m.id,
       title: m.title_romaji || m.title_english,
+    })));
+  },
+
+  async getVibeRecommendations(mediaId: number): Promise<Result<VibeRecommendation[]>> {
+    const { data, error } = await supabase.rpc('get_vibe_recommendations', {
+      p_media_id: mediaId,
+    });
+    if (error) return failure(error.message);
+    return success((data || []).map((r: any) => ({
+      media_id: r.media_id,
+      similarity: r.similarity ?? 0,
     })));
   },
 };
