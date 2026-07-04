@@ -6,9 +6,8 @@ import CharacterDetail from "./features/character/CharacterDetail.svelte";
 import StaffDetail from "./features/staff/StaffDetail.svelte";
 import SignupPage from "./features/auth/SignupPage.svelte";
 
-import Browse from "./features/browse/Browse.svelte";
-
 import ForumThread from "./features/forum/ForumThread.svelte";
+import TopMedia from "./features/browse/TopMedia.svelte";
 
 export interface Route {
   path: string;
@@ -54,8 +53,8 @@ export const routes: Route[] = [
     props: (path) => ({ mediaId: path.split("/")[2], type: "light_novel" })
   },
   {
-    path: "/browse/",
-    component: Browse,
+    path: "/top/",
+    component: TopMedia,
     props: (path) => ({ mediaType: path.split("/")[2] || "anime" })
   },
   {
