@@ -4,6 +4,7 @@
   import { HakoImage } from "../shared/utils/images";
   import { openModal } from "../core/ui.svelte";
   import Dropdown from "../shared/components/Dropdown.svelte";
+  import BrowseDropdown from "../shared/components/BrowseDropdown.svelte";
   import SearchInput from "../shared/components/SearchInput.svelte";
   import { MediaService } from "../features/media/services/mediaService";
   import type { Media } from "../shared/types/index";
@@ -84,24 +85,6 @@
     ];
   });
 
-  let browseDropdownItems = $derived([
-    {
-      label: "Anime",
-      action: () => navigate("/browse/anime", true),
-      icon: "fa-tv",
-    },
-    {
-      label: "Manga",
-      action: () => navigate("/browse/manga", true),
-      icon: "fa-book",
-    },
-    {
-      label: "Light Novels",
-      action: () => navigate("/browse/lightnovel", true),
-      icon: "fa-book-open",
-    },
-  ]);
-
   async function handleLogout() {
     await AuthService.logout();
   }
@@ -167,9 +150,9 @@
           <Dropdown items={listDropdownItems}>
             <span class="nav-link cursor-pointer">Lists</span>
           </Dropdown>
-          <Dropdown items={browseDropdownItems}>
+          <BrowseDropdown>
             <span class="nav-link cursor-pointer">Browse</span>
-          </Dropdown>
+          </BrowseDropdown>
           <a
             href="/forum"
             class="nav-link ring-0 outline-none"

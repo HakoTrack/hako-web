@@ -37,6 +37,7 @@
     behind: "var(--c1)",
     empty: "var(--surface-elevated)",
   };
+  const GRACE_PERIOD = 72 * 3600;
 
   function getSegments(entry: ScheduleEntry) {
     const total = entry.episodes ?? Math.max(entry.next_episode + 10, 26);
@@ -80,6 +81,7 @@
 
   let scheduleEntries = $state<ScheduleEntry[]>([]);
   let scheduleLoading = $state(false);
+  let scheduleMediaIds = $state(new Set<number>());
   let now = $state(Math.floor(Date.now() / 1000));
 
   let loadedImages = $state<Record<number, boolean>>({});
@@ -92,13 +94,19 @@
       manga: [],
       light_novel: [],
     };
-    items.forEach((item: QuickUpdateItem) => {
+    for (const item of items) {
+      if (scheduleMediaIds.has(item.media_id)) continue;
       const type = item.media_type;
       if (groups[type]) {
         groups[type].push(item);
       }
-    });
+    }
     return groups;
+  });
+
+  let filteredCount = $derived(() => {
+    const groups = categorizedItems();
+    return groups.anime.length + groups.manga.length + groups.light_novel.length;
   });
 
   let sortedEntries = $derived(
@@ -139,66 +147,110 @@
 
     const nowTs = Math.floor(Date.now() / 1000);
 
-    const { data: list } = await supabase
-      .from("profile_list")
-      .select("media_id, progress, status")
-      .eq("profile_id", user.id)
-      .eq("media_type", "anime")
-      .in("status", ["current", "planning"]);
+    const allListEntries: {
+      media_id: number;
+      progress: number;
+      status: string;
+    }[] = [];
+    let page = 0;
+    const pageSize = 1000;
+    let hasMore = true;
 
-    if (!list?.length) {
+    while (hasMore) {
+      const { data } = await supabase
+        .from("profile_list")
+        .select("media_id, progress, status")
+        .eq("profile_id", user.id)
+        .eq("media_type", "anime")
+        .in("status", ["current", "planning"])
+        .range(page * pageSize, (page + 1) * pageSize - 1);
+
+      if (data?.length) allListEntries.push(...data);
+      hasMore = data?.length === pageSize;
+      page++;
+    }
+
+    if (!allListEntries.length) {
       scheduleLoading = false;
       return;
     }
 
-    const mediaIds = list.map((e) => e.media_id);
+    const mediaIds = allListEntries.map((e) => e.media_id);
     const listMap = new Map(
-      list.map((e) => [e.media_id, { progress: e.progress, status: e.status }]),
+      allListEntries.map((e) => [
+        e.media_id,
+        { progress: e.progress, status: e.status },
+      ]),
     );
 
     const { data: schedules } = await supabase
       .from("airing_schedules")
       .select("id, episode, airing_at, media_id")
       .in("media_id", mediaIds)
-      .gte("airing_at", nowTs)
+      .gte("airing_at", nowTs - 14 * 86400)
       .order("airing_at", { ascending: true });
 
-    if (schedules) {
-      const seen = new Set<number>();
-      const entries: ScheduleEntry[] = [];
-      for (const s of schedules) {
-        if (seen.has(s.media_id)) continue;
-        seen.add(s.media_id);
-        const entry = listMap.get(s.media_id) || {
-          progress: 0,
-          status: "current",
-        };
-        const behind = Math.max(0, s.episode - 1 - entry.progress);
-        entries.push({
-          media_id: s.media_id,
-          next_episode: s.episode,
-          airing_at: s.airing_at,
-          progress: entry.progress,
-          status: entry.status,
-          behind,
-          episodes: null,
-        });
-      }
-
-      const { data: mediaRows } = await supabase
-        .from("media")
-        .select("id, episodes")
-        .in("id", [...seen]);
-
-      if (mediaRows) {
-        const epMap = new Map(mediaRows.map((m) => [m.id, m.episodes]));
-        for (const e of entries) {
-          e.episodes = epMap.get(e.media_id) ?? null;
-        }
-      }
-
-      scheduleEntries = entries;
+    if (!schedules?.length) {
+      scheduleLoading = false;
+      return;
     }
+
+    const mediaSchedMap = new Map<number, typeof schedules>();
+    for (const s of schedules) {
+      if (!mediaSchedMap.has(s.media_id)) mediaSchedMap.set(s.media_id, []);
+      mediaSchedMap.get(s.media_id)!.push(s);
+    }
+
+    const entries: ScheduleEntry[] = [];
+    for (const [mediaId, scheds] of mediaSchedMap) {
+      const nextEntry = scheds.find((s) => s.airing_at > nowTs);
+      if (!nextEntry) continue;
+
+      const airedCount = scheds.filter((s) => s.airing_at <= nowTs).length;
+      const entry = listMap.get(mediaId) || { progress: 0, status: "current" };
+      const behind = Math.max(0, airedCount - entry.progress);
+
+      entries.push({
+        media_id: mediaId,
+        next_episode: nextEntry.episode,
+        airing_at: nextEntry.airing_at,
+        progress: entry.progress,
+        status: entry.status,
+        behind,
+        episodes: null,
+      });
+    }
+
+    const graceIds = new Set<number>();
+    for (const [mediaId, scheds] of mediaSchedMap) {
+      const hasFuture = scheds.some((s) => s.airing_at > nowTs);
+      if (hasFuture) continue;
+      const lastAired = Math.max(...scheds.map((s) => s.airing_at));
+      if (lastAired > nowTs - GRACE_PERIOD) graceIds.add(mediaId);
+    }
+
+    const excludedIds = new Set([...entries.map((e) => e.media_id), ...graceIds]);
+
+    if (!entries.length && !graceIds.size) {
+      scheduleMediaIds = excludedIds;
+      scheduleLoading = false;
+      return;
+    }
+
+    const { data: mediaRows } = await supabase
+      .from("media")
+      .select("id, episodes")
+      .in("id", [...excludedIds]);
+
+    if (mediaRows) {
+      const epMap = new Map(mediaRows.map((m) => [m.id, m.episodes]));
+      for (const e of entries) {
+        e.episodes = epMap.get(e.media_id) ?? null;
+      }
+    }
+
+    scheduleEntries = entries;
+    scheduleMediaIds = excludedIds;
     scheduleLoading = false;
   }
 
@@ -214,6 +266,7 @@
       fetchSchedule();
     } else {
       scheduleEntries = [];
+      scheduleMediaIds = new Set();
     }
   });
 
@@ -419,9 +472,9 @@
                     </div>
                     {#if entry.behind > 0}
                       <div
-                        class="absolute bottom-8 left-1.5 bg-(--c1) text-white text-[10px] font-bold px-1.5 py-0.5 rounded leading-none pointer-events-none"
+                        class="absolute bottom-6 right-1.5 bg-(--c1)/80 text-white text-[10px] font-bold px-1.5 py-0.5 rounded leading-none pointer-events-none"
                       >
-                        -{entry.behind} eps
+                        {entry.behind} behind
                       </div>
                     {/if}
                     <div
@@ -445,7 +498,7 @@
         </div>
       {/if}
 
-      {#if isLoading && items.length === 0}
+      {#if isLoading && items.length === 0 && filteredCount() === 0}
         <div class="grid grid-cols-1 md:grid-cols-3 gap-10">
           {#each ["Anime", "Manga", "Light Novels"] as label}
             <div class="flex flex-col">
@@ -477,10 +530,14 @@
             </div>
           {/each}
         </div>
-      {:else if items.length === 0}
+      {:else if filteredCount() === 0}
         <div class="text-center py-20 text-(--c8)">
           <i class="fa-solid fa-list-check text-4xl mb-4 block opacity-20"></i>
-          <p class="text-sm font-medium">No titles currently in progress.</p>
+          <p class="text-sm font-medium">
+            {items.length > 0
+              ? "All airing titles are shown in the schedule above."
+              : "No titles currently in progress."}
+          </p>
         </div>
       {:else}
         <div class="grid grid-cols-1 md:grid-cols-3 gap-10">
