@@ -23,168 +23,64 @@
   }>();
 
   interface ScheduleEntry {
-    id: number;
-    episode: number;
-    episode_end?: number;
-    airing_at: number;
     media_id: number;
-    title_romaji: string;
-    title_english: string | null;
-    title_native: string | null;
-    format: string;
-    episodes: number | null;
+    next_episode: number;
+    airing_at: number;
     progress: number;
     status: string;
+    behind: number;
+    episodes: number | null;
+  }
+
+  const COLORS = {
+    progress: "var(--c2)",
+    behind: "var(--c1)",
+    empty: "var(--surface-elevated)",
+  };
+
+  function getSegments(entry: ScheduleEntry) {
+    const total = entry.episodes ?? Math.max(entry.next_episode + 10, 26);
+    const segs: {
+      color: string;
+      first: boolean;
+      last: boolean;
+      flex: number;
+    }[] = [];
+    const progress = Math.max(0, entry.progress);
+    const behind = Math.max(0, entry.next_episode - 1 - entry.progress);
+    const unreleased = Math.max(0, total - (entry.next_episode - 1));
+
+    if (progress > 0)
+      segs.push({
+        color: COLORS.progress,
+        first: segs.length === 0,
+        last: false,
+        flex: progress,
+      });
+    if (behind > 0)
+      segs.push({
+        color: COLORS.behind,
+        first: segs.length === 0,
+        last: false,
+        flex: behind,
+      });
+    if (unreleased > 0)
+      segs.push({
+        color: COLORS.empty,
+        first: segs.length === 0,
+        last: true,
+        flex: unreleased,
+      });
+
+    if (segs.length === 0)
+      segs.push({ color: COLORS.empty, first: true, last: true, flex: 1 });
+    segs[segs.length - 1].last = true;
+    return segs;
   }
 
   let scheduleEntries = $state<ScheduleEntry[]>([]);
   let scheduleLoading = $state(false);
   let now = $state(Math.floor(Date.now() / 1000));
-  let hoveredScheduleId = $state<number | null>(null);
-
-  const DAYS = [
-    "Sunday",
-    "Monday",
-    "Tuesday",
-    "Wednesday",
-    "Thursday",
-    "Friday",
-    "Saturday",
-  ] as const;
-
-  $effect(() => {
-    const interval = setInterval(() => {
-      now = Math.floor(Date.now() / 1000);
-    }, 1000);
-    return () => clearInterval(interval);
-  });
-
-  function mergeConsecutive(entries: ScheduleEntry[]): ScheduleEntry[] {
-    const merged: ScheduleEntry[] = [];
-    for (const entry of entries) {
-      const last = merged[merged.length - 1];
-      if (
-        last &&
-        last.media_id === entry.media_id &&
-        last.episode_end === entry.episode - 1
-      ) {
-        last.episode_end = entry.episode;
-      } else {
-        merged.push({ ...entry, episode_end: entry.episode });
-      }
-    }
-    return merged;
-  }
-
-  function getDayName(ts: number): string {
-    return DAYS[new Date(ts * 1000).getDay()];
-  }
-
-  let mergedEntries = $derived(mergeConsecutive(scheduleEntries));
-
-  let groupedByDay = $derived(() => {
-    const groups: Record<string, ScheduleEntry[]> = {};
-    for (const entry of mergedEntries) {
-      const day = getDayName(entry.airing_at);
-      if (!groups[day]) groups[day] = [];
-      groups[day].push(entry);
-    }
-    const ordered = DAYS.filter((d) => groups[d]).map((d) => ({
-      day: d,
-      entries: groups[d],
-    }));
-    return ordered;
-  });
-
-  async function fetchSchedule() {
-    const user = await AuthService.getCurrentUser();
-    if (!user) return;
-
-    scheduleLoading = true;
-
-    const nowTs = Math.floor(Date.now() / 1000);
-    const weekAgo = nowTs - 7 * 86400;
-
-    const { data: list } = await supabase
-      .from("profile_list")
-      .select("media_id, progress, status")
-      .eq("profile_id", user.id)
-      .eq("media_type", "anime")
-      .in("status", ["current", "planning"]);
-
-    if (!list?.length) {
-      scheduleLoading = false;
-      return;
-    }
-
-    const mediaIds = list.map((e) => e.media_id);
-    const listMap = new Map(
-      list.map((e: any) => [
-        e.media_id,
-        { progress: e.progress, status: e.status },
-      ]),
-    );
-
-    const { data: schedules } = await supabase
-      .from("airing_schedules")
-      .select(
-        `id, episode, airing_at, media_id,
-         media:media_id (
-           title_romaji, title_english, title_native,
-           format, episodes
-         )`,
-      )
-      .in("media_id", mediaIds)
-      .gte("airing_at", weekAgo)
-      .order("airing_at", { ascending: true })
-      .limit(10);
-
-    if (schedules) {
-      scheduleEntries = schedules.map((s: any) => {
-        const entry = listMap.get(s.media_id) || {
-          progress: 0,
-          status: "current",
-        };
-        return {
-          id: s.id,
-          episode: s.episode,
-          airing_at: s.airing_at,
-          media_id: s.media_id,
-          progress: entry.progress,
-          status: entry.status,
-          ...(s.media ?? {}),
-        };
-      });
-    }
-    scheduleLoading = false;
-  }
-
-  $effect(() => {
-    if (isOpen) {
-      fetchSchedule();
-    } else {
-      scheduleEntries = [];
-    }
-  });
-
-  function countdown(airingAt: number): string {
-    const diff = airingAt - now;
-    if (diff <= 0) return "Aired";
-    const hours = Math.floor(diff / 3600);
-    const minutes = Math.floor((diff % 3600) / 60);
-    if (hours >= 24) {
-      const days = Math.floor(hours / 24);
-      return `${days}d ${hours % 24}h`;
-    }
-    return `${hours}h ${minutes}m`;
-  }
-
-  function episodeLabel(entry: ScheduleEntry): string {
-    if (entry.episode_end && entry.episode_end !== entry.episode) {
-      return `Ep ${entry.episode}-${entry.episode_end}`;
-    }
-    return `Ep ${entry.episode}`;
-  }
 
   let loadedImages = $state<Record<number, boolean>>({});
   let hoveredPlus = $state<Record<number, boolean>>({});
@@ -203,6 +99,122 @@
       }
     });
     return groups;
+  });
+
+  let sortedEntries = $derived(
+    [...scheduleEntries].sort((a, b) => {
+      const aBehind = a.behind > 0 ? 0 : 1;
+      const bBehind = b.behind > 0 ? 0 : 1;
+      if (aBehind !== bBehind) return aBehind - bBehind;
+      return a.airing_at - b.airing_at;
+    }),
+  );
+
+  function getDayName(ts: number): string {
+    return new Date(ts * 1000).toLocaleDateString("en-US", {
+      weekday: "short",
+    });
+  }
+
+  function countdown(airingAt: number): string {
+    const diff = airingAt - now;
+    if (diff <= 0) return "Airing";
+    if (diff < 60) return `${diff}s`;
+    const totalMinutes = Math.floor(diff / 60);
+    const days = Math.floor(totalMinutes / 1440);
+    const hours = Math.floor((totalMinutes % 1440) / 60);
+    const minutes = totalMinutes % 60;
+    const parts: string[] = [];
+    if (days > 0) parts.push(`${days}d`);
+    if (hours > 0 || days > 0) parts.push(`${hours}h`);
+    parts.push(`${minutes}m`);
+    return parts.join(" ");
+  }
+
+  async function fetchSchedule() {
+    const user = await AuthService.getCurrentUser();
+    if (!user) return;
+
+    scheduleLoading = true;
+
+    const nowTs = Math.floor(Date.now() / 1000);
+
+    const { data: list } = await supabase
+      .from("profile_list")
+      .select("media_id, progress, status")
+      .eq("profile_id", user.id)
+      .eq("media_type", "anime")
+      .in("status", ["current", "planning"]);
+
+    if (!list?.length) {
+      scheduleLoading = false;
+      return;
+    }
+
+    const mediaIds = list.map((e) => e.media_id);
+    const listMap = new Map(
+      list.map((e) => [e.media_id, { progress: e.progress, status: e.status }]),
+    );
+
+    const { data: schedules } = await supabase
+      .from("airing_schedules")
+      .select("id, episode, airing_at, media_id")
+      .in("media_id", mediaIds)
+      .gte("airing_at", nowTs)
+      .order("airing_at", { ascending: true });
+
+    if (schedules) {
+      const seen = new Set<number>();
+      const entries: ScheduleEntry[] = [];
+      for (const s of schedules) {
+        if (seen.has(s.media_id)) continue;
+        seen.add(s.media_id);
+        const entry = listMap.get(s.media_id) || {
+          progress: 0,
+          status: "current",
+        };
+        const behind = Math.max(0, s.episode - 1 - entry.progress);
+        entries.push({
+          media_id: s.media_id,
+          next_episode: s.episode,
+          airing_at: s.airing_at,
+          progress: entry.progress,
+          status: entry.status,
+          behind,
+          episodes: null,
+        });
+      }
+
+      const { data: mediaRows } = await supabase
+        .from("media")
+        .select("id, episodes")
+        .in("id", [...seen]);
+
+      if (mediaRows) {
+        const epMap = new Map(mediaRows.map((m) => [m.id, m.episodes]));
+        for (const e of entries) {
+          e.episodes = epMap.get(e.media_id) ?? null;
+        }
+      }
+
+      scheduleEntries = entries;
+    }
+    scheduleLoading = false;
+  }
+
+  $effect(() => {
+    const interval = setInterval(() => {
+      now = Math.floor(Date.now() / 1000);
+    }, 1000);
+    return () => clearInterval(interval);
+  });
+
+  $effect(() => {
+    if (isOpen) {
+      fetchSchedule();
+    } else {
+      scheduleEntries = [];
+    }
   });
 
   async function incrementProgress(e: MouseEvent, item: QuickUpdateItem) {
@@ -245,18 +257,6 @@
     }
   }
 
-  function handleItemClick(item: QuickUpdateItem) {
-    openQuickEditor(item.media_id, item.media_type);
-  }
-
-  function handleItemHover(item: QuickUpdateItem) {
-    activeItemId = item.media_id;
-  }
-
-  function handleItemLeave() {
-    activeItemId = null;
-  }
-
   async function incrementScheduleProgress(
     e: MouseEvent,
     entry: ScheduleEntry,
@@ -267,39 +267,44 @@
     if (!user) return;
 
     const newProgress = (entry.progress || 0) + 1;
-    const total = entry.episodes;
 
-    if (total && newProgress > total) return;
-
-    const updates = {
+    const updates: Record<string, any> = {
       progress: newProgress,
-      status: total === newProgress ? "completed" : entry.status,
-      total: total,
     };
 
-    const oldEntry = {
-      media_id: entry.media_id,
-      metadata: { episodes: entry.episodes },
-    };
+    if (entry.status === "planning") {
+      updates.status = "current";
+      updates.started_at = new Date().toISOString().split("T")[0];
+    }
 
     const result = await ListService.updateListEntry(
       user.id,
       "anime",
       entry.media_id,
       updates,
-      oldEntry,
+      null,
     );
     if (result.success) {
       entry.progress = newProgress;
-      if (updates.status === "completed") {
-        scheduleEntries = scheduleEntries.filter(
-          (s) => s.media_id !== entry.media_id,
-        );
+      if (entry.status === "planning") {
+        entry.status = "current";
       }
     } else {
       console.error("Failed to update progress:", result.error);
       alert("Failed to update progress: " + result.error);
     }
+  }
+
+  function handleItemClick(item: QuickUpdateItem) {
+    openQuickEditor(item.media_id, item.media_type);
+  }
+
+  function handleItemHover(item: QuickUpdateItem) {
+    activeItemId = item.media_id;
+  }
+
+  function handleItemLeave() {
+    activeItemId = null;
   }
 
   function navigateTo(url: string) {
@@ -355,82 +360,82 @@
           </h3>
 
           {#if scheduleLoading}
-            <div class="flex gap-4 overflow-x-auto pb-2">
-              {#each { length: 3 } as _}
-                <div class="shrink-0 w-64 animate-pulse">
+            <div class="flex gap-3 overflow-x-auto pb-2">
+              {#each { length: 11 } as _}
+                <div class="shrink-0 w-28">
                   <div
-                    class="h-3 w-14 bg-(--surface-elevated) rounded mb-3"
+                    class="aspect-17/23 bg-(--surface-elevated) rounded animate-pulse"
                   ></div>
-                  <div class="grid grid-cols-2 gap-2">
-                    {#each { length: 4 } as _}
-                      <div
-                        class="aspect-17/23 bg-(--surface-elevated) rounded"
-                      ></div>
-                    {/each}
+                  <div class="flex gap-px w-full h-1 mt-1">
+                    <div
+                      class="h-full flex-1 bg-(--surface-elevated) rounded-sm animate-pulse"
+                    ></div>
                   </div>
                 </div>
               {/each}
             </div>
           {:else}
-            <div class="flex gap-4 overflow-x-auto pb-2">
-              {#each groupedByDay() as { day, entries }}
-                <div class="shrink-0 w-64 bg-(--surface)/40 rounded-lg p-2.5">
-                  <h4
-                    class="text-xs font-bold text-slate-400 uppercase tracking-wider mb-2"
-                  >
-                    {day}
-                  </h4>
-                  <div class="grid grid-cols-2 gap-2">
-                    {#each entries as entry}
-                      <!-- svelte-ignore a11y_click_events_have_key_events -->
-                      <!-- svelte-ignore a11y_no_static_element_interactions -->
-                      <div
-                        class="relative w-28 cursor-pointer group"
-                        onclick={() => {
-                          onClose();
-                          navigateTo(`/anime/${entry.media_id}`);
-                        }}
-                        onmouseenter={() =>
-                          (hoveredScheduleId = entry.media_id)}
-                        onmouseleave={() => (hoveredScheduleId = null)}
+            <div class="flex gap-3 overflow-x-auto pb-2">
+              {#each sortedEntries as entry}
+                <!-- svelte-ignore a11y_click_events_have_key_events -->
+                <!-- svelte-ignore a11y_no_static_element_interactions -->
+                <div
+                  class="shrink-0 w-28 cursor-pointer group"
+                  onclick={() => {
+                    onClose();
+                    navigateTo(`/anime/${entry.media_id}`);
+                  }}
+                >
+                  <div class="relative">
+                    <MediaCover
+                      mediaId={entry.media_id}
+                      type="anime"
+                      size="medium"
+                      showTooltip={true}
+                      noHoverScale
+                    />
+                    <button
+                      type="button"
+                      aria-label="Increment progress"
+                      onclick={(e) => incrementScheduleProgress(e, entry)}
+                      class="absolute top-1 right-1 w-7 h-7 rounded-full flex items-center justify-center bg-(--hako-bg)/80 text-(--hako-fg) hover:bg-accent hover:text-white transition-all opacity-0 group-hover:opacity-100 pointer-events-auto cursor-pointer"
+                    >
+                      <svg
+                        class="w-3 h-3"
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        stroke="currentColor"
+                        stroke-width="3.5"
+                        stroke-linecap="round"
                       >
-                        <MediaCover
-                          mediaId={entry.media_id}
-                          type="anime"
-                          size="medium"
-                          showTooltip={true}
-                          noHoverScale
-                        />
-                        <div
-                          class="absolute bottom-1 left-1 right-1 bg-(--hako-bg)/80 p-2 rounded-lg pointer-events-none"
-                        >
-                          {#if hoveredScheduleId === entry.media_id}
-                            <div class="flex items-center justify-between">
-                              <span class="text-xs font-bold tabular-nums">
-                                {episodeLabel(entry)}
-                              </span>
-                              <!-- svelte-ignore a11y_consider_explicit_label -->
-                              <button
-                                type="button"
-                                onclick={(e) =>
-                                  incrementScheduleProgress(e, entry)}
-                                class="shrink-0 w-6 h-6 rounded-full flex items-center justify-center bg-accent/10 text-accent hover:bg-accent hover:text-white transition-all pointer-events-auto"
-                              >
-                                <i class="fa-solid fa-plus text-[10px]"></i>
-                              </button>
-                            </div>
-                          {:else}
-                            <div class="text-xs font-bold tabular-nums">
-                              {episodeLabel(entry)}
-                            </div>
-                            <div
-                              class="text-[10px] text-(--hako-accent) tabular-nums"
-                            >
-                              {countdown(entry.airing_at)}
-                            </div>
-                          {/if}
-                        </div>
+                        <line x1="12" y1="5" x2="12" y2="19" />
+                        <line x1="5" y1="12" x2="19" y2="12" />
+                      </svg>
+                    </button>
+                    <div
+                      class="absolute top-1.5 left-1.5 bg-(--hako-bg)/80 text-(--hako-fg) text-[10px] font-bold px-1.5 py-0.5 rounded leading-none pointer-events-none"
+                    >
+                      {getDayName(entry.airing_at)}
+                    </div>
+                    {#if entry.behind > 0}
+                      <div
+                        class="absolute bottom-8 left-1.5 bg-(--c1) text-white text-[10px] font-bold px-1.5 py-0.5 rounded leading-none pointer-events-none"
+                      >
+                        -{entry.behind} eps
                       </div>
+                    {/if}
+                    <div
+                      class="absolute bottom-1.5 right-1.5 bg-(--hako-bg)/80 text-(--hako-fg) text-[10px] font-bold px-1.5 py-0.5 rounded leading-none tabular-nums pointer-events-none"
+                    >
+                      {countdown(entry.airing_at)}
+                    </div>
+                  </div>
+                  <div class="flex gap-px w-full h-1 mt-1">
+                    {#each getSegments(entry) as seg}
+                      <div
+                        class="h-full bg-(--surface-elevated)"
+                        style="flex: {seg.flex}; background-color: {seg.color}; border-radius: 2px"
+                      ></div>
                     {/each}
                   </div>
                 </div>
