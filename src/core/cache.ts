@@ -33,7 +33,7 @@ interface HakoDB extends DBSchema {
 }
 
 const DB_NAME = 'HakoDB_v2';
-const DB_VERSION = 13.0;
+const DB_VERSION = 14.0;
 
 
 const dbPromise = openDB<HakoDB>(DB_NAME, DB_VERSION, {
@@ -150,5 +150,15 @@ export const CacheService = {
   async deleteListEntry(cacheKey: string) {
     const db = await dbPromise;
     return db.delete('list_entries', cacheKey);
+  },
+
+  async clearAllMedia() {
+    const db = await dbPromise;
+    const keys = await db.getAllKeys('media_metadata');
+    const tx = db.transaction('media_metadata', 'readwrite');
+    for (const key of keys) {
+      tx.store.delete(key);
+    }
+    await tx.done;
   }
 };
