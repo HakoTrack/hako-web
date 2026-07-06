@@ -18,5 +18,5 @@ pulldown-cmark = "0.12"
 regex = "1.11"
 
 [profile.release]
-opt-level = "s"
+opt-level = "z"
 lto = true

@@ -16,38 +16,40 @@
   const phases: Phase[] = [
     {
       name: "Foundation",
-      status: "current",
-      description: "Basic core features.",
+      status: "completed",
+      description: "Core platform features.",
       features: [
         { name: "Basic List Management", status: "completed" },
         { name: "User Profiles", status: "completed" },
         { name: "Initial Vibes System", status: "completed" },
-        { name: "Activity Feed", status: "in-progress" },
+        { name: "Basic Search", status: "completed" },
+        { name: "Activity Feed", status: "completed" },
       ],
     },
     {
       name: "Closed Beta",
-      status: "upcoming",
-      description: "Refining features based on feedback, database expansion.",
+      status: "current",
+      description: "Community features live, refining based on feedback.",
       features: [
-        { name: "Robust Media Search", status: "in-progress" },
-        { name: "Forums", status: "upcoming" },
-        { name: "Refining Vibes System", status: "upcoming" },
-        { name: "Vibes Based Recommendations", status: "upcoming" },
+        { name: "Forums", status: "completed" },
+        { name: "Advanced Media Search", status: "completed" },
+        { name: "Media Detail Overhaul", status: "completed" },
+        { name: "User Recommendations", status: "completed" },
+        { name: "Curated Tags v2", status: "completed" },
+        { name: "Refined Vibes & Recommendations", status: "in-progress" },
         { name: "Mobile Responsive Design", status: "in-progress" },
       ],
     },
     {
       name: "Full Release",
       status: "upcoming",
-      description: "Social and community expansion.",
+      description: "Parity with existing platforms, social expansion.",
       features: [
         { name: "Database Parity with MAL/AniList", status: "in-progress" },
-        { name: "Refined Social Features", status: "upcoming" },
-        { name: "Groups", status: "upcoming" },
-        { name: "Collections", status: "upcoming" },
-        { name: "Achievements System", status: "upcoming" },
+        { name: "Social Features (Groups, Collections)", status: "upcoming" },
         { name: "User Reviews", status: "upcoming" },
+        { name: "Achievements System", status: "upcoming" },
+        { name: "Visual Novel Data & Tracking", status: "upcoming" },
       ],
     },
     {
@@ -55,77 +57,95 @@
       status: "upcoming",
       description: "Going further beyond.",
       features: [
-        { name: "Visual Novel Data and Tracking", status: "upcoming" },
-        {
-          name: "Changes and refinements based on user feedback",
-          status: "upcoming",
-        },
-        {
-          name: "In-depth Profile themeing via custom CSS",
-          status: "upcoming",
-        },
+        { name: "Custom Profile Theming (CSS)", status: "upcoming" },
+        { name: "Advanced Analytics & Insights", status: "upcoming" },
+        { name: "API for Third-Party Integrations", status: "upcoming" },
+        { name: "Community Translations", status: "upcoming" },
       ],
     },
   ];
+
+  const statusConfig: Record<
+    string,
+    { icon: string; label: string; color: string }
+  > = {
+    completed: {
+      icon: "fa-check",
+      label: "Done",
+      color: "var(--c2)",
+    },
+    current: {
+      icon: "fa-spinner fa-pulse",
+      label: "In Progress",
+      color: "var(--c3)",
+    },
+    upcoming: {
+      icon: "fa-clock",
+      label: "Planned",
+      color: "var(--c8)",
+    },
+  };
 </script>
 
-<div class="w-full py-12 px-8">
-  <div class="flex justify-between items-start">
+<div class="relative">
+  <!-- Timeline line -->
+  <div
+    class="absolute left-[7px] md:left-[15px] top-0 bottom-0 w-px bg-(--c0)"
+  ></div>
+
+  <div class="space-y-10">
     {#each phases as phase, i}
-      <div class="flex flex-col items-center flex-1 relative">
-        <!-- Node Container (Circle) -->
+      <div class="relative md:pl-10 pl-5">
+        <!-- Timeline dot -->
         <div
-          class="w-8 h-8 rounded-full border-2 bg-(--hako-bg) flex items-center justify-center mb-6 z-10"
-          style={phase.status === "completed"
-            ? "background-color: var(--c2); border-color: var(--c2);"
-            : phase.status === "current"
-              ? "background-color: var(--c3); border-color: var(--c3);"
-              : "background-color: var(--hako-bg); border-color: var(--c8);"}
+          class="absolute left-[0px] md:left-[8px] top-[5px] w-[15px] h-[15px] rounded-full border-2 z-10"
+          style="border-color: {statusConfig[phase.status]
+            .color}; background: var(--hako-bg);"
         >
-          {#if phase.status === "completed"}
-            <i class="fa-solid fa-check text-(--hako-bg) text-xs"></i>
-          {:else if phase.status === "current"}
-            <div class="w-3 h-3 rounded-full bg-(--hako-bg)"></div>
-          {:else}
-            <div class="w-3 h-3 rounded-full bg-(--c8)"></div>
-          {/if}
-        </div>
-
-        <!-- Connector Line -->
-        {#if i < phases.length - 1}
           <div
-            class="absolute top-4 left-[50%] w-full h-0.5 -z-10"
-            style={phase.status === "completed"
-              ? "background-color: var(--hako-fg);"
-              : "background-color: var(--c8);"}
+            class="w-[7px] h-[7px] rounded-full mx-auto mt-[2px]"
+            style="background: {statusConfig[phase.status].color};"
           ></div>
-        {/if}
-
-        <!-- Content -->
-        <div class="text-center w-full px-2">
-          <div class="text-lg font-bold text-(--hako-fg) mb-1">
-            {phase.name}
-          </div>
-          <p class="text-xs text-(--c8) mb-6 leading-tight max-w-50 mx-auto">
-            {phase.description}
-          </p>
-
-          <!-- Checklist -->
-          <ul class="text-left space-y-2 w-full inline-block max-w-60">
-            {#each phase.features as feature}
-              <li class="flex items-center text-xs text-(--hako-fg)">
-                <i
-                  class="fa-solid {feature.status === 'completed'
-                    ? 'fa-check-circle text-(--c2)'
-                    : feature.status === 'in-progress'
-                      ? 'fa-spinner fa-spin text-(--c3)'
-                      : 'fa-circle text-(--c8)'} mr-2"
-                ></i>
-                {feature.name}
-              </li>
-            {/each}
-          </ul>
         </div>
+
+        <!-- Phase header row -->
+        <div class="flex items-start gap-4 mb-4">
+          <div class="min-w-0">
+            <h3 class="text-lg font-bold text-(--hako-fg)">{phase.name}</h3>
+            <p class="text-xs text-(--c8)">{phase.description}</p>
+          </div>
+          <span
+            class="ml-auto shrink-0 inline-flex items-center gap-1.5 text-[10px] font-semibold uppercase tracking-wider px-2.5 py-1 rounded-full whitespace-nowrap"
+            style="color: {statusConfig[phase.status]
+              .color}; background: {statusConfig[phase.status]
+              .color}15; border: 1px solid {statusConfig[phase.status]
+              .color}30;"
+          >
+            <i class="fa-solid {statusConfig[phase.status].icon} text-[8px]"
+            ></i>
+            {statusConfig[phase.status].label}
+          </span>
+        </div>
+
+        <!-- Feature list -->
+        <ul class="space-y-1.5">
+          {#each phase.features as feature}
+            <li class="flex items-center gap-2 text-xs text-(--hako-fg)">
+              <i
+                class="fa-solid {feature.status === 'completed'
+                  ? 'fa-check-circle text-(--c2)'
+                  : feature.status === 'in-progress'
+                    ? 'fa-circle-notch fa-pulse text-(--c3)'
+                    : 'fa-circle text-(--c8)/40'} text-[8px]"
+              ></i>
+              <span
+                class={feature.status === "completed"
+                  ? "line-through opacity-50"
+                  : ""}>{feature.name}</span
+              >
+            </li>
+          {/each}
+        </ul>
       </div>
     {/each}
   </div>

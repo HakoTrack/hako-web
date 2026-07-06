@@ -10,6 +10,8 @@
   type Step = "tos" | "credentials" | "profile" | "import";
   let step = $state<Step>("tos");
   let isSaving = $state(false);
+  let signupComplete = $state(false);
+  let signupEmail = $state("");
 
   let formData = $state({
     username: "",
@@ -27,21 +29,23 @@
   });
 
   async function next() {
-    console.log("Current step:", step);
     if (step === "tos") {
       step = "credentials";
-      console.log("Stepped to:", step);
     } else if (step === "credentials") {
-      // Validate invite code
-      const { data, error: rpcError } = await supabase.rpc(
-        "redeem_invite_code",
-        {
-          invite_code: formData.inviteCode,
-        },
-      );
-
-      if (rpcError || !data) {
-        toast.error("Invalid or already used invite code.");
+      if (!formData.username.trim()) {
+        toast.error("Username is required");
+        return;
+      }
+      if (formData.password !== formData.confirmPassword) {
+        toast.error("Passwords do not match");
+        return;
+      }
+      if (formData.password.length < 8) {
+        toast.error("Password must be at least 8 characters");
+        return;
+      }
+      if (!formData.inviteCode.trim()) {
+        toast.error("Invite code is required");
         return;
       }
       step = "profile";
@@ -57,9 +61,36 @@
   }
 
   async function finish() {
+    if (formData.password !== formData.confirmPassword) {
+      toast.error("Passwords do not match");
+      return;
+    }
+    if (formData.password.length < 8) {
+      toast.error("Password must be at least 8 characters");
+      return;
+    }
+    if (!formData.username.trim()) {
+      toast.error("Username is required");
+      return;
+    }
+    if (!formData.inviteCode.trim()) {
+      toast.error("Invite code is required");
+      return;
+    }
+
     isSaving = true;
 
-    // 1. Sign up user
+    const { data: codeData, error: codeError } = await supabase.rpc(
+      "redeem_invite_code",
+      { invite_code: formData.inviteCode },
+    );
+
+    if (codeError || !codeData) {
+      toast.error("Invalid or already used invite code.");
+      isSaving = false;
+      return;
+    }
+
     const { data: authData, error: authError } = await supabase.auth.signUp({
       email: formData.email,
       password: formData.password,
@@ -77,15 +108,23 @@
       return;
     }
 
-    // 2. Update profile
-    const { error: profileError } = await supabase
-      .from("profiles")
-      .update({
-        username: formData.username,
-        quote: formData.quote,
-        about: formData.aboutMe,
-      })
-      .eq("id", authData.user.id);
+    const { error: claimError } = await supabase.rpc("claim_invite_code", {
+      invite_code: formData.inviteCode,
+      user_id: authData.user.id,
+    });
+
+    if (claimError) {
+      toast.error("Failed to link invite code: " + claimError.message);
+      isSaving = false;
+      return;
+    }
+
+    const { error: profileError } = await supabase.rpc("setup_profile", {
+      user_id: authData.user.id,
+      p_username: formData.username,
+      p_quote: formData.quote,
+      p_about_me: formData.aboutMe,
+    });
 
     if (profileError) {
       toast.error("Failed to set up profile: " + profileError.message);
@@ -93,8 +132,8 @@
       return;
     }
 
-    toast.success("Account created successfully!");
-    window.location.href = "/feed";
+    signupEmail = formData.email;
+    signupComplete = true;
   }
 </script>
 
@@ -103,7 +142,22 @@
   style="--hero-bg: url('{heroUrl}')"
 >
   <div class="w-full max-w-2xl p-2">
-    {#if step === "tos"}
+    {#if signupComplete}
+      <div class="text-center py-16">
+        <i class="fa-solid fa-envelope text-6xl text-(--hako-accent) mb-6 block"
+        ></i>
+        <h1 class="text-2xl font-bold text-(--hako-fg) mb-3">
+          Check your email
+        </h1>
+        <p class="text-slate-400 mb-2">We sent a confirmation link to</p>
+        <p class="text-(--hako-fg) font-medium mb-8">
+          {signupEmail}
+        </p>
+        <p class="text-sm text-slate-500">
+          Click the link in the email to verify your account, then log in.
+        </p>
+      </div>
+    {:else if step === "tos"}
       <h1 class="text-2xl font-bold text-(--hako-fg) mb-2 text-center">
         Terms of Service
       </h1>
@@ -120,7 +174,7 @@
         </button>
         <button
           type="button"
-          class="px-6 py-2.5 rounded-xl font-bold text-sm bg-[var(--hako-accent)] text-[var(--hako-bg)] hover:opacity-90 shadow-lg transition-all"
+          class="px-6 py-2.5 rounded-xl font-bold text-sm bg-var(--hako-accent) text-var(--hako-bg) hover:opacity-90 shadow-lg transition-all"
           onclick={next}
         >
           Accept & Continue
@@ -145,7 +199,7 @@
           autocomplete="new-password"
         />
         <TextInput
-          label="Email (Optional)"
+          label="Email"
           type="email"
           bind:value={formData.email}
           name="email"

@@ -1,32 +1,121 @@
 <script lang="ts">
-  import { onMount } from "svelte";
   import {
+    MediaService,
+    getMediaCharacters,
+    getMediaStaff,
+    getAnimeThemes,
+    type AnimeTheme,
+    groupStaff,
+    filterTopStaff,
+  } from "./services";
+  import StaffPreview from "./StaffPreview.svelte";
+  import StaffTab from "./StaffTab.svelte";
+  import MediaTab from "./MediaTab.svelte";
+  import {
+    HakoImage,
     fetchMediaDetails,
+    fetchTagDefinitions,
     formatDescription,
-  } from "../../shared/utils/mediaData";
-  import { MediaService } from "./services/mediaService";
-  import { CacheService } from "../../core/cache";
-  import { HakoImage } from "../../shared/utils/images";
-  import { get_vibes_wasm } from "$wasm/hako_wasm";
-  import { wasmInitialized } from "../../core/wasm-init";
-  import { getDisplayTitle, settings } from "../../core/settings.svelte";
-  import MediaCover from "../../shared/components/MediaCover.svelte";
-  import Badge from "../../shared/components/Badge.svelte";
-  import TasteProfile from "../profile/components/TasteProfile.svelte";
-  import type { Media } from "../../shared/types/index";
+  } from "$shared/utils";
+  import { CacheService, getDisplayTitle, settings } from "$core";
+  import { MediaCover, Badge, InitialAvatar } from "$shared/components";
+  import {
+    RecommendationService,
+    type MediaRecommendation,
+    type VibeRecommendation,
+  } from "./services";
+  import { AuthService } from "$core/auth";
+  import type {
+    Media,
+    MediaCompanies,
+    ForumThread,
+    VibeResult,
+  } from "$shared/types";
+  import { ForumThreadService } from "$features/forum/services/forumThreadService";
+  import ThreadRow from "$features/forum/components/ThreadRow.svelte";
+  import MediaRecommendations from "./MediaRecommendations.svelte";
+  import MediaSidebar from "./MediaSidebar.svelte";
 
   let { mediaId, type = "anime" } = $props<{
     mediaId: string;
     type?: string;
   }>();
+
+  let id = $derived(mediaId);
+  let mediaType = $derived(type);
+
   let media: Media | null = $state(null);
   let relations: any[] = $state([]);
   let isLoading = $state(true);
-  let isWasmReady = $state(false);
-  let currentActiveTab = $state("overview"); // Tab tracking state
+  let currentActiveTab = $state("overview");
   let bannerError = $state(false);
+  let characters = $state<any[]>([]);
+  let staff = $state<any[]>([]);
+  let companies = $state<MediaCompanies>({ studios: [], producers: [] });
+  let themes = $state<AnimeTheme[]>([]);
+  let forumThreads = $state<ForumThread[]>([]);
+  let recommendations = $state<MediaRecommendation[]>([]);
+  let vibeRecommendations = $state<VibeRecommendation[]>([]);
+  let showAllRelations = $state(false);
+  let currentUser = $state<{ id: string } | null>(null);
+  let tagDefs = $state<
+    Record<
+      number,
+      { name: string; category: string; parentName: string | null }
+    >
+  >({});
 
-  // Derived title based on user preference
+  function goto(path: string) {
+    window.history.pushState({}, "", path);
+    window.dispatchEvent(new PopStateEvent("popstate"));
+  }
+
+  function getSiteConfig(site: string): { icon: string; color: string } {
+    const lower = site.toLowerCase();
+    if (lower.includes("twitter") || lower.includes("x.com"))
+      return { icon: "fa-brands fa-x-twitter", color: "#000000" };
+    if (lower.includes("youtube"))
+      return { icon: "svg-youtube", color: "#FF0000" };
+    if (lower.includes("crunchyroll"))
+      return { icon: "svg-crunchyroll", color: "#F47521" };
+    if (lower.includes("wikipedia"))
+      return { icon: "fa-brands fa-wikipedia-w", color: "#636466" };
+    if (lower.includes("facebook"))
+      return { icon: "fa-brands fa-facebook", color: "#1877F2" };
+    if (lower.includes("instagram"))
+      return { icon: "fa-brands fa-instagram", color: "#E4405F" };
+    if (lower.includes("amazon"))
+      return { icon: "fa-brands fa-amazon", color: "#FF9900" };
+    if (lower.includes("tiktok"))
+      return { icon: "fa-brands fa-tiktok", color: "#000000" };
+    if (lower.includes("discord"))
+      return { icon: "fa-brands fa-discord", color: "#5865F2" };
+    if (lower.includes("reddit"))
+      return { icon: "fa-brands fa-reddit", color: "#FF4500" };
+    if (lower.includes("twitch"))
+      return { icon: "fa-brands fa-twitch", color: "#9146FF" };
+    if (lower.includes("tumblr"))
+      return { icon: "fa-brands fa-tumblr", color: "#36465D" };
+    if (lower.includes("netflix"))
+      return { icon: "fa-solid fa-film", color: "#E50914" };
+    if (lower.includes("hulu"))
+      return { icon: "fa-solid fa-film", color: "#1CE783" };
+    if (lower.includes("hidive"))
+      return { icon: "fa-solid fa-film", color: "#00A2FF" };
+    if (lower.includes("funimation"))
+      return { icon: "fa-solid fa-film", color: "#5B158B" };
+    if (
+      lower.includes("anilist") ||
+      lower.includes("myanimelist") ||
+      lower.includes("anidb") ||
+      lower.includes("mal")
+    )
+      return { icon: "fa-solid fa-database", color: "#02A9FF" };
+    if (lower.includes("official"))
+      return { icon: "fa-solid fa-globe", color: "#64748B" };
+    return { icon: "fa-solid fa-link", color: "#64748B" };
+  }
+
   const displayTitle = $derived.by(() => {
     const m = media;
     if (m && m.title) {
@@ -34,34 +123,101 @@
     }
     return "";
   });
-  // Reactive vibe calculation
-  let vibes = $derived(isWasmReady && media ? get_vibes_wasm(media) : null);
 
-  $effect(() => {
-    const unsub = wasmInitialized.subscribe((ready) => {
-      isWasmReady = ready;
-    });
-    return unsub;
+  const CATEGORY_CONFIG: Record<string, { label: string; color: string }> = {
+    subgenre: { label: "Genre", color: "var(--c5)" },
+    theme: { label: "Theme", color: "var(--c1)" },
+    setting: { label: "Setting", color: "var(--c3)" },
+    content: { label: "Content", color: "var(--c2)" },
+    cast_trait: { label: "Cast Trait", color: "var(--c4)" },
+  };
+
+  const categorizedTags = $derived.by(() => {
+    const groups: Record<
+      string,
+      {
+        category: string;
+        label: string;
+        color: string;
+        tags: {
+          name: string;
+          parent?: string;
+          spoiler?: boolean;
+        }[];
+      }
+    > = {};
+    for (const entry of media?.tags_v2 ?? []) {
+      const def = tagDefs[entry.id];
+      if (!def) continue;
+      const cfg = CATEGORY_CONFIG[def.category];
+      if (!cfg) continue;
+      if (!groups[def.category]) {
+        groups[def.category] = {
+          category: def.category,
+          label: cfg.label,
+          color: cfg.color,
+          tags: [],
+        };
+      }
+      const tag: { name: string; parent?: string; spoiler?: boolean } = {
+        name: def.name,
+      };
+      if (entry.spoiler) tag.spoiler = true;
+      if (def.parentName) tag.parent = def.parentName;
+      groups[def.category].tags.push(tag);
+    }
+    const order = ["subgenre", "theme", "setting", "content", "cast_trait"];
+    return order.map((cat) => groups[cat]).filter(Boolean);
   });
+
+  function vibeVectorToResult(
+    v: Record<string, number> | undefined | null,
+  ): VibeResult | null {
+    if (!v || Object.keys(v).length === 0) return null;
+    const scores = {
+      Speculative: v.Speculative ?? 0,
+      Visceral: v.Visceral ?? 0,
+      Cerebral: v.Cerebral ?? 0,
+      Emotive: v.Emotive ?? 0,
+      Interpersonal: v.Interpersonal ?? 0,
+      Lighthearted: v.Lighthearted ?? 0,
+    };
+    const sorted = (
+      [
+        "Speculative",
+        "Visceral",
+        "Cerebral",
+        "Emotive",
+        "Interpersonal",
+        "Lighthearted",
+      ] as const
+    )
+      .map((name) => ({ name: name.toLowerCase(), score: scores[name] }))
+      .sort((a, b) => b.score - a.score);
+    return { scores, sorted } as unknown as VibeResult;
+  }
+
+  let vibes = $derived(vibeVectorToResult(media?.vibe_vector));
+
+  const groupedStaff = $derived(groupStaff(staff));
+  const keyStaff = $derived(filterTopStaff(groupedStaff));
 
   function toTitleCase(str: string | null | undefined): string {
     if (!str) return "N/A";
     return str
-      .split("_")
-      .map((word) => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase())
-      .join(" ");
+      .toLowerCase()
+      .replace(/_/g, " ")
+      .replace(/\b\w/g, (c) => c.toUpperCase());
   }
 
   function getEffectiveRelationLabel(relationType: string): string {
-    if (relationType === "ADAPTATION" && media?.source !== "ORIGINAL") {
-      return "Source";
-    }
     return toTitleCase(relationType);
   }
 
-  function getEffectiveSource(media: Media): string {
-    if (media.source !== "OTHER") return toTitleCase(media.source);
-
+  const effectiveSource = $derived.by(() => {
+    if (!media) return "";
+    const m = media;
+    if (m.source !== "OTHER") return toTitleCase(m.source);
     const ANIME_FORMATS = new Set([
       "TV",
       "TV_SHORT",
@@ -74,14 +230,13 @@
     const hasAnimeRelation = relations.some((rel: any) => {
       const type = rel.relation_type;
       const format = rel.related_media?.format;
-
       return type === "ADAPTATION" && ANIME_FORMATS.has(format);
     });
-
-    return hasAnimeRelation ? "Anime" : toTitleCase(media.source);
-  }
+    return hasAnimeRelation ? "Anime" : toTitleCase(m.source);
+  });
 
   const RELATION_PRIORITY: Record<string, number> = {
+    SOURCE: 1,
     ADAPTATION: 1,
     PREQUEL: 2,
     SIDE_STORY: 3,
@@ -89,250 +244,205 @@
     SEQUEL: 4,
   };
 
+  const MEDIA_TYPE_ORDER: Record<string, number> = {
+    anime: 1,
+    manga: 2,
+    light_novel: 3,
+  };
+
   function sortRelations(rels: any[]): any[] {
     return [...rels].sort((a, b) => {
       const pA = RELATION_PRIORITY[a.relation_type] || 99;
       const pB = RELATION_PRIORITY[b.relation_type] || 99;
-      return pA - pB;
+      if (pA !== pB) return pA - pB;
+
+      const tA = MEDIA_TYPE_ORDER[a.related_media?.media_type] || 99;
+      const tB = MEDIA_TYPE_ORDER[b.related_media?.media_type] || 99;
+      if (tA !== tB) return tA - tB;
+
+      return (a.related_media?.id || 0) - (b.related_media?.id || 0);
     });
   }
 
-  onMount(async () => {
-    try {
-      const [mediaRes, cachedRelations] = await Promise.all([
-        fetchMediaDetails(Number(mediaId)),
-        CacheService.getMediaRelations(mediaId),
-      ]);
+  $effect(() => {
+    const currentId = id;
+    const t = mediaType;
+    if (!currentId) return;
 
-      media = mediaRes;
+    media = null;
+    relations = [];
+    characters = [];
+    staff = [];
+    themes = [];
+    bannerError = false;
+    currentActiveTab = "overview";
+    isLoading = true;
 
-      if (cachedRelations) {
-        relations = sortRelations(cachedRelations);
-      } else {
-        const relRes = await MediaService.getMediaRelations(Number(mediaId));
-        if (relRes.success) {
-          relations = sortRelations(relRes.data);
-          await CacheService.setMediaRelations(
-            mediaId,
-            JSON.parse(JSON.stringify(relations)),
+    let aborted = false;
+
+    (async () => {
+      try {
+        const [
+          mediaRes,
+          cachedRelations,
+          characterRes,
+          staffRes,
+          companiesRes,
+        ] = await Promise.all([
+          fetchMediaDetails(Number(id)),
+          CacheService.getMediaRelations(id),
+          getMediaCharacters(Number(id)),
+          getMediaStaff(Number(id)),
+          MediaService.getMediaCompanies(Number(id)),
+        ]);
+
+        if (aborted) return;
+
+        media = mediaRes;
+        characters = characterRes;
+        staff = staffRes;
+        companies = companiesRes;
+
+        if (mediaRes?.tags_v2?.length) {
+          const defs = await fetchTagDefinitions(
+            mediaRes.tags_v2.map((t) => t.id),
           );
+          if (!aborted) tagDefs = defs;
         }
+
+        if (cachedRelations && cachedRelations[0]?.related_media?.media_type) {
+          relations = sortRelations(cachedRelations);
+        } else {
+          const relRes = await MediaService.getMediaRelations(Number(id));
+          if (aborted) return;
+          if (relRes.success) {
+            relations = sortRelations(relRes.data);
+            await CacheService.setMediaRelations(
+              id,
+              JSON.parse(JSON.stringify(relations)),
+            );
+          }
+        }
+      } catch (e) {
+        if (aborted) return;
+        console.error("Failed to fetch media:", e);
+      } finally {
+        if (!aborted) isLoading = false;
       }
-    } catch (e) {
-      console.error("Failed to fetch media:", e);
-    } finally {
-      isLoading = false;
-    }
+
+      if (!aborted && t === "anime") {
+        getAnimeThemes(Number(id)).then((result) => {
+          if (!aborted) themes = result;
+        });
+      }
+
+      ForumThreadService.getThreadsByMediaId(Number(id)).then((result) => {
+        if (!aborted && result.success) forumThreads = result.data;
+      });
+
+      AuthService.getCurrentUser().then((user) => {
+        if (aborted) return;
+        currentUser = user;
+        RecommendationService.getRecommendations(Number(id), user?.id).then(
+          (result) => {
+            if (!aborted && result.success) recommendations = result.data;
+          },
+        );
+        RecommendationService.getVibeRecommendations(Number(id)).then(
+          (result) => {
+            if (!aborted && result.success) vibeRecommendations = result.data;
+          },
+        );
+      });
+    })();
+
+    return () => {
+      aborted = true;
+    };
   });
 
   const tabs = [
     { id: "overview", label: "Overview", icon: "fa-info-circle" },
     { id: "characters", label: "Characters", icon: "fa-users" },
     { id: "staff", label: "Staff", icon: "fa-user-tie" },
-    { id: "recommendations", label: "Recommendations", icon: "fa-thumbs-up" },
-    { id: "reviews", label: "Reviews", icon: "fa-comments" },
-    { id: "stats", label: "Stats", icon: "fa-chart-simple" },
+    { id: "media", label: "Media", icon: "fa-film" },
+    { id: "community", label: "Community", icon: "fa-comments" },
   ];
-
-  // Placeholder data for the new sections
-  const mockExtraData = {
-    studio: "Kyoto Animation",
-    producers: ["Pony Canyon", "Lantis", "ABC Animation"],
-    favorites: 12450,
-    tags: [
-      { name: "Coming of Age", rank: 95 },
-      { name: "Music", rank: 88 },
-      { name: "School", rank: 82 },
-      { name: "Slice of Life", rank: 75 },
-      { name: "Post-Apocalyptic", rank: 68 },
-      { name: "Melancholy", rank: 62 },
-    ],
-    relations: [
-      {
-        id: 101,
-        title: "Hako: The Movie",
-        type: "Sequel",
-        format: "Movie",
-        image: "https://placehold.co/100x150/151f2e/ffffff?text=Movie",
-      },
-      {
-        id: 102,
-        title: "Hako: Side Story",
-        type: "Side Story",
-        format: "OVA",
-        image: "https://placehold.co/100x150/151f2e/ffffff?text=OVA",
-      },
-      {
-        id: 103,
-        title: "Hako: Early Days",
-        type: "Prequel",
-        format: "TV",
-        image: "https://placehold.co/100x150/151f2e/ffffff?text=Prequel",
-      },
-    ],
-    characters: [
-      {
-        name: "Hako-chan",
-        role: "Main",
-        image: "https://placehold.co/100x150/151f2e/ffffff?text=Hako",
-        va: {
-          name: "Aoi Koga",
-          image: "https://placehold.co/100x150/0b1622/ffffff?text=VA1",
-        },
-      },
-      {
-        name: "Sora-kun",
-        role: "Main",
-        image: "https://placehold.co/100x150/151f2e/ffffff?text=Sora",
-        va: {
-          name: "Natsuki Hanae",
-          image: "https://placehold.co/100x150/0b1622/ffffff?text=VA2",
-        },
-      },
-      {
-        name: "Rin",
-        role: "Supporting",
-        image: "https://placehold.co/100x150/151f2e/ffffff?text=Rin",
-        va: {
-          name: "Rie Takahashi",
-          image: "https://placehold.co/100x150/0b1622/ffffff?text=VA3",
-        },
-      },
-      {
-        name: "Ken",
-        role: "Supporting",
-        image: "https://placehold.co/100x150/151f2e/ffffff?text=Ken",
-        va: {
-          name: "Mamoru Miyano",
-          image: "https://placehold.co/100x150/0b1622/ffffff?text=VA4",
-        },
-      },
-    ],
-    staff: [
-      {
-        name: "Naoko Yamada",
-        role: "Director",
-        image: "https://placehold.co/100x100/151f2e/ffffff?text=Staff1",
-      },
-      {
-        name: "Reiko Yoshida",
-        role: "Series Composition",
-        image: "https://placehold.co/100x100/151f2e/ffffff?text=Staff2",
-      },
-      {
-        name: "Futoshi Nishiya",
-        role: "Character Design",
-        image: "https://placehold.co/100x100/151f2e/ffffff?text=Staff3",
-      },
-      {
-        name: "Kensuke Ushio",
-        role: "Music",
-        image: "https://placehold.co/100x100/151f2e/ffffff?text=Staff4",
-      },
-    ],
-    stats: {
-      medianScore: 84,
-      distribution: [
-        { score: 10, count: 120 },
-        { score: 20, count: 450 },
-        { score: 30, count: 800 },
-        { score: 40, count: 1500 },
-        { score: 50, count: 3200 },
-        { score: 60, count: 5600 },
-        { score: 70, count: 12000 },
-        { score: 80, count: 18000 },
-        { score: 90, count: 14000 },
-        { score: 100, count: 9000 },
-      ],
-    },
-  };
 </script>
 
 {#if isLoading}
   <div class="animate-in fade-in duration-300">
-    <!-- Banner Skeleton -->
-    <div
-      class="w-full h-80 bg-[#0b1622] animate-pulse relative overflow-hidden"
-    >
-      <div
-        class="absolute inset-0 bg-linear-to-t from-[#0b1622] to-transparent"
-      ></div>
-    </div>
-
-    <!-- Main Content Container Skeleton -->
+    <div class="w-full h-100 bg-(--surface-elevated) animate-pulse"></div>
     <div class="max-w-375 mx-auto px-4 sm:px-6 lg:px-8">
-      <div class="relative -mt-20 flex items-end space-x-6 pb-8">
-        <!-- Cover Skeleton -->
+      <div class="relative -mt-20 flex items-end space-x-6 pb-6">
         <div
-          class="w-40 lg:w-50 aspect-17/23 rounded bg-(--surface-elevated) animate-pulse shadow-2xl shrink-0"
+          class="w-40 lg:w-50 aspect-17/23 bg-(--surface) rounded animate-pulse shrink-0"
         ></div>
-
-        <!-- Header Info Skeleton -->
-        <div class="mb-2 space-y-4 w-full">
+        <div class="mb-2 w-full">
           <div
-            class="w-1/3 h-10 bg-(--surface-elevated) animate-pulse rounded"
+            class="h-8 w-2/3 bg-(--surface) rounded animate-pulse mb-2"
           ></div>
+          <div class="flex flex-wrap items-center gap-x-4 gap-y-1 mb-3">
+            <div class="h-4 w-16 bg-(--surface) rounded animate-pulse"></div>
+            <div class="h-4 w-12 bg-(--surface) rounded animate-pulse"></div>
+            <div class="h-4 w-20 bg-(--surface) rounded animate-pulse"></div>
+            <div class="h-4 w-24 bg-(--surface) rounded animate-pulse"></div>
+            <div class="h-4 w-16 bg-(--surface) rounded animate-pulse"></div>
+          </div>
           <div class="flex gap-2">
-            <div class="w-20 h-5 bg-blue-500/10 animate-pulse rounded"></div>
-            <div class="w-20 h-5 bg-blue-500/10 animate-pulse rounded"></div>
+            <Badge loading variant="genre" />
+            <Badge loading variant="genre" />
+            <Badge loading variant="genre" />
           </div>
         </div>
       </div>
-
-      <!-- Main Layout Skeleton -->
-      <div class="flex flex-col lg:flex-row gap-8 mb-12">
-        <!-- Sidebar Skeleton -->
-        <aside class="lg:w-50 shrink-0">
+      <div class="flex gap-1 mb-6 pb-1 border-b border-(--c0)">
+        {#each tabs as tab}
           <div
-            class="bg-card rounded-xl border border-slate-800 overflow-hidden"
+            class="flex items-center gap-2 px-4 py-2.5 text-sm font-medium whitespace-nowrap opacity-30"
           >
-            {#each Array(4) as _}
-              <div
-                class="h-11 w-full border-l-4 border-transparent bg-slate-800/20 animate-pulse mb-px"
-              ></div>
-            {/each}
+            <i class="fa-solid {tab.icon} text-xs"></i>
+            {tab.label}
           </div>
-        </aside>
-
-        <!-- Main Content Area Skeleton -->
-        <main class="lg:w-[65%] min-h-100 pb-12 space-y-6">
-          <div
-            class="bg-card p-6 rounded-xl shadow-lg border border-slate-800 space-y-4"
-          >
+        {/each}
+      </div>
+      <div class="flex flex-col lg:flex-row gap-8 mb-12">
+        <main class="grow min-h-100 pb-12 space-y-6">
+          <div class="bg-card p-6 rounded-xl shadow-lg space-y-4">
             <div
-              class="w-32 h-6 bg-(--surface-elevated) animate-pulse rounded"
+              class="h-5 w-24 bg-(--surface-elevated) rounded animate-pulse"
             ></div>
             <div class="space-y-3">
               <div
-                class="w-full h-4 bg-(--surface-elevated)/50 animate-pulse rounded"
+                class="h-4 w-full bg-(--surface-elevated) rounded animate-pulse"
               ></div>
               <div
-                class="w-full h-4 bg-(--surface-elevated)/50 animate-pulse rounded"
+                class="h-4 w-5/6 bg-(--surface-elevated) rounded animate-pulse"
               ></div>
               <div
-                class="w-full h-4 bg-(--surface-elevated)/50 animate-pulse rounded"
-              ></div>
-              <div
-                class="w-3/4 h-4 bg-(--surface-elevated)/50 animate-pulse rounded"
+                class="h-4 w-4/6 bg-(--surface-elevated) rounded animate-pulse"
               ></div>
             </div>
           </div>
         </main>
-
-        <!-- Metadata Column Skeleton -->
-        <div class="lg:w-[20%] space-y-6">
-          <div
-            class="bg-card p-6 rounded-xl shadow-lg border border-slate-800 space-y-4"
-          >
+        <aside class="lg:w-72 space-y-6">
+          <div class="bg-card p-6 rounded-xl shadow-lg space-y-4">
             <div
-              class="w-20 h-5 bg-(--surface-elevated) animate-pulse rounded"
+              class="h-5 w-16 bg-(--surface-elevated) rounded animate-pulse"
             ></div>
             <div class="flex flex-wrap gap-2">
-              <div class="w-16 h-6 bg-slate-800 animate-pulse rounded"></div>
-              <div class="w-16 h-6 bg-slate-800 animate-pulse rounded"></div>
+              <div
+                class="w-16 h-6 bg-(--surface-elevated) rounded animate-pulse"
+              ></div>
+              <div
+                class="w-16 h-6 bg-(--surface-elevated) rounded animate-pulse"
+              ></div>
+              <div
+                class="w-20 h-6 bg-(--surface-elevated) rounded animate-pulse"
+              ></div>
             </div>
           </div>
-        </div>
+        </aside>
       </div>
     </div>
   </div>
@@ -340,8 +450,7 @@
   <div class="text-(--hako-fg) p-10 text-center">Media not found.</div>
 {:else}
   <div class="relative">
-    <!-- Banner -->
-    <div class="w-full h-80 relative overflow-hidden bg-[#0b1622]">
+    <div class="w-full h-100 relative overflow-hidden bg-(--hako-bg)">
       {#if bannerError}
         <div
           class="absolute inset-0"
@@ -359,7 +468,7 @@
           "
         ></div>
         <div
-          class="absolute inset-0 bg-linear-to-b from-transparent to-[#0b1622]"
+          class="absolute inset-0 bg-linear-to-b from-transparent to-(--hako-bg)"
         ></div>
       {:else}
         <img
@@ -370,14 +479,12 @@
         />
       {/if}
       <div
-        class="absolute inset-0 bg-linear-to-t from-[#0b1622] to-transparent"
+        class="absolute inset-0 bg-linear-to-t from-(--hako-bg) to-transparent"
       ></div>
     </div>
 
-    <!-- Main Content Container -->
     <div class="max-w-375 mx-auto px-4 sm:px-6 lg:px-8">
-      <div class="relative -mt-20 flex items-end space-x-6 pb-8">
-        <!-- Cover -->
+      <div class="relative -mt-20 flex items-end space-x-6 pb-6">
         <MediaCover
           mediaId={media.media_id}
           {type}
@@ -386,59 +493,130 @@
           showTooltip={false}
           alt={displayTitle}
         />
-
-        <!-- Header Info -->
         <div class="mb-2 w-full">
           <div class="flex justify-between items-start">
-            <h1 class="text-4xl font-bold text-(--hako-fg) mb-2">
-              {displayTitle}
-            </h1>
-            <div class="flex flex-col items-end shrink-0">
-              <div class="flex items-center gap-2 text-pink-500 mb-1">
-                <i class="fa-solid fa-heart"></i>
-                <span class="text-xl font-bold"
-                  >{mockExtraData.favorites.toLocaleString()}</span
-                >
-              </div>
-              <span
-                class="text-[10px] text-slate-500 uppercase tracking-widest font-bold"
-                >Favorites</span
+            <div class="min-w-0">
+              <h1 class="text-4xl font-bold text-(--hako-fg) mb-2">
+                {displayTitle}
+              </h1>
+              <div
+                class="flex flex-wrap items-center gap-x-4 gap-y-1 text-sm text-(--c8) mb-3"
               >
+                <span class="font-medium text-(--hako-fg)">{media.format}</span>
+                {#if type === "anime" && media.episodes}
+                  <span>{media.episodes} eps</span>
+                {:else if media.chapters}
+                  <span>{media.chapters} ch.</span>
+                {/if}
+                <span>{toTitleCase(media.status)}</span>
+                {#if media.season && media.seasonYear}
+                  <span>{toTitleCase(media.season)} {media.seasonYear}</span>
+                {/if}
+                {#if companies.studios.length > 0}
+                  <span class="text-(--c5)"
+                    >{companies.studios.map((s) => s.name).join(", ")}</span
+                  >
+                {/if}
+              </div>
+              <div class="flex flex-wrap gap-2">
+                {#each media.genres as genre}
+                  <Badge label={genre} variant="genre" />
+                {/each}
+              </div>
             </div>
-          </div>
-          <div class="flex flex-wrap gap-2">
-            {#each media.genres as genre}
-              <Badge label={genre} variant="genre" />
-            {/each}
+            <div class="flex flex-col items-end shrink-0 ml-4">
+              <div class="flex items-center gap-6">
+                <div class="text-center">
+                  <div class="text-2xl font-black text-(--c5)">8.5</div>
+                  <div
+                    class="text-[10px] text-(--c8) uppercase tracking-widest font-bold"
+                  >
+                    Mean
+                  </div>
+                </div>
+                <div class="text-center">
+                  <div class="text-2xl font-black text-(--c5)">82</div>
+                  <div
+                    class="text-[10px] text-(--c8) uppercase tracking-widest font-bold"
+                  >
+                    Median
+                  </div>
+                </div>
+                <div class="text-center">
+                  <div
+                    class="flex items-center gap-1 text-2xl font-black text-pink-500"
+                  >
+                    <i class="fa-solid fa-heart text-lg"></i>
+                    <span>12.4k</span>
+                  </div>
+                  <div
+                    class="text-[10px] text-(--c8) uppercase tracking-widest font-bold"
+                  >
+                    Favorites
+                  </div>
+                </div>
+              </div>
+              {#if media.externalLinks.length > 0}
+                <div class="flex flex-wrap gap-2 mt-4 justify-end">
+                  {#each media.externalLinks as link}
+                    {@const cfg = getSiteConfig(link.site)}
+                    <a
+                      href={link.url}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      title={link.site}
+                      class="inline-flex items-center justify-center w-9 h-9 rounded-full transition-transform hover:scale-110"
+                      style="background-color: {cfg.color}"
+                    >
+                      {#if cfg.icon === "svg-youtube"}
+                        <svg
+                          class="w-[18px] h-[18px] text-white"
+                          viewBox="0 0 24 24"
+                          fill="currentColor"
+                        >
+                          <path
+                            d="M23.498 6.186a3.016 3.016 0 0 0-2.122-2.136C19.505 3.545 12 3.545 12 3.545s-7.505 0-9.377.505A3.017 3.017 0 0 0 .502 6.186C0 8.07 0 12 0 12s0 3.93.502 5.814a3.016 3.016 0 0 0 2.122 2.136c1.871.505 9.376.505 9.376.505s7.505 0 9.377-.505a3.015 3.015 0 0 0 2.122-2.136C24 15.93 24 12 24 12s0-3.93-.502-5.814zM9.545 15.568V8.432L15.818 12l-6.273 3.568z"
+                          />
+                        </svg>
+                      {:else if cfg.icon === "svg-crunchyroll"}
+                        <svg
+                          class="w-[18px] h-[18px] text-white"
+                          viewBox="0 0 24 24"
+                          fill="currentColor"
+                        >
+                          <path
+                            d="M2.909 13.436C2.914 7.61 7.642 2.893 13.468 2.898c5.576.005 10.137 4.339 10.51 9.819q.021-.351.022-.706C24.007 5.385 18.64.006 12.012 0S.007 5.36 0 11.988 5.36 23.994 11.988 24q.412 0 .815-.027c-5.526-.338-9.9-4.928-9.894-10.538Zm16.284.155a4.1 4.1 0 0 1-4.095-4.103 4.1 4.1 0 0 1 2.712-3.855 8.95 8.95 0 0 0-4.187-1.037 9.007 9.007 0 1 0 8.997 9.016q-.001-.847-.15-1.651a4.1 4.1 0 0 1-3.278 1.63Z"
+                          />
+                        </svg>
+                      {:else}
+                        <i class="{cfg.icon} text-sm text-white"></i>
+                      {/if}
+                    </a>
+                  {/each}
+                </div>
+              {/if}
+            </div>
           </div>
         </div>
       </div>
 
-      <!-- Main Layout -->
-      <div class="flex flex-col lg:flex-row gap-8 mb-12">
-        <!-- Sidebar Navigation -->
-        <aside class="lg:w-50 shrink-0">
-          <div class="sticky top-24">
-            <div class="bg-card rounded-xl overflow-hidden">
-              {#each tabs as tab}
-                <button
-                  onclick={() => (currentActiveTab = tab.id)}
-                  class="flex items-center px-4 py-3 text-sm font-medium w-full transition-all border-l-4 outline-none focus:ring-0 {currentActiveTab ===
-                  tab.id
-                    ? 'text-(--hako-fg) bg-(--surface-elevated) border-accent'
-                    : 'text-slate-400 hover:text-(--hako-fg) border-transparent'} "
-                >
-                  <i class="fa-solid {tab.icon} mr-3"></i>
-                  {tab.label}
-                </button>
-              {/each}
-            </div>
-          </div>
-        </aside>
+      <div class="flex gap-1 mb-6 pb-1 border-b border-(--c0) overflow-x-auto">
+        {#each tabs as tab}
+          <button
+            onclick={() => (currentActiveTab = tab.id)}
+            class="flex items-center gap-2 px-4 py-2.5 text-sm font-medium whitespace-nowrap transition-colors border-b-2 -mb-px cursor-pointer
+              {currentActiveTab === tab.id
+              ? 'text-(--c5) border-(--c5)'
+              : 'text-(--c8) border-transparent hover:text-(--hako-fg) hover:border-(--c8)'}"
+          >
+            <i class="fa-solid {tab.icon} text-xs"></i>
+            {tab.label}
+          </button>
+        {/each}
+      </div>
 
-        <!-- Main Content Area -->
-        <main class="lg:w-[65%] min-h-100 pb-12 space-y-6">
-          <!-- Overview Tab -->
+      <div class="flex flex-col lg:flex-row gap-8 mb-12">
+        <main class="grow min-h-100 pb-12 space-y-6">
           <div class:hidden={currentActiveTab !== "overview"} class="space-y-6">
             <div class="bg-card p-6 rounded-xl shadow-lg">
               <h3 class="text-(--hako-fg) font-bold mb-4">Description</h3>
@@ -447,13 +625,22 @@
               </div>
             </div>
 
-            <!-- Relations -->
             {#if relations.length > 0}
               <div class="space-y-4">
-                <h3 class="text-(--hako-fg) font-bold px-2">Relations</h3>
+                <div class="flex justify-between items-center">
+                  <h3 class="text-(--hako-fg) font-bold">Relations</h3>
+                  {#if relations.length > 8 && !showAllRelations}
+                    <button
+                      onclick={() => (showAllRelations = true)}
+                      class="text-xs text-(--c5) hover:underline cursor-pointer"
+                    >
+                      View all ({relations.length})
+                    </button>
+                  {/if}
+                </div>
                 <div class="flex flex-wrap gap-4">
-                  {#each relations as relation}
-                    <div class="relative group">
+                  {#each showAllRelations ? relations : relations.slice(0, 8) as relation}
+                    <div class="relative group shrink-0">
                       <MediaCover
                         mediaId={relation.related_media.id}
                         type={relation.related_media.format === "MANGA"
@@ -473,323 +660,262 @@
               </div>
             {/if}
 
-            <!-- Characters Preview -->
-            <div class="space-y-4">
-              <div class="flex justify-between items-center px-2">
-                <h3 class="text-(--hako-fg) font-bold">Characters</h3>
-                <button
-                  onclick={() => (currentActiveTab = "characters")}
-                  class="text-xs text-slate-500 hover:text-accent font-medium transition-colors"
-                  >View all</button
-                >
-              </div>
-              <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                {#each mockExtraData.characters.slice(0, 4) as char}
-                  <div
-                    class="bg-card rounded-lg overflow-hidden flex justify-between p-2 hover:bg-slate-800/30 transition-colors"
-                  >
-                    <div class="flex gap-3 min-w-0">
-                      <img
-                        src={char.image}
-                        alt={char.name}
-                        class="w-12 h-16 object-cover rounded shadow-md shrink-0"
-                      />
-                      <div class="flex flex-col justify-center min-w-0">
-                        <span
-                          class="text-xs text-(--hako-fg) font-bold truncate"
-                          >{char.name}</span
-                        >
-                        <span class="text-[10px] text-slate-500"
-                          >{char.role}</span
-                        >
-                      </div>
-                    </div>
-                    <div class="flex gap-3 text-right min-w-0">
-                      <div class="flex flex-col justify-center min-w-0">
-                        <span
-                          class="text-xs text-(--hako-fg) font-bold truncate"
-                          >{char.va.name}</span
-                        >
-                        <span class="text-[10px] text-slate-500">Japanese</span>
-                      </div>
-                      <img
-                        src={char.va.image}
-                        alt={char.va.name}
-                        class="w-12 h-16 object-cover rounded shadow-md shrink-0"
-                      />
-                    </div>
-                  </div>
-                {/each}
-              </div>
-            </div>
-
-            <!-- Staff Preview -->
-            <div class="space-y-4">
-              <div class="flex justify-between items-center px-2">
-                <h3 class="text-(--hako-fg) font-bold">Staff</h3>
-                <button
-                  onclick={() => (currentActiveTab = "staff")}
-                  class="text-xs text-slate-500 hover:text-accent font-medium transition-colors"
-                  >View all</button
-                >
-              </div>
-              <div class="grid grid-cols-2 sm:grid-cols-4 gap-4">
-                {#each mockExtraData.staff as person}
-                  <div
-                    class="bg-card rounded-lg overflow-hidden p-3 hover:bg-slate-800/30 transition-colors text-center"
-                  >
-                    <img
-                      src={person.image}
-                      alt={person.name}
-                      class="w-16 h-16 object-cover rounded-full shadow-md mx-auto mb-2"
-                    />
-                    <span
-                      class="block text-xs text-(--hako-fg) font-bold truncate"
-                      >{person.name}</span
-                    >
-                    <span class="block text-[10px] text-slate-500 truncate"
-                      >{person.role}</span
-                    >
-                  </div>
-                {/each}
-              </div>
-            </div>
-          </div>
-
-          <!-- Characters Tab -->
-          <div class:hidden={currentActiveTab !== "characters"}>
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-              {#each mockExtraData.characters as char}
-                <div
-                  class="bg-card rounded-lg overflow-hidden flex justify-between p-3 hover:bg-slate-800/30 transition-colors"
-                >
-                  <div class="flex gap-4 min-w-0">
-                    <img
-                      src={char.image}
-                      alt={char.name}
-                      class="w-16 h-24 object-cover rounded shadow-lg shrink-0"
-                    />
-                    <div class="flex flex-col justify-center min-w-0">
-                      <span class="text-sm text-(--hako-fg) font-bold truncate"
-                        >{char.name}</span
-                      >
-                      <span class="text-xs text-slate-500">{char.role}</span>
-                    </div>
-                  </div>
-                  <div class="flex gap-4 text-right min-w-0">
-                    <div class="flex flex-col justify-center min-w-0">
-                      <span class="text-sm text-(--hako-fg) font-bold truncate"
-                        >{char.va.name}</span
-                      >
-                      <span class="text-xs text-slate-500">Japanese</span>
-                    </div>
-                    <img
-                      src={char.va.image}
-                      alt={char.va.name}
-                      class="w-16 h-24 object-cover rounded shadow-lg shrink-0"
-                    />
-                  </div>
-                </div>
-              {/each}
-            </div>
-          </div>
-
-          <!-- Staff Tab -->
-          <div class:hidden={currentActiveTab !== "staff"}>
-            <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-6">
-              {#each mockExtraData.staff as person}
-                <div
-                  class="bg-card rounded-xl p-4 hover:bg-slate-800/30 transition-all text-center group"
-                >
-                  <div class="relative mb-4">
-                    <img
-                      src={person.image}
-                      alt={person.name}
-                      class="w-24 h-24 object-cover rounded-full shadow-xl mx-auto border-2 border-slate-700 group-hover:border-accent transition-colors"
-                    />
-                  </div>
-                  <span
-                    class="block text-sm text-(--hako-fg) font-bold truncate mb-1"
-                    >{person.name}</span
-                  >
-                  <span class="block text-xs text-slate-500 truncate"
-                    >{person.role}</span
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+              <div class="space-y-4">
+                <div class="flex justify-between items-center">
+                  <h3 class="text-(--hako-fg) font-bold">Characters</h3>
+                  <button
+                    onclick={() => (currentActiveTab = "characters")}
+                    class="text-xs text-slate-500 hover:text-accent font-medium transition-colors"
+                    >View all</button
                   >
                 </div>
-              {/each}
-            </div>
-          </div>
-
-          <div class:hidden={currentActiveTab !== "recommendations"}>
-            <div class="p-10 text-slate-500 text-center">
-              Recommendations view coming soon...
-            </div>
-          </div>
-          <div class:hidden={currentActiveTab !== "reviews"}>
-            <div class="p-10 text-slate-500 text-center">
-              Reviews view coming soon...
-            </div>
-          </div>
-
-          <!-- Stats Tab -->
-          <div class:hidden={currentActiveTab !== "stats"}>
-            <div class="bg-card p-8 rounded-xl shadow-lg space-y-10">
-              <div class="flex flex-col items-center text-center">
-                <span class="text-6xl font-black text-accent mb-2"
-                  >{mockExtraData.stats.medianScore}%</span
-                >
-                <span
-                  class="text-sm text-slate-400 uppercase tracking-widest font-bold"
-                  >Median Score</span
-                >
-              </div>
-
-              <div class="space-y-6">
-                <h4
-                  class="text-(--hako-fg) font-bold text-sm uppercase tracking-wider text-center"
-                >
-                  Score Distribution
-                </h4>
-                <div class="flex items-end gap-1 h-48 group px-4">
-                  {#each mockExtraData.stats.distribution as dist}
+                <div class="grid grid-cols-1 gap-3">
+                  {#each [...characters]
+                    .filter((c) => c.role === "MAIN")
+                    .sort((a, b) => a.id - b.id) as char}
                     <div
-                      class="flex-1 flex flex-col items-center gap-3 group/bar"
+                      class="bg-card rounded-lg overflow-hidden flex justify-between p-2 text-left w-full"
                     >
-                      <div
-                        class="w-full bg-accent/20 rounded-t-md group-hover:bg-accent/10 group-hover/bar:bg-accent transition-all relative"
-                        style="height: {(dist.count / 18000) * 100}%"
-                      >
-                        <div
-                          class="absolute -top-10 left-1/2 -translate-x-1/2 bg-slate-800 text-[10px] px-2 py-1.5 rounded-md opacity-0 group-hover/bar:opacity-100 transition-opacity shadow-xl border border-slate-700 whitespace-nowrap z-10"
-                        >
-                          <span class="text-accent font-bold"
-                            >{dist.count.toLocaleString()}</span
-                          > users
+                      <div class="flex gap-3 min-w-0">
+                        <!-- svelte-ignore a11y_no_noninteractive_element_interactions -->
+                        <!-- svelte-ignore a11y_click_events_have_key_events -->
+                        <img
+                          src={char.image}
+                          alt={char.name}
+                          class="w-10 h-14 object-cover rounded shadow-md shrink-0 cursor-pointer"
+                          loading="lazy"
+                          onclick={() => goto(`/character/${char.id}`)}
+                        />
+                        <div class="flex flex-col min-w-0">
+                          <!-- svelte-ignore a11y_click_events_have_key_events -->
+                          <!-- svelte-ignore a11y_no_static_element_interactions -->
+                          <span
+                            class="text-sm text-(--hako-fg) font-bold truncate cursor-pointer"
+                            onclick={() => goto(`/character/${char.id}`)}
+                            >{char.name}</span
+                          >
+                          <span class="text-xs text-slate-500"
+                            >{toTitleCase(char.role)}</span
+                          >
                         </div>
                       </div>
-                      <span class="text-[10px] text-slate-500 font-bold"
-                        >{dist.score}</span
-                      >
+                      {#if char.va}
+                        <div class="flex gap-2 text-right min-w-0 items-end">
+                          <div class="flex flex-col min-w-0 text-right">
+                            <!-- svelte-ignore a11y_click_events_have_key_events -->
+                            <!-- svelte-ignore a11y_no_static_element_interactions -->
+                            <span
+                              class="text-sm text-(--hako-fg) font-bold truncate cursor-pointer"
+                              onclick={(e) => {
+                                e.stopPropagation();
+                                goto(`/staff/${char.va.id}`);
+                              }}>{char.va.name}</span
+                            >
+                            <span class="text-xs text-slate-500">Japanese</span>
+                          </div>
+                          <InitialAvatar
+                            src={char.va.image}
+                            name={char.va.name}
+                            class="w-10 h-14 object-cover rounded shadow-md shrink-0 cursor-pointer"
+                            onclick={(e) => {
+                              e.stopPropagation();
+                              goto(`/staff/${char.va.id}`);
+                            }}
+                          />
+                        </div>
+                      {/if}
                     </div>
+                  {:else}
+                    <p class="text-center text-slate-500 py-4 text-sm">
+                      No character data available
+                    </p>
                   {/each}
                 </div>
               </div>
+
+              <StaffPreview
+                staff={keyStaff}
+                onViewAll={() => (currentActiveTab = "staff")}
+              />
             </div>
+
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+              <div class="space-y-4">
+                <h3 class="text-(--hako-fg) font-bold">
+                  Vibe-Driven Recommendations
+                </h3>
+                {#if vibeRecommendations.length === 0}
+                  <p class="text-center text-slate-500 py-6 text-sm">
+                    No vibe matches found
+                  </p>
+                {:else}
+                  <div class="grid grid-cols-5 gap-3">
+                    {#each vibeRecommendations.slice(0, 5) as rec (rec.media_id)}
+                      <div class="relative group shrink-0">
+                        <MediaCover
+                          mediaId={rec.media_id}
+                          {type}
+                          size="medium"
+                          onClick={() => goto(`/${type}/${rec.media_id}`)}
+                        />
+                        <div
+                          class="absolute -top-1 -right-1 bg-(--surface-elevated) text-(--hako-accent) text-[10px] font-bold px-1.5 py-0.5 rounded-full shadow-lg"
+                        >
+                          {Math.round(rec.similarity * 100)}%
+                        </div>
+                      </div>
+                    {/each}
+                  </div>
+                {/if}
+              </div>
+              <MediaRecommendations
+                bind:recommendations
+                {mediaType}
+                {currentUser}
+                mediaId={Number(id)}
+              />
+            </div>
+
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+              <div class="space-y-3">
+                <div class="flex justify-between items-center">
+                  <h3 class="text-(--hako-fg) font-bold">Reviews</h3>
+                  <button
+                    onclick={() => (currentActiveTab = "community")}
+                    class="text-xs text-slate-500 hover:text-accent font-medium transition-colors"
+                    >View all</button
+                  >
+                </div>
+                <p class="text-center text-slate-500 py-6 text-sm">
+                  No reviews yet
+                </p>
+              </div>
+              <div class="space-y-3">
+                <div class="flex justify-between items-center">
+                  <h3 class="text-(--hako-fg) font-bold">Forum Threads</h3>
+                  <button
+                    onclick={() => (currentActiveTab = "community")}
+                    class="text-xs text-slate-500 hover:text-accent font-medium transition-colors"
+                    >View all</button
+                  >
+                </div>
+                {#if forumThreads.length === 0}
+                  <p class="text-center text-slate-500 py-6 text-sm">
+                    No forum threads yet
+                  </p>
+                {:else}
+                  <div class="space-y-2">
+                    {#each forumThreads.slice(0, 2) as thread (thread.id)}
+                      <ThreadRow {thread} />
+                    {/each}
+                  </div>
+                {/if}
+              </div>
+            </div>
+          </div>
+
+          <div class:hidden={currentActiveTab !== "characters"}>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+              {#each [...characters].sort((a, b) => {
+                const roleOrder = (r: string) => (r === "MAIN" ? 0 : 1);
+                const diff = roleOrder(a.role) - roleOrder(b.role);
+                return diff !== 0 ? diff : a.id - b.id;
+              }) as char}
+                <div
+                  class="bg-card rounded-lg overflow-hidden flex justify-between p-2 text-left w-full"
+                >
+                  <div class="flex gap-4 min-w-0">
+                    <!-- svelte-ignore a11y_no_noninteractive_element_interactions -->
+                    <!-- svelte-ignore a11y_click_events_have_key_events -->
+                    <img
+                      src={char.image}
+                      alt={char.name}
+                      class="w-12 h-16 object-cover rounded shadow-md shrink-0 cursor-pointer"
+                      loading="lazy"
+                      onclick={() => goto(`/character/${char.id}`)}
+                    />
+                    <div class="flex flex-col min-w-0">
+                      <!-- svelte-ignore a11y_click_events_have_key_events -->
+                      <!-- svelte-ignore a11y_no_static_element_interactions -->
+                      <span
+                        class="text-sm text-(--hako-fg) font-bold truncate cursor-pointer"
+                        onclick={() => goto(`/character/${char.id}`)}
+                        >{char.name}</span
+                      >
+                      <span class="text-xs text-slate-500"
+                        >{toTitleCase(char.role)}</span
+                      >
+                    </div>
+                  </div>
+                  {#if char.va}
+                    <div class="flex gap-3 text-right min-w-0 items-end">
+                      <div class="flex flex-col min-w-0 text-right">
+                        <!-- svelte-ignore a11y_click_events_have_key_events -->
+                        <!-- svelte-ignore a11y_no_static_element_interactions -->
+                        <span
+                          class="text-sm text-(--hako-fg) font-bold truncate cursor-pointer"
+                          onclick={(e) => {
+                            e.stopPropagation();
+                            goto(`/staff/${char.va.id}`);
+                          }}>{char.va.name}</span
+                        >
+                        <span class="text-xs text-slate-500">Japanese</span>
+                      </div>
+                      <InitialAvatar
+                        src={char.va.image}
+                        name={char.va.name}
+                        class="w-12 h-16 object-cover rounded shadow-md shrink-0 cursor-pointer"
+                        onclick={(e) => {
+                          e.stopPropagation();
+                          goto(`/staff/${char.va.id}`);
+                        }}
+                      />
+                    </div>
+                  {/if}
+                </div>
+              {:else}
+                <p
+                  class="col-span-full text-center text-slate-500 py-8 text-sm"
+                >
+                  No character data available
+                </p>
+              {/each}
+            </div>
+          </div>
+
+          <div class:hidden={currentActiveTab !== "staff"}>
+            <StaffTab staff={groupedStaff} />
+          </div>
+
+          <div class:hidden={currentActiveTab !== "media"}>
+            <MediaTab {themes} {type} mediaId={Number(mediaId)} />
+          </div>
+
+          <div class:hidden={currentActiveTab !== "community"}>
+            <h3 class="text-(--hako-fg) font-bold mb-4">Forum Threads</h3>
+            {#if forumThreads.length === 0}
+              <p class="text-slate-500 text-sm">No forum threads yet.</p>
+            {:else}
+              <div class="space-y-2">
+                {#each forumThreads as thread (thread.id)}
+                  <ThreadRow {thread} />
+                {/each}
+              </div>
+            {/if}
           </div>
         </main>
 
-        <!-- Metadata Column -->
-        {#if currentActiveTab === "overview"}
-          <div class="lg:w-[20%] space-y-6">
-            <!-- Vibes -->
-            <TasteProfile {vibes} />
-
-            <!-- Info -->
-            <div class="bg-card p-6 rounded-xl shadow-lg">
-              <h3 class="text-(--hako-fg) font-bold mb-4">Info</h3>
-              <div class="space-y-3 text-sm text-slate-300">
-                <div class="flex justify-between">
-                  <span>Source</span><span class="text-(--hako-fg)"
-                    >{getEffectiveSource(media)}</span
-                  >
-                </div>
-                <div class="flex justify-between">
-                  <span>Format</span><span class="text-(--hako-fg)"
-                    >{media.format}</span
-                  >
-                </div>
-                <div class="flex justify-between">
-                  {#if type === "anime"}
-                    <span>Episodes</span>
-                  {:else}
-                    <span>Chapters</span>
-                  {/if}
-                  <span class="text-(--hako-fg)">
-                    {#if type === "anime"}
-                      {media.episodes || "N/A"}
-                    {:else}
-                      {media.chapters || "N/A"}
-                    {/if}
-                  </span>
-                </div>
-                <div class="flex justify-between">
-                  <span>Duration</span><span class="text-(--hako-fg)"
-                    >{media.duration || "N/A"}
-                    {type === "anime" ? "mins" : ""}</span
-                  >
-                </div>
-                <div class="space-y-1">
-                  <div class="flex justify-between">
-                    <span>Season</span><span class="text-(--hako-fg)"
-                      >{toTitleCase(media.season)}
-                      {media.seasonYear || ""}</span
-                    >
-                  </div>
-
-                  {#if media.startDate?.year || media.endDate?.year}
-                    <div class="text-[10px] text-slate-500 text-right">
-                      {media.startDate?.year
-                        ? `${String(media.startDate.month).padStart(2, "0")}/${String(media.startDate.day).padStart(2, "0")}/${media.startDate.year}`
-                        : "???"}
-                      -
-                      {media.endDate?.year
-                        ? `${String(media.endDate.month).padStart(2, "0")}/${String(media.endDate.day).padStart(2, "0")}/${media.endDate.year}`
-                        : "Present"}
-                    </div>
-                  {/if}
-                </div>
-
-                <hr class="border-slate-800 my-4" />
-
-                <div class="flex justify-between">
-                  <span>Studio</span><span class="text-accent font-medium"
-                    >{mockExtraData.studio}</span
-                  >
-                </div>
-                <div class="space-y-1">
-                  <span class="text-slate-500 text-xs">Producers</span>
-                  <div class="flex flex-wrap gap-1">
-                    {#each mockExtraData.producers as producer}
-                      <span
-                        class="text-[10px] text-slate-400 bg-slate-800/50 px-2 py-0.5 rounded border border-slate-700/50"
-                        >{producer}</span
-                      >
-                    {/each}
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            <!-- Tags -->
-            <div class="bg-card p-6 rounded-xl shadow-lg">
-              <h3 class="text-(--hako-fg) font-bold mb-4">Tags</h3>
-              <div class="space-y-3">
-                {#each mockExtraData.tags as tag}
-                  <div class="group cursor-default">
-                    <div class="flex justify-between text-[11px] mb-1.5">
-                      <span
-                        class="text-slate-400 group-hover:text-accent transition-colors"
-                        >{tag.name}</span
-                      >
-                      <span
-                        class="text-slate-600 group-hover:text-slate-400 transition-colors font-medium"
-                        >{tag.rank}%</span
-                      >
-                    </div>
-                    <div
-                      class="w-full h-1 bg-slate-800 rounded-full overflow-hidden"
-                    >
-                      <div
-                        class="h-full bg-accent/40 group-hover:bg-accent transition-all duration-500"
-                        style="width: {tag.rank}%"
-                      ></div>
-                    </div>
-                  </div>
-                {/each}
-              </div>
-            </div>
-          </div>
-        {/if}
+        <aside class="lg:w-72 shrink-0">
+          <MediaSidebar
+            {media}
+            {type}
+            {companies}
+            {vibes}
+            {categorizedTags}
+            {effectiveSource}
+          />
+        </aside>
       </div>
     </div>
   </div>

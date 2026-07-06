@@ -34,3 +34,4 @@ src-wasm/pkg/
 tools/
 new_tools/
 plans/
+supabase/

@@ -4,6 +4,7 @@
   import { HakoImage } from "../shared/utils/images";
   import { openModal } from "../core/ui.svelte";
   import Dropdown from "../shared/components/Dropdown.svelte";
+  import BrowseDropdown from "../shared/components/BrowseDropdown.svelte";
   import SearchInput from "../shared/components/SearchInput.svelte";
   import { MediaService } from "../features/media/services/mediaService";
   import type { Media } from "../shared/types/index";
@@ -11,7 +12,7 @@
 
   let { user = null, profile = null } = $props();
 
-  let username = $derived(profile?.username || "user");
+  let username = $derived(profile?.username ?? null);
   let searchInputRef = $state<HTMLInputElement | null>(null);
 
   let searchTimeout: ReturnType<typeof setTimeout>;
@@ -58,64 +59,31 @@
     navigate(`/${mediaType}/${mediaId}`);
   }
 
-  let dropdownItems = $derived([
-    {
-      label: "Profile",
-      action: () => navigate(`/user/${username}`, true),
-      icon: "fa-user",
-    },
-    {
-      label: "Theme",
-      action: () => openModal("theme"),
-      icon: "fa-palette",
-    },
-    {
-      label: "Settings",
-      action: () => openModal("settings", { profile }),
-      icon: "fa-cog",
-    },
-    {
-      label: "Logout",
-      action: handleLogout,
-      icon: "fa-right-from-bracket",
-    },
-  ]);
+  let dropdownItems = $derived.by(() => {
+    const items = [];
+    if (username) {
+      items.push({
+        label: "Profile",
+        action: () => navigate(`/user/${username}`, true),
+        icon: "fa-user",
+      });
+    }
+    items.push(
+      { label: "Theme", action: () => openModal("theme"), icon: "fa-palette" },
+      { label: "Settings", action: () => openModal("settings", { profile }), icon: "fa-cog" },
+      { label: "Logout", action: handleLogout, icon: "fa-right-from-bracket" },
+    );
+    return items;
+  });
 
-  let listDropdownItems = $derived([
-    {
-      label: "Anime List",
-      action: () => navigate(`/user/${username}/anime`, true),
-      icon: "fa-tv",
-    },
-    {
-      label: "Manga List",
-      action: () => navigate(`/user/${username}/manga`, true),
-      icon: "fa-book fa-flip-horizontal",
-    },
-    {
-      label: "Light Novel List",
-      action: () => navigate(`/user/${username}/lightnovel`, true),
-      icon: "fa-book-open",
-    },
-  ]);
-
-  let browseDropdownItems = $derived([
-    {
-      label: "Anime",
-      action: () => navigate("/browse/anime", true),
-      icon: "fa-tv",
-    },
-    {
-      label: "Manga",
-      action: () => navigate("/browse/manga", true),
-      icon: "fa-book",
-    },
-    {
-      label: "Light Novels",
-      action: () => navigate("/browse/lightnovel", true),
-      icon: "fa-book-open",
-    },
-  ]);
+  let listDropdownItems = $derived.by(() => {
+    if (!username) return [];
+    return [
+      { label: "Anime List", action: () => navigate(`/user/${username}/anime`, true), icon: "fa-tv" },
+      { label: "Manga List", action: () => navigate(`/user/${username}/manga`, true), icon: "fa-book fa-flip-horizontal" },
+      { label: "Light Novel List", action: () => navigate(`/user/${username}/lightnovel`, true), icon: "fa-book-open" },
+    ];
+  });
 
   async function handleLogout() {
     await AuthService.logout();
@@ -169,20 +137,30 @@
               navigate("/feed");
             }}>Feed</a
           >
-          <a
-            href="/user/{username}"
-            class="nav-link ring-0 outline-none"
-            onclick={(e) => {
-              e.preventDefault();
-              navigate(`/user/${username}`, true);
-            }}>Profile</a
-          >
+          {#if username}
+            <a
+              href="/user/{username}"
+              class="nav-link ring-0 outline-none"
+              onclick={(e) => {
+                e.preventDefault();
+                navigate(`/user/${username}`, true);
+              }}>Profile</a
+            >
+          {/if}
           <Dropdown items={listDropdownItems}>
             <span class="nav-link cursor-pointer">Lists</span>
           </Dropdown>
-          <Dropdown items={browseDropdownItems}>
+          <BrowseDropdown>
             <span class="nav-link cursor-pointer">Browse</span>
-          </Dropdown>
+          </BrowseDropdown>
+          <a
+            href="/forum"
+            class="nav-link ring-0 outline-none"
+            onclick={(e) => {
+              e.preventDefault();
+              navigate("/forum");
+            }}>Forum</a
+          >
         {:else}
           <button
             id="nav-login"
@@ -234,13 +212,13 @@
               <img
                 src={HakoImage.get(profile.avatar_url)}
                 class="w-8 h-8 rounded-full object-cover border border-slate-700 cursor-pointer"
-                alt="{username}'s avatar"
+                alt={username ? `${username}'s avatar` : "Avatar"}
               />
             {:else}
               <div
                 class="w-8 h-8 rounded-full bg-accent flex items-center justify-center font-bold text-xs cursor-pointer"
               >
-                {username.charAt(0).toUpperCase()}
+                {username ? username.charAt(0).toUpperCase() : "?"}
               </div>
             {/if}
           </Dropdown>

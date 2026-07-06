@@ -52,6 +52,7 @@
           left: `${x}px`,
           top: `${y}px`,
           visibility: "visible",
+          opacity: "1",
         });
       }
     }
@@ -126,8 +127,8 @@
 {#if isVisible}
   <div
     bind:this={tooltipRef}
-    style="visibility: hidden"
-    class="fixed z-9999 pointer-events-none bg-(--surface-elevated) text-(--hako-fg) p-2.5 rounded-lg shadow-2xl text-sm animate-in fade-in zoom-in-95 duration-200 backdrop-blur-md {contentClass}"
+    style="visibility: hidden; opacity: 0;"
+    class="fixed z-9999 pointer-events-none bg-(--surface-elevated) text-(--hako-fg) p-2.5 rounded-lg shadow-2xl text-sm transition-opacity duration-150 ease-out backdrop-blur-md {contentClass}"
     role="tooltip"
   >
     {@render content()}

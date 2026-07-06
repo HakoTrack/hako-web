@@ -7,6 +7,7 @@
     name = "",
     autocomplete = "",
     maxlength,
+    class: className = "",
   } = $props<{
     value?: string;
     placeholder?: string;
@@ -15,10 +16,11 @@
     name?: string;
     autocomplete?: string;
     maxlength?: string | number;
+    class?: string;
   }>();
 </script>
 
-<div class="w-full">
+<div class="w-full {className}">
   {#if label}
     <!-- svelte-ignore a11y_label_has_associated_control -->
     <label

@@ -2,7 +2,7 @@ import { AuthService } from '../core/auth';
 import { ListService } from '../features/profile/services/listService';
 import { MetadataService } from '../features/media/services/metadataService';
 import { fetchUserListEntry, fetchMediaSummaryWithDescription } from '../shared/utils/mediaData';
-import type { QuickUpdateItem } from '../shared/types/index';
+import type { Media, QuickUpdateItem } from '../shared/types/index';
 import { CacheService } from './cache';
 
 export interface ModalData {
@@ -118,15 +118,15 @@ export function closeModal() {
 export async function openQuickEditor(mediaId: number, type: string = 'anime') {
   openModal('quick-editor', { isFetching: true });
 
-  let media = await CacheService.getMedia(mediaId.toString());
+  const cached = await CacheService.getMedia(mediaId.toString());
 
-  // Check if cache is fresh and HAS description
-  const isFresh = media && (Date.now() - new Date(media.lastSync).getTime() < 86400000);
-  const hasDescription = media?.data?.description;
+  const isFresh = cached && (Date.now() - new Date(cached.lastSync).getTime() < 86400000);
+  const hasDescription = cached?.data?.description;
+
+  let media: Media | null = null;
 
   if (isFresh && hasDescription) {
-    console.log(`[QuickEditor] Found fresh media in cache:`, media.data);
-    media = media.data;
+    media = cached.data;
   } else {
     console.log(`[QuickEditor] Media not in cache, stale, or missing description, fetching from network...`);
     const fetched = await fetchMediaSummaryWithDescription(mediaId);
@@ -134,8 +134,6 @@ export async function openQuickEditor(mediaId: number, type: string = 'anime') {
       await CacheService.setMedia(mediaId.toString(), { data: fetched, lastSync: new Date().toISOString() });
       console.log(`[QuickEditor] Network fetch complete and cached:`, fetched);
       media = fetched;
-    } else {
-      media = null;
     }
   }
 

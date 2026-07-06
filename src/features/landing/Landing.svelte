@@ -79,9 +79,6 @@
       <RoadmapTimeline />
     </div>
   </section>
-
-  <!-- Footer -->
-  <footer class="mt-auto pt-12 text-center pb-8 bg-(--hako-bg)/90"></footer>
 </div>
 
 <style>

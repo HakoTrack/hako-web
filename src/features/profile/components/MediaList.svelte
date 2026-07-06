@@ -15,6 +15,34 @@
   import init, { ListEngine } from "$wasm/hako_wasm";
   import VirtualScroll from "../../../shared/components/VirtualScroll.svelte";
   import { untrack } from "svelte";
+  import { registerShortcut } from "../../../core/keys.svelte";
+
+  let searchInputRef = $state<HTMLInputElement | null>(null);
+
+  $effect(() => {
+    const cleanups: (() => void)[] = [];
+
+    cleanups.push(
+      registerShortcut("f", (e) => {
+        e.preventDefault();
+        searchInputRef?.focus();
+      }),
+    );
+
+    statusGroups.forEach((group, index) => {
+      if (index < 9) {
+        cleanups.push(
+          registerShortcut((index + 1).toString(), () => {
+            setFilter(group.id, true);
+          }),
+        );
+      }
+    });
+
+    return () => {
+      cleanups.forEach((c) => c());
+    };
+  });
 
   let {
     type = "anime",
@@ -328,7 +356,7 @@
                   : ''}"
               >
                 <div
-                  class="w-12 aspect-[17/23] bg-(--surface-elevated) animate-pulse rounded mx-auto"
+                  class="w-12 aspect-17/23 bg-(--surface-elevated) animate-pulse rounded mx-auto"
                 ></div>
               </td>
               <td
@@ -372,7 +400,7 @@
                   : ''}"
               >
                 <div
-                  class="h-[18px] w-12 bg-(--surface-elevated) animate-pulse rounded mx-auto"
+                  class="h-4.5 w-12 bg-(--surface-elevated) animate-pulse rounded mx-auto"
                 ></div>
               </td>
             </tr>
@@ -398,7 +426,7 @@
             <div
               class="bg-card rounded-xl overflow-hidden shadow-md border border-(--surface-elevated) flex flex-col h-full animate-pulse"
             >
-              <div class="aspect-[2/3] bg-(--surface-elevated)"></div>
+              <div class="aspect-2/3 bg-(--surface-elevated)"></div>
             </div>
           {/each}
         </div>
@@ -415,6 +443,7 @@
         <SearchInput
           value={searchQuery}
           oninput={handleSearchInput}
+          bind:inputRef={searchInputRef}
           placeholder="Search"
           label="Search List"
         />
@@ -445,7 +474,7 @@
         </div>
       </div>
 
-      <div class="bg-card rounded-xl overflow-hidden shadow-sm">
+      <div class="bg-card rounded-xl overflow-hidden shadow-sm p-2">
         <div class="p-4">
           <h3
             class="text-xs font-bold uppercase tracking-widest text-(--hako-fg) flex items-center"
@@ -456,10 +485,10 @@
         <div class="flex flex-col">
           <button
             onclick={() => setFilter("all", true)}
-            class="flex items-center justify-between px-4 py-3 text-sm font-medium transition-all border-l-4 ring-0 outline-none {filterStatus ===
+            class="flex items-center justify-between px-4 py-3 text-sm font-medium ring-0 outline-none cursor-pointer {filterStatus ===
             'all'
-              ? 'text-(--hako-fg) bg-(--surface-elevated) border-(--hako-accent)'
-              : 'text-slate-400 hover:text-(--hako-fg) border-transparent hover:bg-card'}"
+              ? 'text-(--hako-fg) bg-(--surface-elevated) rounded-lg'
+              : 'text-slate-400 hover:text-(--hako-fg)'}"
           >
             <div class="flex items-center">
               <span class="w-2 h-2 rounded-full mr-3 bg-(--c7)"></span>
@@ -470,10 +499,10 @@
           {#each statusGroups as group}
             <button
               onclick={() => setFilter(group.id, true)}
-              class="flex items-center justify-between px-4 py-3 text-sm font-medium ring-0 outline-none {filterStatus ===
+              class="flex items-center justify-between px-4 py-3 text-sm font-medium ring-0 outline-none cursor-pointer {filterStatus ===
               group.id
-                ? 'text-(--hako-fg) bg-(--surface-elevated) border-l-4 border-(--hako-accent)'
-                : 'text-slate-400 hover:text-(--c15) border-l-4 border-transparent hover:bg-card'}"
+                ? 'text-(--hako-fg) bg-(--surface-elevated) rounded-lg'
+                : 'text-slate-400 hover:text-(--c15)'}"
             >
               <div class="flex items-center">
                 <span
@@ -609,7 +638,7 @@
                           : ''}"
                       >
                         <td
-                          class="p-2 border-b bg-(--surface) border-(--surface-elevated) group-hover:!bg-[color-mix(in_srgb,var(--surface-elevated)_80%,transparent)] transition-colors {isLast
+                          class="p-2 border-b bg-(--surface) border-(--surface-elevated) group-hover:bg-[color-mix(in_srgb,var(--surface-elevated)_80%,transparent)]! transition-colors {isLast
                             ? 'rounded-bl-xl border-b-0'
                             : ''}"
                         >
@@ -621,10 +650,11 @@
                             class="mx-auto group-hover:scale-105 transition-transform"
                             showTooltip={false}
                             prefetchedMedia={meta}
+                            onClick={() => handleOpenEditor(item.media_id)}
                           />
                         </td>
                         <td
-                          class="p-4 cursor-pointer border-b bg-(--surface) border-(--surface-elevated) group-hover:!bg-[color-mix(in_srgb,var(--surface-elevated)_80%,transparent)] transition-colors {isLast
+                          class="p-4 cursor-pointer border-b bg-(--surface) border-(--surface-elevated) group-hover:bg-[color-mix(in_srgb,var(--surface-elevated)_80%,transparent)]! transition-colors {isLast
                             ? 'border-b-0'
                             : ''}"
                           onclick={() => handleOpenEditor(item.media_id)}
@@ -641,14 +671,14 @@
                           </div>
                         </td>
                         <td
-                          class="bg-(--surface) group-hover:!bg-[color-mix(in_srgb,var(--surface-elevated)_80%,transparent)] transition-colors p-4 text-center text-sm font-mono {getScoreColor(
+                          class="bg-(--surface) group-hover:bg-[color-mix(in_srgb,var(--surface-elevated)_80%,transparent)]! transition-colors p-4 text-center text-sm font-mono {getScoreColor(
                             item.score,
                           )} border-b border-(--surface-elevated) group-last:border-0 {isLast
                             ? 'border-b-0'
                             : ''}">{item.score?.toFixed(1) || "—"}</td
                         >
                         <td
-                          class="bg-(--surface) group-hover:!bg-[color-mix(in_srgb,var(--surface-elevated)_80%,transparent)] transition-colors p-4 text-center text-sm font-mono text-(--hako-fg) border-b border-(--surface-elevated) group-last:border-0 {isLast
+                          class="bg-(--surface) group-hover:bg-[color-mix(in_srgb,var(--surface-elevated)_80%,transparent)]! transition-colors p-4 text-center text-sm font-mono text-(--hako-fg) border-b border-(--surface-elevated) group-last:border-0 {isLast
                             ? 'border-b-0'
                             : ''}"
                         >
@@ -658,7 +688,7 @@
                           >
                         </td>
                         <td
-                          class="bg-(--surface) group-hover:!bg-[color-mix(in_srgb,var(--surface-elevated)_80%,transparent)] transition-colors p-4 text-center border-b border-(--surface-elevated) group-last:border-0 hidden sm:table-cell {isLast
+                          class="bg-(--surface) group-hover:bg-[color-mix(in_srgb,var(--surface-elevated)_80%,transparent)]! transition-colors p-4 text-center border-b border-(--surface-elevated) group-last:border-0 hidden sm:table-cell {isLast
                             ? 'rounded-br-xl border-b-0'
                             : ''}"
                         >
@@ -699,10 +729,7 @@
                 {group.label}
               </h2>
             </div>
-            <div
-              class="rounded-xl overflow-hidden shadow-sm w-full"
-              bind:clientWidth={gridWidth}
-            >
+            <div class="overflow-hidden w-full" bind:clientWidth={gridWidth}>
               <VirtualScroll
                 enabled={filterStatus === "all" || filterStatus === group.id}
                 items={group.items}
@@ -748,6 +775,7 @@
                         class="w-full aspect-2/3 rounded-md"
                         showTooltip={false}
                         prefetchedMedia={meta}
+                        onClick={() => handleOpenEditor(item.media_id)}
                       />
                       <div
                         class="absolute bottom-0 left-0 right-0 bg-(--hako-bg)/80 p-2 text-(--hako-fg) opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none rounded-lg"

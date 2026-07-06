@@ -3,6 +3,7 @@
   import Navbar from "./components/Navbar.svelte";
   import Footer from "./components/Footer.svelte";
   import Landing from "./features/landing/Landing.svelte";
+  import Forum from "./features/forum/Forum.svelte";
   import ModalWrapper from "./components/modals/ModalWrapper.svelte";
   import { AuthService } from "./core/auth";
   import { ProfileService } from "./features/profile/services/profileService";
@@ -15,6 +16,21 @@
   import init from "$wasm/hako_wasm";
   import { wasmInitialized } from "./core/wasm-init";
   import { ui } from "./core/ui.svelte";
+  import { initShortcuts, registerShortcut } from "./core/keys.svelte";
+
+  initShortcuts();
+
+  // Register default shortcuts
+  registerShortcut("/", (e) => {
+    e.preventDefault();
+    ui.isSearchOpen = true;
+  });
+
+  registerShortcut("Escape", () => {
+    if (ui.activeModal) return;
+    ui.isSearchOpen = false;
+    ui.isQuickUpdateOpen = false;
+  });
 
   let user = $state(null);
   let profile = $state(null);
@@ -143,7 +159,9 @@
 
     const { data } = supabase.auth.onAuthStateChange((event, session) => {
       user = session?.user ?? null;
-      handleRouting();
+      if (window.location.pathname !== currentPath) {
+        handleRouting();
+      }
     });
     authSubscription = data.subscription;
 
@@ -161,6 +179,7 @@
   let activeRoute = $derived(
     routes.find((r) => currentPath.startsWith(r.path)),
   );
+  let RouteComponent = $derived(activeRoute?.component);
 
   function handleSearchSelect(media) {
     const fmt = media.format?.toLowerCase();
@@ -208,14 +227,15 @@
 
   <main
     id="app-view"
-    class="grow flex flex-col relative z-10 bg-(--hako-bg) pb-40"
+    class="grow flex flex-col relative z-10 bg-(--hako-bg) {!isLanding && !isSignup ? 'pb-40' : ''}"
   >
     <div class="grow">
       {#if currentPath === "/"}
         <Landing />
+      {:else if currentPath === "/forum"}
+        <Forum />
       {:else if activeRoute}
-        {@const Component = activeRoute.component}
-        <Component
+        <RouteComponent
           {...activeRoute.props(
             currentPath,
             user,

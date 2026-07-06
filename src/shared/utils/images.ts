@@ -37,6 +37,20 @@ export const HakoImage = {
   },
 
   /**
+   * Helper for character images mapping to pre-generated in media bucket: /characters/{id}/{size}.webp
+   */
+  getCharacter: function (id: number | string, size: 'medium' | 'large' = 'medium'): string {
+    return `${ASSET_DOMAIN}/characters/${id}/${size}.webp`;
+  },
+
+  /**
+   * Helper for staff images mapping to pre-generated in media bucket: /people/{id}.webp
+   */
+  getStaff: function (id: number | string): string {
+    return `${ASSET_DOMAIN}/people/${id}.webp`;
+  },
+
+  /**
    * Prefetch banner for performance optimization.
    */
   prefetchBanner: function (id: number | string): void {
@@ -46,5 +60,19 @@ export const HakoImage = {
     link.as = 'image';
     link.href = url;
     document.head.appendChild(link);
-  }
+  },
+
+  /**
+   * Helper for extras (alternate covers, character art, etc.): /extras/{mediaId}/{category}/{filename}
+   */
+  getExtras: function (mediaId: number | string, category: string, filename: string): string {
+    return `${ASSET_DOMAIN}/extras/${mediaId}/${category}/${filename}`;
+  },
+
+  /**
+   * Helper for alternate covers with pre-generated sizes: /extras/{mediaId}/alternate-covers/{variant}/{size}.webp
+   */
+  getAlternateCover: function (mediaId: number | string, variant: string, size: 'small' | 'medium' | 'large' = 'medium'): string {
+    return `${ASSET_DOMAIN}/extras/${mediaId}/alternate-covers/${variant}/${size}.webp`;
+  },
 };

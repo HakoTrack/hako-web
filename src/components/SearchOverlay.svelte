@@ -21,10 +21,8 @@
   }>();
 
   function getMediaType(media: Media) {
-    const fmt = media.format?.toLowerCase();
-    if (fmt === "manga" || fmt === "one_shot") return "manga";
-    if (fmt === "novel") return "lightnovel";
-    return "anime";
+    if (media.media_type === "light_novel") return "lightnovel";
+    return media.media_type || "anime";
   }
 
   let categorizedResults = $derived(() => {
@@ -127,9 +125,9 @@
                         <div
                           class="text-[10px] text-slate-500 truncate mt-0.5 flex flex-wrap gap-1.5"
                         >
-                          {#each media.genres.slice(0, 5) as genre}
+                          {#each (media.genres ?? []).slice(0, 5) as genre}
                             <span>{genre}</span>
-                            {#if genre !== media.genres.slice(0, 5).at(-1)}
+                            {#if genre !== (media.genres ?? []).slice(0, 5).at(-1)}
                               <span class="opacity-30">•</span>
                             {/if}
                           {/each}

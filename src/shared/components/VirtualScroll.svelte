@@ -24,7 +24,7 @@
       bottomSpacerHeight: number;
       virtualizer: any;
     }) => any;
-    fallback?: import("svelte").Snippet;
+    fallback?: any;
   } = $props();
 
   let containerEl = $state<HTMLDivElement | null>(null);

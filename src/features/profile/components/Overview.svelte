@@ -89,6 +89,7 @@
 
 <!-- MOBILE: Swipe Container -->
 <div class="lg:hidden w-full overflow-hidden relative mb-12">
+  <!-- svelte-ignore a11y_no_static_element_interactions -->
   <div
     class="flex transition-transform duration-300 ease-out touch-pan-y"
     style="transform: translateX(-{currentSlide * 100}%)"
