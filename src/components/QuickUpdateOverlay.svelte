@@ -206,9 +206,8 @@
       const nextEntry = scheds.find((s) => s.airing_at > nowTs);
       if (!nextEntry) continue;
 
-      const airedCount = scheds.filter((s) => s.airing_at <= nowTs).length;
       const entry = listMap.get(mediaId) || { progress: 0, status: "current" };
-      const behind = Math.max(0, airedCount - entry.progress);
+      const behind = Math.max(0, nextEntry.episode - 1 - entry.progress);
 
       entries.push({
         media_id: mediaId,
@@ -264,9 +263,6 @@
   $effect(() => {
     if (isOpen) {
       fetchSchedule();
-    } else {
-      scheduleEntries = [];
-      scheduleMediaIds = new Set();
     }
   });
 
@@ -320,6 +316,8 @@
     if (!user) return;
 
     const newProgress = (entry.progress || 0) + 1;
+    const total = entry.episodes;
+    if (total && newProgress > total) return;
 
     const updates: Record<string, any> = {
       progress: newProgress,
@@ -328,19 +326,34 @@
     if (entry.status === "planning") {
       updates.status = "current";
       updates.started_at = new Date().toISOString().split("T")[0];
+    } else if (total && total === newProgress) {
+      updates.status = "completed";
     }
+
+    const listItem = items.find(
+      (i: QuickUpdateItem) => i.media_id === entry.media_id && i.media_type === "anime",
+    );
 
     const result = await ListService.updateListEntry(
       user.id,
       "anime",
       entry.media_id,
       updates,
-      null,
+      listItem || null,
     );
     if (result.success) {
       entry.progress = newProgress;
       if (entry.status === "planning") {
         entry.status = "current";
+      }
+      if (listItem) {
+        listItem.progress = newProgress;
+        listItem.updated_at = new Date().toISOString();
+        if (updates.status === "completed") {
+          ui.quickUpdateItems = ui.quickUpdateItems.filter(
+            (i) => i.media_id !== entry.media_id,
+          );
+        }
       }
     } else {
       console.error("Failed to update progress:", result.error);

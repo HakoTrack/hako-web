@@ -262,3 +262,32 @@ export interface MediaCompanies {
   studios: Company[];
   producers: Company[];
 }
+
+export interface AchievementTier {
+  name: string;
+  color: string;
+}
+
+export interface Achievement {
+  id: number;
+  code: string;
+  title: string;
+  description: string;
+  icon: string;
+  category: string;
+  max_tier: number;
+  media_type: string | null;
+  user_tier: number | null;
+  earned_at: string | null;
+  tier_labels: Record<string, AchievementTier> | null;
+}
+
+export interface AchievementAwardResult {
+  success: boolean;
+  error?: string;
+  code?: string;
+  title?: string;
+  tier?: number;
+  max_tier?: number;
+  icon?: string;
+}

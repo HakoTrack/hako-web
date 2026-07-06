@@ -8,6 +8,7 @@ import SignupPage from "./features/auth/SignupPage.svelte";
 
 import ForumThread from "./features/forum/ForumThread.svelte";
 import TopMedia from "./features/browse/TopMedia.svelte";
+import SearchPage from "./features/search/SearchPage.svelte";
 
 export interface Route {
   path: string;
@@ -56,6 +57,14 @@ export const routes: Route[] = [
     path: "/top/",
     component: TopMedia,
     props: (path) => ({ mediaType: path.split("/")[2] || "anime" })
+  },
+  {
+    path: "/search/",
+    component: SearchPage,
+    props: (path) => {
+      const raw = path.split("/")[2] || "anime";
+      return { mediaType: raw === "lightnovel" ? "light_novel" : raw };
+    }
   },
   {
     path: "/feed",
