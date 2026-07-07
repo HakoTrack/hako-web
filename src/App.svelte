@@ -158,12 +158,16 @@
     user = await AuthService.getCurrentUser();
     authInitialized = true;
 
-    if (user && !sessionStorage.getItem('achievements_scanned')) {
-      sessionStorage.setItem('achievements_scanned', '1');
-      for (const mt of ['anime', 'manga', 'light_novel']) {
-        AchievementService.checkCompletedMilestones(user.id, mt).then((awarded) => {
-          if (awarded?.success) console.log('Achievement unlocked:', awarded.title);
-        });
+    if (user) {
+      ui.prefetchSchedule();
+
+      if (!sessionStorage.getItem('achievements_scanned')) {
+        sessionStorage.setItem('achievements_scanned', '1');
+        for (const mt of ['anime', 'manga', 'light_novel']) {
+          AchievementService.checkCompletedMilestones(user.id, mt).then((awarded) => {
+            if (awarded?.success) console.log('Achievement unlocked:', awarded.title);
+          });
+        }
       }
     }
 

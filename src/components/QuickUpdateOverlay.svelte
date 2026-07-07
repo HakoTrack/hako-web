@@ -8,6 +8,7 @@
   import { ui, openQuickEditor } from "../core/ui.svelte";
   import { ListService } from "../features/profile/services/listService";
   import { AuthService } from "../core/auth";
+  import { CacheService } from "../core/cache";
   import { registerShortcut } from "../core/keys.svelte";
 
   let {
@@ -87,6 +88,7 @@
   let loadedImages = $state<Record<number, boolean>>({});
   let hoveredPlus = $state<Record<number, boolean>>({});
   let activeItemId = $state<number | null>(null);
+  let completedIds = $state(new Set<number>());
 
   let categorizedItems = $derived(() => {
     const groups: Record<string, QuickUpdateItem[]> = {
@@ -141,9 +143,20 @@
     return parts.join(" ");
   }
 
+  let scheduleLoadedFromCache = $state(false);
+
   async function fetchSchedule() {
     const user = await AuthService.getCurrentUser();
     if (!user) return;
+
+    // Try cache first — populate state immediately so items are placed
+    // correctly on first render instead of after the Supabase round-trip.
+    const cached = await CacheService.getSchedule(user.id);
+    if (cached?.data && !scheduleLoadedFromCache) {
+      scheduleEntries = cached.data.entries;
+      scheduleMediaIds = new Set(cached.data.excludedIds);
+      scheduleLoadedFromCache = true;
+    }
 
     scheduleLoading = true;
 
@@ -255,7 +268,10 @@
 
     scheduleEntries = entries;
     scheduleMediaIds = excludedIds;
+    scheduleLoadedFromCache = true;
     scheduleLoading = false;
+
+    await CacheService.setSchedule(user.id, { entries, excludedIds: [...excludedIds] }, new Date().toISOString());
   }
 
   $effect(() => {
@@ -284,11 +300,13 @@
 
     if (total && newProgress > total) return;
 
-    const updates = {
+    const today = new Date().toISOString().split("T")[0];
+    const updates: Record<string, any> = {
       progress: newProgress,
       status: total === newProgress ? "completed" : item.status,
       total: total,
     };
+    if (total === newProgress) updates.completed_at = today;
 
     const result = await ListService.updateListEntry(
       user.id,
@@ -324,15 +342,17 @@
     const total = entry.episodes;
     if (total && newProgress > total) return;
 
+    const today = new Date().toISOString().split("T")[0];
     const updates: Record<string, any> = {
       progress: newProgress,
     };
 
     if (entry.status === "planning") {
       updates.status = "current";
-      updates.started_at = new Date().toISOString().split("T")[0];
+      updates.started_at = today;
     } else if (total && total === newProgress) {
       updates.status = "completed";
+      updates.completed_at = today;
     }
 
     const listItem = items.find(
@@ -349,8 +369,12 @@
     );
     if (result.success) {
       entry.progress = newProgress;
+      entry.behind = Math.max(0, entry.next_episode - 1 - newProgress);
       if (entry.status === "planning") {
         entry.status = "current";
+      }
+      if (updates.status === "completed") {
+        completedIds.add(entry.media_id);
       }
       if (listItem) {
         listItem.progress = newProgress;
@@ -431,7 +455,7 @@
             Seasonal Schedule
           </h3>
 
-          {#if scheduleLoading}
+          {#if scheduleLoading && scheduleEntries.length === 0}
             <div class="flex gap-3 overflow-x-auto pb-2">
               {#each { length: 11 } as _}
                 <div class="shrink-0 w-28">
@@ -446,11 +470,12 @@
                 </div>
               {/each}
             </div>
-          {:else}
+          {:else if scheduleEntries.length > 0}
             <div class="flex gap-3 overflow-x-auto pb-2">
               {#each sortedEntries as entry}
                 <!-- svelte-ignore a11y_click_events_have_key_events -->
                 <!-- svelte-ignore a11y_no_static_element_interactions -->
+                {@const done = completedIds.has(entry.media_id)}
                 <div
                   class="shrink-0 w-28 cursor-pointer group"
                   onclick={() => {
@@ -459,48 +484,62 @@
                   }}
                 >
                   <div class="relative">
-                    <MediaCover
-                      mediaId={entry.media_id}
-                      type="anime"
-                      size="medium"
-                      showTooltip={true}
-                      noHoverScale
-                    />
-                    <button
-                      type="button"
-                      aria-label="Increment progress"
-                      onclick={(e) => incrementScheduleProgress(e, entry)}
-                      class="absolute top-1 right-1 w-7 h-7 rounded-full flex items-center justify-center bg-(--hako-bg)/80 text-(--hako-fg) hover:bg-accent hover:text-white transition-all opacity-0 group-hover:opacity-100 pointer-events-auto cursor-pointer"
-                    >
-                      <svg
-                        class="w-3 h-3"
-                        viewBox="0 0 24 24"
-                        fill="none"
-                        stroke="currentColor"
-                        stroke-width="3.5"
-                        stroke-linecap="round"
-                      >
-                        <line x1="12" y1="5" x2="12" y2="19" />
-                        <line x1="5" y1="12" x2="19" y2="12" />
-                      </svg>
-                    </button>
-                    <div
-                      class="absolute top-1.5 left-1.5 bg-(--hako-bg)/80 text-(--hako-fg) text-[10px] font-bold px-1.5 py-0.5 rounded leading-none pointer-events-none"
-                    >
-                      {getDayName(entry.airing_at)}
+                    <div class="{done ? 'opacity-50' : ''}">
+                      <MediaCover
+                        mediaId={entry.media_id}
+                        type="anime"
+                        size="medium"
+                        showTooltip={true}
+                        noHoverScale
+                      />
                     </div>
-                    {#if entry.behind > 0}
-                      <div
-                        class="absolute bottom-6 right-1.5 bg-(--c1)/80 text-white text-[10px] font-bold px-1.5 py-0.5 rounded leading-none pointer-events-none"
+                    {#if !done}
+                      <button
+                        type="button"
+                        aria-label="Increment progress"
+                        onclick={(e) => incrementScheduleProgress(e, entry)}
+                        class="absolute top-1 right-1 w-7 h-7 rounded-full flex items-center justify-center bg-(--hako-bg)/80 text-(--hako-fg) hover:bg-accent hover:text-white transition-all opacity-0 group-hover:opacity-100 pointer-events-auto cursor-pointer"
                       >
-                        {entry.behind} behind
+                        <svg
+                          class="w-3 h-3"
+                          viewBox="0 0 24 24"
+                          fill="none"
+                          stroke="currentColor"
+                          stroke-width="3.5"
+                          stroke-linecap="round"
+                        >
+                          <line x1="12" y1="5" x2="12" y2="19" />
+                          <line x1="5" y1="12" x2="19" y2="12" />
+                        </svg>
+                      </button>
+                      <div
+                        class="absolute top-1.5 left-1.5 bg-(--hako-bg)/80 text-(--hako-fg) text-[10px] font-bold px-1.5 py-0.5 rounded leading-none pointer-events-none"
+                      >
+                        {getDayName(entry.airing_at)}
+                      </div>
+                      {#if entry.behind > 0}
+                        <div
+                          class="absolute bottom-6 right-1.5 bg-(--c1)/80 text-white text-[10px] font-bold px-1.5 py-0.5 rounded leading-none pointer-events-none"
+                        >
+                          {entry.behind} behind
+                        </div>
+                      {/if}
+                      <div
+                        class="absolute bottom-1.5 right-1.5 bg-(--hako-bg)/80 text-(--hako-fg) text-[10px] font-bold px-1.5 py-0.5 rounded leading-none tabular-nums pointer-events-none"
+                      >
+                        {countdown(entry.airing_at)}
+                      </div>
+                    {:else}
+                      <div
+                        class="absolute inset-0 flex items-center justify-center"
+                      >
+                        <span
+                          class="bg-green-600/90 text-white text-[11px] font-bold px-2.5 py-1 rounded leading-none"
+                        >
+                          Completed
+                        </span>
                       </div>
                     {/if}
-                    <div
-                      class="absolute bottom-1.5 right-1.5 bg-(--hako-bg)/80 text-(--hako-fg) text-[10px] font-bold px-1.5 py-0.5 rounded leading-none tabular-nums pointer-events-none"
-                    >
-                      {countdown(entry.airing_at)}
-                    </div>
                   </div>
                   <div class="flex gap-px w-full h-1 mt-1">
                     {#each getSegments(entry) as seg}

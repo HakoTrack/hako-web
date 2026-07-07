@@ -171,4 +171,15 @@ export const CacheService = {
     const db = await dbPromise;
     return db.put('media_metadata', { data, lastSync }, `rel:${key}`);
   },
+
+  // --- Schedule cache ---
+
+  async getSchedule(userId: string): Promise<SyncCache<any> | undefined> {
+    const db = await dbPromise;
+    return db.get('media_metadata', `schedule:${userId}`);
+  },
+  async setSchedule(userId: string, data: any, lastSync: string) {
+    const db = await dbPromise;
+    return db.put('media_metadata', { data, lastSync }, `schedule:${userId}`);
+  },
 };
