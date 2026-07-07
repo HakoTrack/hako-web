@@ -117,29 +117,7 @@ export async function fetchUserListEntry(
   return entry;
 }
 
-/**
- * Lightweight check: for a list of media IDs, fetch their updated_at from DB.
- * Returns a Set of IDs where the DB timestamp is newer than the cached timestamp.
- */
-async function staleMediaIds(
-  ids: number[],
-  cacheEntries: Map<string, string>,
-): Promise<Set<number>> {
-  if (ids.length === 0) return new Set();
-  const { data } = await supabase
-    .from('media')
-    .select('id, updated_at')
-    .in('id', ids);
-  if (!data) return new Set(ids);
-  const stale = new Set<number>();
-  for (const row of data) {
-    const cachedTime = cacheEntries.get(row.id.toString());
-    if (!cachedTime || new Date(row.updated_at).getTime() > new Date(cachedTime).getTime()) {
-      stale.add(row.id);
-    }
-  }
-  return stale;
-}
+
 
 // --- Optimized Fetchers ---
 
@@ -152,10 +130,10 @@ export async function fetchMediaSummaries(
 ): Promise<Record<string, Media>> {
   if (!ids || ids.length === 0) return {};
 
+  const SUMMARY_TTL = 24 * 60 * 60 * 1000; // 24 hours
   const result: Record<string, any> = {};
   const uncachedIds: number[] = [];
 
-  // Chunked cache lookup to avoid microtask queue congestion
   const CACHE_CHUNK_SIZE = 1000;
   for (let i = 0; i < ids.length; i += CACHE_CHUNK_SIZE) {
     const chunk = ids.slice(i, i + CACHE_CHUNK_SIZE);
@@ -163,35 +141,23 @@ export async function fetchMediaSummaries(
       chunk.map((id) => CacheService.getMedia(id.toString())),
     );
 
-    const cachedById = new Map<string, string>();
-    const cachedIndex = new Map<string, number>();
-
     chunk.forEach((id, index) => {
       const cached = cachedResults[index];
-      if (cached && cached.data && cached.lastSync) {
-        cachedById.set(id.toString(), cached.lastSync);
-        cachedIndex.set(id.toString(), index);
+      if (
+        cached &&
+        cached.data &&
+        cached.lastSync &&
+        Date.now() - new Date(cached.lastSync).getTime() < SUMMARY_TTL
+      ) {
+        result[id.toString()] = cached.data;
       } else {
         uncachedIds.push(id);
       }
     });
-
-    // Lightweight freshness check against db updated_at
-    const stale = await staleMediaIds(
-      Array.from(cachedById.keys()).map(Number),
-      cachedById,
-    );
-    for (const [idStr, index] of cachedIndex) {
-      if (stale.has(Number(idStr))) {
-        uncachedIds.push(Number(idStr));
-      } else {
-        result[idStr] = cachedResults[index]!.data;
-      }
-    }
   }
 
   if (uncachedIds.length > 0) {
-    const CHUNK_SIZE = 1000; // Increased chunk size
+    const CHUNK_SIZE = 1000;
     for (let i = 0; i < uncachedIds.length; i += CHUNK_SIZE) {
       const chunk = uncachedIds.slice(i, i + CHUNK_SIZE);
       const { data } = await supabase
@@ -200,8 +166,8 @@ export async function fetchMediaSummaries(
         .in("id", chunk);
 
       if (data) {
-        // Prepare bulk cache updates
-        const cachePromises: Promise<any>[] = [];
+        const now = new Date().toISOString();
+        const batch: { key: string; value: any }[] = [];
         for (const item of data) {
           const summary = {
             media_id: item.id,
@@ -217,9 +183,9 @@ export async function fetchMediaSummaries(
             volumes: item.volumes,
           };
           result[item.id.toString()] = summary;
-          cachePromises.push(CacheService.setMedia(item.id.toString(), { data: summary, lastSync: new Date().toISOString() }));
+          batch.push({ key: item.id.toString(), value: { data: summary, lastSync: now } });
         }
-        await Promise.all(cachePromises);
+        await CacheService.setMediaBatch(batch);
       }
     }
   }
@@ -236,10 +202,10 @@ export async function fetchMediaSummaryWithGenres(
 ): Promise<Record<string, Media>> {
   if (!ids || ids.length === 0) return {};
 
+  const SUMMARY_TTL = 24 * 60 * 60 * 1000; // 24 hours
   const result: Record<string, any> = {};
   const uncachedIds: number[] = [];
 
-  // Chunked cache lookup to avoid microtask queue congestion
   const CACHE_CHUNK_SIZE = 1000;
   for (let i = 0; i < ids.length; i += CACHE_CHUNK_SIZE) {
     const chunk = ids.slice(i, i + CACHE_CHUNK_SIZE);
@@ -247,37 +213,25 @@ export async function fetchMediaSummaryWithGenres(
       chunk.map((id) => CacheService.getMedia(id.toString())),
     );
 
-    const cachedById = new Map<string, string>();
-    const cachedIndex = new Map<string, number>();
-
     chunk.forEach((id, index) => {
       const cached = cachedResults[index];
       const data = cached?.data;
-      const isGenresSummary = data && "genres" in data && "episodes" in data;
+      const hasRequiredFields = data && "genres" in data && "episodes" in data;
 
-      if (isGenresSummary && cached.lastSync) {
-        cachedById.set(id.toString(), cached.lastSync);
-        cachedIndex.set(id.toString(), index);
+      if (
+        hasRequiredFields &&
+        cached.lastSync &&
+        Date.now() - new Date(cached.lastSync).getTime() < SUMMARY_TTL
+      ) {
+        result[id.toString()] = data;
       } else {
         uncachedIds.push(id);
       }
     });
-
-    const stale = await staleMediaIds(
-      Array.from(cachedById.keys()).map(Number),
-      cachedById,
-    );
-    for (const [idStr, index] of cachedIndex) {
-      if (stale.has(Number(idStr))) {
-        uncachedIds.push(Number(idStr));
-      } else {
-        result[idStr] = cachedResults[index]!.data;
-      }
-    }
   }
 
   if (uncachedIds.length > 0) {
-    const CHUNK_SIZE = 1000; // Increased chunk size
+    const CHUNK_SIZE = 1000;
     for (let i = 0; i < uncachedIds.length; i += CHUNK_SIZE) {
       const chunk = uncachedIds.slice(i, i + CHUNK_SIZE);
       const { data } = await supabase
@@ -288,7 +242,8 @@ export async function fetchMediaSummaryWithGenres(
         .in("id", chunk);
 
       if (data) {
-        const cachePromises: Promise<any>[] = [];
+        const now = new Date().toISOString();
+        const batch: { key: string; value: any }[] = [];
         for (const item of data) {
           const summary = {
             media_id: item.id,
@@ -314,9 +269,9 @@ export async function fetchMediaSummaryWithGenres(
             seasonYear: item.start_year,
           };
           result[item.id.toString()] = summary;
-          cachePromises.push(CacheService.setMedia(item.id.toString(), { data: summary, lastSync: new Date().toISOString() }));
+          batch.push({ key: item.id.toString(), value: { data: summary, lastSync: now } });
         }
-        await Promise.all(cachePromises);
+        await CacheService.setMediaBatch(batch);
       }
     }
   }
