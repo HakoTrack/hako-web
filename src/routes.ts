@@ -9,6 +9,8 @@ import SignupPage from "./features/auth/SignupPage.svelte";
 import ForumThread from "./features/forum/ForumThread.svelte";
 import TopMedia from "./features/browse/TopMedia.svelte";
 import SearchPage from "./features/search/SearchPage.svelte";
+import DiscoverPage from "./features/discover/DiscoverPage.svelte";
+import CollectionDetail from "./features/discover/components/CollectionDetail.svelte";
 
 export interface Route {
   path: string;
@@ -83,5 +85,18 @@ export const routes: Route[] = [
       const parts = path.split("/").filter(Boolean);
       return { threadId: Number(parts[1]), postId: parts[2] ? Number(parts[2]) : null };
     }
+  },
+  {
+    path: "/discover/",
+    component: DiscoverPage,
+    props: (path) => {
+      const raw = path.split("/")[2] || "anime";
+      return { mediaType: raw === "lightnovel" ? "light_novel" : raw };
+    }
+  },
+  {
+    path: "/collection/",
+    component: CollectionDetail,
+    props: (path) => ({ collectionId: path.split("/")[2], onBack: undefined })
   }
 ];

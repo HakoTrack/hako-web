@@ -291,3 +291,93 @@ export interface AchievementAwardResult {
   max_tier?: number;
   icon?: string;
 }
+
+// --- Collection Interfaces ---
+
+export type CollectionType = 'anime' | 'manga' | 'light_novel' | 'visual_novel' | 'mixed';
+export type CollectionSort = 'newest' | 'popular';
+
+export interface ViewerBreakdown {
+  total: number;
+  current: number;
+  completed: number;
+  paused: number;
+  dropped: number;
+  planning: number;
+  unlisted: number;
+}
+
+export interface CollectionSummary {
+  id: string;
+  title: string;
+  description: string | null;
+  collection_type: CollectionType;
+  author_id: string;
+  author_username: string;
+  entry_count: number;
+  subscriber_count: number;
+  is_added: boolean;
+  viewer_breakdown: ViewerBreakdown | null;
+  preview_media_ids: number[];
+  has_hentai: boolean;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface CollectionEntrySummary {
+  id: string;
+  media_id: number;
+  media_type: string;
+  position: number;
+  notes: string | null;
+  title_romaji: string;
+  title_english: string | null;
+  title_native: string | null;
+  format: string;
+  episodes: number | null;
+  chapters: number | null;
+  volumes: number | null;
+  genre_ids: number[];
+  vibe_vector: Record<string, number> | null;
+  author_score: number | null;
+  author_status: string | null;
+  viewer_score: number | null;
+  viewer_status: string | null;
+  viewer_progress: number | null;
+}
+
+export interface CollectionDetail {
+  id: string;
+  title: string;
+  description: string | null;
+  collection_type: CollectionType;
+  author_id: string;
+  author_username: string;
+  created_at: string;
+  updated_at: string;
+  entry_count: number;
+  subscriber_count: number;
+  is_added: boolean;
+  viewer_breakdown: ViewerBreakdown | null;
+  entries: CollectionEntrySummary[];
+}
+
+export interface UserCollection {
+  collection_id: string;
+  added_at: string;
+  collection: {
+    id: string;
+    title: string;
+    collection_type: CollectionType;
+    author_id: string;
+    author_username: string;
+    entry_count: number;
+  };
+}
+
+export interface CollectionsResult {
+  data: CollectionSummary[];
+  total: number;
+  page: number;
+  per_page: number;
+}

@@ -10,9 +10,10 @@ export interface ModalData {
   profile?: any;
   profileId?: string;
   isFetching?: boolean;
+  onSaved?: (collectionId?: string) => void;
 }
 
-export type ModalType = 'quick-editor' | 'login' | 'signup' | 'settings' | 'theme' | null;
+export type ModalType = 'quick-editor' | 'login' | 'signup' | 'settings' | 'theme' | 'collection-form' | null;
 
 interface UIState {
   activeModal: ModalType;

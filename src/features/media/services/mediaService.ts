@@ -69,13 +69,14 @@ export const MediaService = {
     }
 
     // 2. Query Supabase per type (trigram indexes make these fast)
-    const SELECT = `*, genre_ids, tags (tag, rank)`;
+    const SELECT = `*, genre_ids`;
     const filter = `title_english.ilike.%${query}%,title_native.ilike.%${query}%,title_romaji.ilike.%${query}%`;
 
     const [animeRes, mangaRes, lnRes] = await Promise.all([
       supabase.from('media').select(SELECT).or(filter).eq('media_type', 'anime').order('id', { ascending: true }).limit(perTypeLimit),
       supabase.from('media').select(SELECT).or(filter).eq('media_type', 'manga').order('id', { ascending: true }).limit(perTypeLimit),
       supabase.from('media').select(SELECT).or(filter).eq('media_type', 'light_novel').order('id', { ascending: true }).limit(perTypeLimit),
+      // supabase.from('media').select(SELECT).or(filter).eq('media_type', 'visual_novel').order('id', { ascending: true }).limit(perTypeLimit)
     ]);
 
     if (animeRes.error) return failure(animeRes.error.message);
@@ -144,6 +145,21 @@ export const MediaService = {
   },
 
   async getMediaCompanies(mediaId: number): Promise<MediaCompanies> {
+    const CACHE_KEY = `companies:${mediaId}`;
+    const cached = await CacheService.getRelationCache(CACHE_KEY);
+
+    if (cached) {
+      const { data: updateData } = await supabase
+        .from('media_companies')
+        .select('updated_at')
+        .eq('media_id', mediaId)
+        .order('updated_at', { ascending: false })
+        .limit(1)
+        .maybeSingle();
+      const isFresh = !updateData || new Date(updateData.updated_at).getTime() <= new Date(cached.lastSync).getTime();
+      if (isFresh) return cached.data;
+    }
+
     const { data, error } = await supabase
       .from('media_companies')
       .select(`
@@ -166,6 +182,8 @@ export const MediaService = {
         result.producers.push(c);
       }
     }
+
+    await CacheService.setRelationCache(CACHE_KEY, result, new Date().toISOString());
     return result;
   },
 };

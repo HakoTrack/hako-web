@@ -1,4 +1,5 @@
 import { supabase } from '../../../core/supabase';
+import { CacheService } from '../../../core/cache';
 import { HakoImage } from '../../../shared/utils/images';
 import { formatName } from '../../../shared/utils/nameUtils';
 import type { CharacterDetail, CharacterMediaAppearance } from '../../../shared/types/index';
@@ -31,7 +32,29 @@ interface StaffRole {
   staff: Staff;
 }
 
+async function staleRelationCache(
+  mediaId: number,
+  table: string,
+  cached: { data: any; lastSync: string } | undefined,
+): Promise<boolean> {
+  if (!cached) return true;
+  const { data } = await supabase
+    .from(table)
+    .select('updated_at')
+    .eq('media_id', mediaId)
+    .order('updated_at', { ascending: false })
+    .limit(1)
+    .maybeSingle();
+  if (!data) return false; // no rows = no data to stale
+  return new Date(data.updated_at).getTime() > new Date(cached.lastSync).getTime();
+}
+
 export async function getMediaCharacters(mediaId: number) {
+  const CACHE_KEY = `characters:${mediaId}`;
+  const cached = await CacheService.getRelationCache(CACHE_KEY);
+  const stale = await staleRelationCache(mediaId, 'character_relations', cached);
+  if (!stale && cached) return cached.data;
+
   // 1. Fetch character relations + characters
   const { data: relations, error: relError } = await supabase
     .from('character_relations')
@@ -75,7 +98,7 @@ export async function getMediaCharacters(mediaId: number) {
   }
 
   // 3. Merge data
-  return (relations || []).map(relation => {
+  const merged = (relations || []).map(relation => {
     const c = relation.characters;
     const va = staffRoles?.find(sr => sr.character_id === c.id)?.staff;
     return {
@@ -90,6 +113,9 @@ export async function getMediaCharacters(mediaId: number) {
       } : null
     };
   });
+
+  await CacheService.setRelationCache(CACHE_KEY, merged, new Date().toISOString());
+  return merged;
 }
 
 export async function getCharacterById(id: number): Promise<CharacterDetail | null> {

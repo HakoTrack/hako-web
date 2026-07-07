@@ -2,16 +2,19 @@ import QuickEditorModal from './QuickEditorModal.svelte';
 import LoginModal from './LoginModal.svelte';
 import SignupModal from './SignupModal.svelte';
 import SettingsModal from './SettingsModal.svelte';
+import CollectionForm from '../../features/discover/components/CollectionForm.svelte';
 
 export type ModalComponent =
   | typeof QuickEditorModal
   | typeof LoginModal
   | typeof SignupModal
-  | typeof SettingsModal;
+  | typeof SettingsModal
+  | typeof CollectionForm;
 
 export const MODAL_REGISTRY: Record<string, ModalComponent> = {
   'quick-editor': QuickEditorModal,
   'login': LoginModal,
   'signup': SignupModal,
-  'settings': SettingsModal
+  'settings': SettingsModal,
+  'collection-form': CollectionForm,
 };

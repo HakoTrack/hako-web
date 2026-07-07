@@ -106,7 +106,9 @@
 
   let filteredCount = $derived(() => {
     const groups = categorizedItems();
-    return groups.anime.length + groups.manga.length + groups.light_novel.length;
+    return (
+      groups.anime.length + groups.manga.length + groups.light_novel.length
+    );
   });
 
   let sortedEntries = $derived(
@@ -228,7 +230,10 @@
       if (lastAired > nowTs - GRACE_PERIOD) graceIds.add(mediaId);
     }
 
-    const excludedIds = new Set([...entries.map((e) => e.media_id), ...graceIds]);
+    const excludedIds = new Set([
+      ...entries.map((e) => e.media_id),
+      ...graceIds,
+    ]);
 
     if (!entries.length && !graceIds.size) {
       scheduleMediaIds = excludedIds;
@@ -331,7 +336,8 @@
     }
 
     const listItem = items.find(
-      (i: QuickUpdateItem) => i.media_id === entry.media_id && i.media_type === "anime",
+      (i: QuickUpdateItem) =>
+        i.media_id === entry.media_id && i.media_type === "anime",
     );
 
     const result = await ListService.updateListEntry(
@@ -616,19 +622,19 @@
                             class="grow bg-(--surface-elevated) h-1.5 rounded-full overflow-hidden"
                           >
                             <div
-                              class="bg-(--c2) h-full transition-all duration-300"
+                              class="bg-(--c2) h-full transition-all duration-300 rounded-sm"
                               style="width: {((item.progress ?? 0) /
                                 (media.episodes || media.chapters || 100)) *
                                 100}%"
                             ></div>
                           </div>
-                          <span
-                            class="text-[10px] font-mono text-slate-500 min-w-12 text-right"
-                          >
-                            {item.progress} / {media.episodes ||
-                              media.chapters ||
-                              "?"}
-                          </span>
+                        </div>
+                        <div
+                          class="text-[10px] font-mono text-slate-500 min-w-12 mt-2 text-right"
+                        >
+                          {item.progress} / {media.episodes ||
+                            media.chapters ||
+                            "??"}
                         </div>
                       </div>
                       <!-- svelte-ignore a11y_consider_explicit_label -->

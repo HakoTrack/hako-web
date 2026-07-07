@@ -159,5 +159,16 @@ export const CacheService = {
       tx.store.delete(key);
     }
     await tx.done;
-  }
+  },
+
+  // --- Relation caches (stored in media_metadata with prefixed keys) ---
+
+  async getRelationCache(key: string): Promise<SyncCache<any> | undefined> {
+    const db = await dbPromise;
+    return db.get('media_metadata', `rel:${key}`);
+  },
+  async setRelationCache(key: string, data: any, lastSync: string) {
+    const db = await dbPromise;
+    return db.put('media_metadata', { data, lastSync }, `rel:${key}`);
+  },
 };
