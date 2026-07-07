@@ -1,6 +1,5 @@
 import { supabase } from '../../../core/supabase.js';
 import { type Result, success, failure } from '../../../shared/utils/result';
-import { MetadataService } from '../../../features/media/services/metadataService';
 import { ActivityOrchestrator } from '../../feed/services/activityOrchestrator';
 import { CacheService } from '../../../core/cache';
 import { AchievementService } from '../../../core/achievements';
@@ -115,10 +114,6 @@ export const ListService = {
       oldEntry,
       type
     );
-
-    // Invalidate local cache to force refresh
-    await CacheService.deleteList(`${type}_${profileId}`);
-    MetadataService.invalidate(mediaId);
 
     if (dbUpdates.status === 'completed') {
       AchievementService.checkCompletedMilestones(profileId, type).then((awarded) => {

@@ -161,6 +161,15 @@ export const CacheService = {
     await tx.done;
   },
 
+  async setMediaBatch(entries: { key: string; value: any }[]) {
+    const db = await dbPromise;
+    const tx = db.transaction('media_metadata', 'readwrite');
+    for (const { key, value } of entries) {
+      tx.store.put(value, key);
+    }
+    await tx.done;
+  },
+
   // --- Relation caches (stored in media_metadata with prefixed keys) ---
 
   async getRelationCache(key: string): Promise<SyncCache<any> | undefined> {
