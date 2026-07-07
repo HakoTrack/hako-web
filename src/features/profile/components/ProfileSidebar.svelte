@@ -1,9 +1,24 @@
 <script lang="ts">
-  import type { Profile } from "../../../shared/types";
+  import { AchievementService } from "../../../core/achievements";
+  import AchievementIcon from "./AchievementIcon.svelte";
+  import type { Profile, Achievement } from "../../../shared/types";
 
   let { profileData } = $props<{
     profileData: Profile | null;
   }>();
+
+  let achievements = $state<Achievement[]>([]);
+
+  $effect(() => {
+    const uid = profileData?.id;
+    if (uid) {
+      AchievementService.getAll(uid).then((data) => {
+        achievements = data;
+      });
+    } else {
+      achievements = [];
+    }
+  });
 </script>
 
 <div class="bg-card p-6 shadow-md">
@@ -36,6 +51,22 @@
       >
     </div>
   </div>
+
+  {#if achievements.length > 0}
+    <div class="mt-6 pt-6 border-t border-(--surface-elevated)">
+      <h4
+        class="text-[10px] uppercase tracking-wider font-bold text-slate-500 mb-3"
+      >
+        Achievements
+      </h4>
+      <div class="flex flex-wrap gap-2">
+        {#each achievements.filter((a) => a.user_tier) as a (a.id)}
+          <AchievementIcon achievement={a} />
+        {/each}
+      </div>
+    </div>
+  {/if}
+
   <div
     class="mt-6 pt-6 border-t border-(--surface-elevated) flex justify-between items-center px-2"
   >

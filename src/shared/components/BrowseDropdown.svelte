@@ -10,7 +10,7 @@
 
   const typeLinks = [
     { label: "Top 100", path: (t) => `/top/${t}` },
-    { label: "Search", path: (t) => `/search/${t}` },
+    { label: "Search", path: (t) => `/search/${t === 'light_novel' ? 'lightnovel' : t}` },
     { label: "Discover", path: (t) => `/discover/${t}` },
   ];
 

@@ -1,4 +1,5 @@
 import { AuthService } from '../core/auth';
+import { supabase } from '../core/supabase.js';
 import { ListService } from '../features/profile/services/listService';
 import { MetadataService } from '../features/media/services/metadataService';
 import { fetchUserListEntry, fetchMediaSummaryWithDescription } from '../shared/utils/mediaData';
@@ -10,9 +11,10 @@ export interface ModalData {
   profile?: any;
   profileId?: string;
   isFetching?: boolean;
+  onSaved?: (collectionId?: string) => void;
 }
 
-export type ModalType = 'quick-editor' | 'login' | 'signup' | 'settings' | 'theme' | null;
+export type ModalType = 'quick-editor' | 'login' | 'signup' | 'settings' | 'theme' | 'collection-form' | null;
 
 interface UIState {
   activeModal: ModalType;
@@ -29,6 +31,7 @@ interface UIState {
   quickUpdateItems: QuickUpdateItem[];
   isQuickUpdateLoading: boolean;
   loadQuickUpdateItems: () => Promise<void>;
+  prefetchSchedule: () => Promise<void>;
   setFavorites: (ids: number[]) => void;
   addFavorite: (id: number) => void;
   removeFavorite: (id: number) => void;
@@ -92,6 +95,85 @@ export const ui: UIState = $state({
     } finally {
       this.isQuickUpdateLoading = false;
     }
+  },
+  async prefetchSchedule() {
+    const user = await AuthService.getCurrentUser();
+    if (!user) return;
+
+    // Skip if already cached from a previous preload
+    const cached = await CacheService.getSchedule(user.id);
+    if (cached?.data) return;
+
+    const nowTs = Math.floor(Date.now() / 1000);
+
+    const { data: profileList } = await supabase
+      .from("profile_list")
+      .select("media_id, progress, status")
+      .eq("profile_id", user.id)
+      .eq("media_type", "anime")
+      .in("status", ["current", "planning"]);
+
+    if (!profileList?.length) return;
+
+    const listMap = new Map(profileList.map((e: any) => [e.media_id, { progress: e.progress, status: e.status }]));
+    const mediaIds = profileList.map((e: any) => e.media_id);
+
+    const { data: schedules } = await supabase
+      .from("airing_schedules")
+      .select("id, episode, airing_at, media_id")
+      .in("media_id", mediaIds)
+      .gte("airing_at", nowTs - 14 * 86400)
+      .order("airing_at", { ascending: true });
+
+    if (!schedules?.length) return;
+
+    const mediaSchedMap = new Map<number, any[]>();
+    for (const s of schedules) {
+      if (!mediaSchedMap.has(s.media_id)) mediaSchedMap.set(s.media_id, []);
+      mediaSchedMap.get(s.media_id)!.push(s);
+    }
+
+    const entries: any[] = [];
+    for (const [mediaId, scheds] of mediaSchedMap) {
+      const nextEntry = scheds.find((s: any) => s.airing_at > nowTs);
+      if (!nextEntry) continue;
+      const entry = listMap.get(mediaId) || { progress: 0, status: "current" };
+      entries.push({
+        media_id: mediaId,
+        next_episode: nextEntry.episode,
+        airing_at: nextEntry.airing_at,
+        progress: entry.progress,
+        status: entry.status,
+        behind: Math.max(0, nextEntry.episode - 1 - entry.progress),
+        episodes: null,
+      });
+    }
+
+    const gracePeriod = 72 * 3600;
+    const excludedIds = new Set(entries.map((e: any) => e.media_id));
+    for (const [mediaId, scheds] of mediaSchedMap) {
+      if (excludedIds.has(mediaId)) continue;
+      const lastAired = Math.max(...scheds.map((s: any) => s.airing_at));
+      if (lastAired > nowTs - gracePeriod) excludedIds.add(mediaId);
+    }
+
+    // Fetch episode counts for schedule entries
+    if (entries.length > 0) {
+      const { data: mediaRows } = await supabase
+        .from("media")
+        .select("id, episodes")
+        .in("id", entries.map((e: any) => e.media_id));
+      if (mediaRows) {
+        const epMap = new Map(mediaRows.map((m: any) => [m.id, m.episodes]));
+        for (const e of entries) e.episodes = epMap.get(e.media_id) ?? null;
+      }
+    }
+
+    await CacheService.setSchedule(
+      user.id,
+      { entries, excludedIds: [...excludedIds] },
+      new Date().toISOString(),
+    );
   },
   setFavorites(ids: number[]) {
     this.favoriteIds = new Set(ids);

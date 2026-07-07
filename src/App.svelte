@@ -17,6 +17,7 @@
   import { wasmInitialized } from "./core/wasm-init";
   import { ui } from "./core/ui.svelte";
   import { initShortcuts, registerShortcut } from "./core/keys.svelte";
+  import { AchievementService } from "./core/achievements";
 
   initShortcuts();
 
@@ -156,6 +157,19 @@
     }
     user = await AuthService.getCurrentUser();
     authInitialized = true;
+
+    if (user) {
+      ui.prefetchSchedule();
+
+      if (!sessionStorage.getItem('achievements_scanned')) {
+        sessionStorage.setItem('achievements_scanned', '1');
+        for (const mt of ['anime', 'manga', 'light_novel']) {
+          AchievementService.checkCompletedMilestones(user.id, mt).then((awarded) => {
+            if (awarded?.success) console.log('Achievement unlocked:', awarded.title);
+          });
+        }
+      }
+    }
 
     const { data } = supabase.auth.onAuthStateChange((event, session) => {
       user = session?.user ?? null;

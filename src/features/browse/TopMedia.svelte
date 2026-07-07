@@ -6,6 +6,7 @@
   import { GENRES } from "../../shared/utils/constants";
   import { getDisplayTitle, settings } from "../../core/settings.svelte";
   import MediaCover from "../../shared/components/MediaCover.svelte";
+  import Badge from "../../shared/components/Badge.svelte";
 
   interface TopMediaItem {
     id: number;
@@ -158,97 +159,91 @@
         <!-- svelte-ignore a11y_click_events_have_key_events -->
         <!-- svelte-ignore a11y_no_static_element_interactions -->
         <div
-          class="relative rounded-xl overflow-hidden cursor-pointer transition-transform duration-200 hover:scale-[1.01] hover:shadow-xl"
-          style="content-visibility: auto; contain-intrinsic-size: 280px;"
-          onclick={() => navigateTo(item.id)}
+          class="rounded-xl transition-shadow duration-200 hover:shadow-2xl hover:ring-1 hover:ring-white/10"
         >
-          <!-- Banner background -->
           <div
-            class="absolute inset-0 bg-cover bg-center"
-            style="background-image: url({HakoImage.getBanner(item.id)})"
-          ></div>
-          <!-- Gradient overlays -->
-          <div
-            class="absolute inset-0 bg-gradient-to-r from-[var(--hako-bg)]/95 via-[var(--hako-bg)]/80 to-[var(--hako-bg)]/60"
-          ></div>
-          <div
-            class="absolute inset-0 bg-gradient-to-t from-[var(--hako-bg)]/40 via-transparent to-transparent"
-          ></div>
+            class="relative cursor-pointer overflow-hidden rounded-xl"
+            style="-webkit-mask-image: url(data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg'%3E%3Crect width='100%25' height='100%25' rx='12' fill='white'/%3E%3C/svg%3E); mask-image: url(data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg'%3E%3Crect width='100%25' height='100%25' rx='12' fill='white'/%3E%3C/svg%3E); background:
+            linear-gradient(to top, rgba(0,0,0,0.4) 0%, transparent 50%),
+            linear-gradient(to right, rgba(0,0,0,1) 0%, rgba(0,0,0,0.6) 100%),
+            url({HakoImage.getBanner(item.id)}) center/cover
+            var(--hako-bg);
+          "
+            onclick={() => navigateTo(item.id)}
+          >
+            <!-- Content -->
+            <div class="relative flex items-start gap-6 p-5">
+              <!-- Cover -->
+              <div class="shrink-0">
+                <MediaCover
+                  mediaId={item.id}
+                  type={mediaType}
+                  size="large"
+                  showTooltip={false}
+                />
+              </div>
 
-          <!-- Content -->
-          <div class="relative flex items-start gap-6 p-5">
-            <!-- Cover -->
-            <div class="shrink-0">
-              <MediaCover
-                mediaId={item.id}
-                type={mediaType}
-                size="large"
-                showTooltip={false}
-              />
-            </div>
+              <!-- Text content -->
+              <div class="flex flex-col min-w-0 gap-2 pt-1 grow">
+                <!-- Title -->
+                <h2
+                  class="text-lg font-bold text-(--hako-fg) leading-tight pr-24"
+                >
+                  {getDisplayTitle(
+                    {
+                      romaji: item.title_romaji,
+                      english: item.title_english,
+                      native: item.title_native,
+                    },
+                    settings.titlePreference,
+                  )}
+                </h2>
 
-            <!-- Text content -->
-            <div class="flex flex-col min-w-0 gap-2 pt-1 grow">
-              <!-- Title -->
-              <h2
-                class="text-lg font-bold text-(--hako-fg) leading-tight pr-24"
-              >
-                {getDisplayTitle(
-                  {
-                    romaji: item.title_romaji,
-                    english: item.title_english,
-                    native: item.title_native,
-                  },
-                  settings.titlePreference,
-                )}
-              </h2>
+                <!-- Badges: vibes + genres -->
+                <div class="flex flex-wrap items-center gap-1.5">
+                  {#each item.vibes as vibe}
+                    <Badge label={vibe.name} variant="vibe" />
+                  {/each}
+                  {#each item.genres.slice(0, 4) as genre}
+                    <Badge label={genre} />
+                  {/each}
+                  {#if item.genres.length > 4}
+                    <span class="text-[10px] text-(--c8)"
+                      >+{item.genres.length - 4}</span
+                    >
+                  {/if}
+                </div>
 
-              <!-- Badges: vibes + genres -->
-              <div class="flex flex-wrap items-center gap-1.5">
-                {#each item.vibes as vibe}
-                  <span
-                    class="text-[10px] px-3 py-2 rounded-full font-bold uppercase tracking-wider inline-flex items-center leading-none bg-(--hako-bg)/70 text-(--c13) border border-(--c13)/30"> {vibe.name}</span
+                <!-- Description -->
+                {#if item.description}
+                  <p
+                    class="text-sm text-slate-300 leading-relaxed line-clamp-5"
                   >
-                {/each}
-                {#each item.genres.slice(0, 4) as genre}
-                  <span
-                    class="text-[10px] px-3 py-2 rounded-full font-bold uppercase tracking-wider inline-flex items-center leading-none bg-(--hako-bg)/70 text-(--c12)"> {genre}</span
-                  >
-                {/each}
-                {#if item.genres.length > 4}
-                  <span class="text-[10px] text-(--c8)"
-                    >+{item.genres.length - 4}</span
-                  >
+                    {@html formatDescription(item.description)}
+                  </p>
                 {/if}
               </div>
 
-              <!-- Description -->
-              {#if item.description}
-                <p class="text-sm text-slate-300 leading-relaxed line-clamp-5">
-                  {@html formatDescription(item.description)}
-                </p>
-              {/if}
-            </div>
-
-            <!-- Rank + Score (top right) -->
-            <div class="absolute top-4 right-4 flex items-center gap-2">
-              {#if rank <= 3}
-                <i
-                  class="fa-solid fa-crown"
-                  style="color: {rank === 1
-                    ? '#FFD700'
-                    : rank === 2
-                      ? '#C0C0C0'
-                      : '#CD7F32'}"
-                ></i>
-              {/if}
-              <span class="flex items-baseline gap-1">
-                <span class="text-xs text-(--c8)">#</span>
-                <span class="text-lg font-bold text-(--hako-fg)">{rank}</span>
-                <span class="text-sm font-bold text-(--c2) ml-2">
-                  {item.median_score?.toFixed(1)}
+              <!-- Rank + Score (top right) -->
+              <div class="absolute top-4 right-4 flex items-center gap-2">
+                {#if rank <= 3}
+                  <i
+                    class="fa-solid fa-crown"
+                    style="color: {rank === 1
+                      ? '#FFD700'
+                      : rank === 2
+                        ? '#C0C0C0'
+                        : '#CD7F32'}"
+                  ></i>
+                {/if}
+                <span class="flex items-baseline gap-1">
+                  <span class="text-xs text-(--c8)">#</span>
+                  <span class="text-lg font-bold text-(--hako-fg)">{rank}</span>
+                  <span class="text-sm font-bold text-(--c2) font-mono ml-2">
+                    {item.median_score?.toFixed(2)}
+                  </span>
                 </span>
-              </span>
+              </div>
             </div>
           </div>
         </div>

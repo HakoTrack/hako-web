@@ -213,7 +213,7 @@
         {#each tabs as tab}
           <button
             onclick={() => switchTab(tab.id, tab.path)}
-            class="tab-btn pb-4 font-semibold focus:outline-none {currentActiveTab ===
+            class="tab-btn pb-4 font-semibold cursor-pointer focus:outline-none {currentActiveTab ===
             tab.id
               ? 'tab-active text-(--hako-fg)'
               : 'text-(--c8)'}"

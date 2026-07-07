@@ -304,7 +304,7 @@
             class="w-full max-w-48 bg-(--c8)/20 h-1.5 rounded-full overflow-hidden"
           >
             <div
-              class="h-full transition-all duration-1000 ease-out"
+              class="h-full transition-all duration-1000 ease-out rounded-sm"
               style="width: {displayedPercent}%; background-color: {statusColor};"
             ></div>
           </div>

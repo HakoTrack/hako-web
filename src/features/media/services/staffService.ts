@@ -1,11 +1,33 @@
 import { supabase } from '../../../core/supabase';
+import { CacheService } from '../../../core/cache';
 import { HakoImage } from '../../../shared/utils/images';
 import { formatName } from '../../../shared/utils/nameUtils';
 import type { StaffDetail, StaffMediaAppearance } from '../../../shared/types/index';
 
 const STAFF_PAGE_SIZE = 1000;
 
+async function staleStaffCache(
+  mediaId: number,
+  cached: { data: any; lastSync: string } | undefined,
+): Promise<boolean> {
+  if (!cached) return true;
+  const { data } = await supabase
+    .from('staff_roles')
+    .select('updated_at')
+    .eq('media_id', mediaId)
+    .order('updated_at', { ascending: false })
+    .limit(1)
+    .maybeSingle();
+  if (!data) return false;
+  return new Date(data.updated_at).getTime() > new Date(cached.lastSync).getTime();
+}
+
 export async function getMediaStaff(mediaId: number) {
+  const CACHE_KEY = `staff:${mediaId}`;
+  const cached = await CacheService.getRelationCache(CACHE_KEY);
+  const stale = await staleStaffCache(mediaId, cached);
+  if (!stale && cached) return cached.data;
+
   const all: any[] = [];
 
   for (let page = 0; ; page++) {
@@ -38,7 +60,7 @@ export async function getMediaStaff(mediaId: number) {
     if (!roles || roles.length < STAFF_PAGE_SIZE) break;
   }
 
-  return all
+  const result = all
     .map((r: any) => {
       const s = r.staff;
       if (!s) return null;
@@ -50,6 +72,9 @@ export async function getMediaStaff(mediaId: number) {
       };
     })
     .filter(Boolean);
+
+  await CacheService.setRelationCache(CACHE_KEY, result, new Date().toISOString());
+  return result;
 }
 
 export async function getStaffById(id: number): Promise<StaffDetail | null> {

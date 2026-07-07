@@ -33,8 +33,7 @@ interface HakoDB extends DBSchema {
 }
 
 const DB_NAME = 'HakoDB_v2';
-const DB_VERSION = 14.0;
-
+const DB_VERSION = 15.0;
 
 const dbPromise = openDB<HakoDB>(DB_NAME, DB_VERSION, {
   upgrade(db) {
@@ -160,5 +159,27 @@ export const CacheService = {
       tx.store.delete(key);
     }
     await tx.done;
-  }
+  },
+
+  // --- Relation caches (stored in media_metadata with prefixed keys) ---
+
+  async getRelationCache(key: string): Promise<SyncCache<any> | undefined> {
+    const db = await dbPromise;
+    return db.get('media_metadata', `rel:${key}`);
+  },
+  async setRelationCache(key: string, data: any, lastSync: string) {
+    const db = await dbPromise;
+    return db.put('media_metadata', { data, lastSync }, `rel:${key}`);
+  },
+
+  // --- Schedule cache ---
+
+  async getSchedule(userId: string): Promise<SyncCache<any> | undefined> {
+    const db = await dbPromise;
+    return db.get('media_metadata', `schedule:${userId}`);
+  },
+  async setSchedule(userId: string, data: any, lastSync: string) {
+    const db = await dbPromise;
+    return db.put('media_metadata', { data, lastSync }, `schedule:${userId}`);
+  },
 };

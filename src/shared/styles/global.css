@@ -55,6 +55,16 @@
   --surface-dim: #141415;
   --surface-elevated: #353545;
 
+  /* Achievement Tier Colors */
+  --tier-bronze: #7a5a30;
+  --tier-silver: #9ea0a8;
+  --tier-gold: #c9a84c;
+  --tier-platinum: #d4d6db;
+  --tier-diamond: #88b0d4;
+  --tier-emerald: #5b8c5a;
+  --tier-ruby: #b34a5e;
+  --tier-opal: #b8acc4;
+
   /* Terminal 16-Color Palette */
   --c0: #252530;
   --c1: #d8647e;

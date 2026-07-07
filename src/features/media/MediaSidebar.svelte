@@ -25,7 +25,7 @@
   }>();
 
   function toTitleCase(str: string | null | undefined): string {
-    if (!str) return "N/A";
+    if (!str) return "Unknown";
     return str
       .toLowerCase()
       .replace(/_/g, " ")
@@ -56,19 +56,23 @@
           >{type === "anime" ? "Episodes" : "Chapters"}</span
         >
         <span class="text-(--hako-fg)">
-          {type === "anime" ? media.episodes || "N/A" : media.chapters || "N/A"}
+          {type === "anime"
+            ? media.episodes || "Unknown"
+            : media.chapters || "Unknown"}
         </span>
       </div>
       {#if type !== "anime"}
         <div class="flex justify-between">
           <span class="text-(--c8)">Volumes</span>
-          <span class="text-(--hako-fg)">{media.volumes || "N/A"}</span>
+          <span class="text-(--hako-fg)">{media.volumes || "Unknown"}</span>
         </div>
       {/if}
       {#if type === "anime"}
         <div class="flex justify-between">
           <span class="text-(--c8)">Duration</span>
-          <span class="text-(--hako-fg)">{media.duration || "N/A"} mins</span>
+          <span class="text-(--hako-fg)"
+            >{media.duration || "Unknown"} mins</span
+          >
         </div>
       {/if}
       <div class="space-y-0.5">

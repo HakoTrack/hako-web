@@ -3,6 +3,7 @@ import { type Result, success, failure } from '../../../shared/utils/result';
 import { MetadataService } from '../../../features/media/services/metadataService';
 import { ActivityOrchestrator } from '../../feed/services/activityOrchestrator';
 import { CacheService } from '../../../core/cache';
+import { AchievementService } from '../../../core/achievements';
 
 interface ListConfig {
   table: string;
@@ -118,6 +119,14 @@ export const ListService = {
     // Invalidate local cache to force refresh
     await CacheService.deleteList(`${type}_${profileId}`);
     MetadataService.invalidate(mediaId);
+
+    if (dbUpdates.status === 'completed') {
+      AchievementService.checkCompletedMilestones(profileId, type).then((awarded) => {
+        if (awarded?.success) {
+          console.log(`Achievement unlocked: ${awarded.title}`);
+        }
+      });
+    }
 
     return success(undefined);
   },

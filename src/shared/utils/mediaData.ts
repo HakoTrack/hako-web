@@ -3,8 +3,6 @@ import { CacheService } from '../../core/cache';
 import { GENRES } from './constants';
 import type { Media, ListEntry } from '../types/index';
 
-const MEDIA_CACHE_VERSION = 3;
-
 // --- Utilities ---
 
 export function formatDescription(description: string | null | undefined): string {
@@ -39,7 +37,7 @@ export function mapSupabaseMedia(media: any): Media | null {
     season: media.season || null,
     seasonYear: media.season_year || null,
     genres: media.genre_ids?.map((id: number) => GENRES[id - 1]) || [],
-    tags: media.tags?.map((t: any) => ({ name: t.tag, rank: t.rank })) || [],
+    tags: [],
     tags_v2: media.tags_v2 || [],
     vibe_vector: media.vibe_vector || {},
     externalLinks: media.external_links || [],
@@ -119,6 +117,30 @@ export async function fetchUserListEntry(
   return entry;
 }
 
+/**
+ * Lightweight check: for a list of media IDs, fetch their updated_at from DB.
+ * Returns a Set of IDs where the DB timestamp is newer than the cached timestamp.
+ */
+async function staleMediaIds(
+  ids: number[],
+  cacheEntries: Map<string, string>,
+): Promise<Set<number>> {
+  if (ids.length === 0) return new Set();
+  const { data } = await supabase
+    .from('media')
+    .select('id, updated_at')
+    .in('id', ids);
+  if (!data) return new Set(ids);
+  const stale = new Set<number>();
+  for (const row of data) {
+    const cachedTime = cacheEntries.get(row.id.toString());
+    if (!cachedTime || new Date(row.updated_at).getTime() > new Date(cachedTime).getTime()) {
+      stale.add(row.id);
+    }
+  }
+  return stale;
+}
+
 // --- Optimized Fetchers ---
 
 /**
@@ -141,14 +163,31 @@ export async function fetchMediaSummaries(
       chunk.map((id) => CacheService.getMedia(id.toString())),
     );
 
+    const cachedById = new Map<string, string>();
+    const cachedIndex = new Map<string, number>();
+
     chunk.forEach((id, index) => {
       const cached = cachedResults[index];
-      if (cached && cached.data) {
-        result[id.toString()] = cached.data;
+      if (cached && cached.data && cached.lastSync) {
+        cachedById.set(id.toString(), cached.lastSync);
+        cachedIndex.set(id.toString(), index);
       } else {
         uncachedIds.push(id);
       }
     });
+
+    // Lightweight freshness check against db updated_at
+    const stale = await staleMediaIds(
+      Array.from(cachedById.keys()).map(Number),
+      cachedById,
+    );
+    for (const [idStr, index] of cachedIndex) {
+      if (stale.has(Number(idStr))) {
+        uncachedIds.push(Number(idStr));
+      } else {
+        result[idStr] = cachedResults[index]!.data;
+      }
+    }
   }
 
   if (uncachedIds.length > 0) {
@@ -208,17 +247,33 @@ export async function fetchMediaSummaryWithGenres(
       chunk.map((id) => CacheService.getMedia(id.toString())),
     );
 
-    chunk.forEach((id, index) => {
-      const cached = cachedResults[index]?.data;
-      const isGenresSummary =
-        cached && "genres" in cached && "episodes" in cached;
+    const cachedById = new Map<string, string>();
+    const cachedIndex = new Map<string, number>();
 
-      if (isGenresSummary) {
-        result[id.toString()] = cached;
+    chunk.forEach((id, index) => {
+      const cached = cachedResults[index];
+      const data = cached?.data;
+      const isGenresSummary = data && "genres" in data && "episodes" in data;
+
+      if (isGenresSummary && cached.lastSync) {
+        cachedById.set(id.toString(), cached.lastSync);
+        cachedIndex.set(id.toString(), index);
       } else {
         uncachedIds.push(id);
       }
     });
+
+    const stale = await staleMediaIds(
+      Array.from(cachedById.keys()).map(Number),
+      cachedById,
+    );
+    for (const [idStr, index] of cachedIndex) {
+      if (stale.has(Number(idStr))) {
+        uncachedIds.push(Number(idStr));
+      } else {
+        result[idStr] = cachedResults[index]!.data;
+      }
+    }
   }
 
   if (uncachedIds.length > 0) {
@@ -228,7 +283,7 @@ export async function fetchMediaSummaryWithGenres(
       const { data } = await supabase
         .from("media")
         .select(
-          "id, title_romaji, title_english, title_native, genre_ids, tags (tag, rank), episodes, chapters, volumes, format, duration, start_year, start_month, start_day",
+          "id, title_romaji, title_english, title_native, genre_ids, episodes, chapters, volumes, format, duration, start_year, start_month, start_day",
         )
         .in("id", chunk);
 
@@ -243,8 +298,7 @@ export async function fetchMediaSummaryWithGenres(
               native: item.title_native,
             },
             genres: item.genre_ids?.map((id: number) => GENRES[id - 1]) || [],
-            tags:
-              item.tags?.map((t: any) => ({ name: t.tag, rank: t.rank })) || [],
+            tags: [],
             tags_v2: [],
             externalLinks: [],
             episodes: item.episodes,
@@ -315,24 +369,65 @@ export async function fetchMediaSummaryWithDescription(id: number): Promise<Medi
 }
 
 /**
+ * Merge fresh detail-only fields into a cached media object and update the cache.
+ */
+async function enrichCachedMedia(
+  id: number,
+  cached: { data: any; lastSync: string },
+): Promise<void> {
+  const { data } = await supabase
+    .from('media')
+    .select(
+      'description, source, status, season, season_year, genre_ids, duration, external_links, start_year, start_month, start_day, end_year, end_month, end_day, tags_v2, vibe_vector',
+    )
+    .eq('id', id)
+    .single();
+  if (!data) return;
+
+  const c = cached.data;
+  c.description = data.description ?? "";
+  c.source = data.source;
+  c.status = data.status;
+  c.season = data.season;
+  c.seasonYear = data.season_year;
+  c.genres = (data.genre_ids ?? []).map((id: number) => GENRES[id - 1]) || [];
+  c.duration = data.duration;
+  c.externalLinks = data.external_links || [];
+  c.startDate = { year: data.start_year, month: data.start_month, day: data.start_day };
+  c.endDate = { year: data.end_year, month: data.end_month, day: data.end_day };
+  c.tags_v2 = data.tags_v2;
+  c.vibe_vector = data.vibe_vector || {};
+
+  await CacheService.setMedia(id.toString(), { data: c, lastSync: new Date().toISOString() });
+}
+
+/**
  * Optimized fetch for DETAIL PAGES.
  */
 export async function fetchMediaDetails(id: number): Promise<Media | null> {
   const cached = await CacheService.getMedia(id.toString());
-  const media = cached?.data;
 
-  if (media && media._cacheVersion === MEDIA_CACHE_VERSION) {
-    // Always fetch fresh tags_v2 + vibe_vector separately so tag edits don't require a cache bump
-    const { data: tagData } = await supabase
+  if (cached?.data && cached.lastSync) {
+    // Lightweight freshness check: fetch only updated_at
+    const { data: updateData, error } = await supabase
       .from('media')
-      .select('tags_v2, vibe_vector')
+      .select('updated_at')
       .eq('id', id)
       .single();
-    if (tagData) {
-      media.tags_v2 = tagData.tags_v2;
-      media.vibe_vector = tagData.vibe_vector || {};
+
+    if (!error && updateData) {
+      const dbTime = new Date(updateData.updated_at).getTime();
+      const cacheTime = new Date(cached.lastSync).getTime();
+      if (dbTime <= cacheTime) {
+        // Cache is fresh; enrich if any key detail fields are null
+        // (catches both missing keys from summary-tier caches
+        //  and explicit nulls from old detail-page caches)
+        if (cached.data.source == null) {
+          await enrichCachedMedia(id, cached);
+        }
+        return cached.data;
+      }
     }
-    return media;
   }
 
   const { data } = await supabase
@@ -341,7 +436,6 @@ export async function fetchMediaDetails(id: number): Promise<Media | null> {
       id, title_romaji, title_english, title_native, description, format, source, status,
       episodes, chapters, volumes, duration, season, season_year,
       genre_ids,
-      tags (tag, rank),
       tags_v2,
       vibe_vector,
       external_links,
@@ -355,7 +449,6 @@ export async function fetchMediaDetails(id: number): Promise<Media | null> {
 
   const fetchedMedia = mapSupabaseMedia(data);
   if (fetchedMedia) {
-    (fetchedMedia as any)._cacheVersion = MEDIA_CACHE_VERSION;
     await CacheService.setMedia(id.toString(), { data: fetchedMedia, lastSync: new Date().toISOString() });
   }
   return fetchedMedia;

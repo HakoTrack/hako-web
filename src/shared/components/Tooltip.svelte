@@ -10,7 +10,7 @@
 
   interface Props {
     children: import("svelte").Snippet;
-    content: import("svelte").Snippet;
+    content: any;
     placement?: Placement;
     offset?: number;
     delay?: number;
