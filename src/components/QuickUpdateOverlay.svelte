@@ -30,7 +30,7 @@
     progress: number;
     status: string;
     behind: number;
-    episodes: number | null;
+    episodes: number | null; // null means we don't know the total, which breaks the "auto-complete on last ep" logic
   }
 
   const COLORS = {
@@ -40,6 +40,10 @@
   };
   const GRACE_PERIOD = 72 * 3600;
 
+  // takes a schedule entry and chops its progress into colored segments
+  // for the little progress bar under each cover. the math here is kinda
+  // delicate — behind is "eps aired but not watched", unreleased is "eps
+  // that haven't aired yet". when episodes is null we just guess a total.
   function getSegments(entry: ScheduleEntry) {
     const total = entry.episodes ?? Math.max(entry.next_episode + 10, 26);
     const segs: {
@@ -85,11 +89,17 @@
   let scheduleMediaIds = $state(new Set<number>());
   let now = $state(Math.floor(Date.now() / 1000));
 
+  // tracks which cover images have loaded so we can show a shimmer
+  // placeholder underneath. the schrodinger's cat of ui patterns.
   let loadedImages = $state<Record<number, boolean>>({});
   let hoveredPlus = $state<Record<number, boolean>>({});
   let activeItemId = $state<number | null>(null);
   let completedIds = $state(new Set<number>());
 
+  // these are $derived functions (not computed values) — they're wrapped
+  // in a callable so they only run when actually called in the template.
+  // it's a svelte 5 idiom for "expensive computation i don't want running
+  // on every render". not ideal but works.
   let categorizedItems = $derived(() => {
     const groups: Record<string, QuickUpdateItem[]> = {
       anime: [],
@@ -113,14 +123,19 @@
     );
   });
 
-  let sortedEntries = $derived(
-    [...scheduleEntries].sort((a, b) => {
+  // sortedEntries is a $state not a $derived because we only want to sort once
+  // on open — re-sorting mid-interaction when progress changes feels janky.
+  // downside: you have to remember to set it everywhere scheduleEntries is set.
+  let sortedEntries = $state<ScheduleEntry[]>([]);
+
+  function sortEntries(entries: ScheduleEntry[]) {
+    return [...entries].sort((a, b) => {
       const aBehind = a.behind > 0 ? 0 : 1;
       const bBehind = b.behind > 0 ? 0 : 1;
       if (aBehind !== bBehind) return aBehind - bBehind;
       return a.airing_at - b.airing_at;
-    }),
-  );
+    });
+  }
 
   function getDayName(ts: number): string {
     return new Date(ts * 1000).toLocaleDateString("en-US", {
@@ -143,17 +158,22 @@
     return parts.join(" ");
   }
 
+  // prevents re-applying cached data on subsequent effect re-runs.
+  // once we've loaded from cache or network, we don't want to flash
+  // stale data again. this flag stays true for the component's life.
   let scheduleLoadedFromCache = $state(false);
 
   async function fetchSchedule() {
     const user = await AuthService.getCurrentUser();
     if (!user) return;
 
-    // Try cache first — populate state immediately so items are placed
-    // correctly on first render instead of after the Supabase round-trip.
+    // cache-first: supabase is slow, so we show stale data immediately
+    // then overwrite with fresh data when it arrives. the flag prevents
+    // re-setting from cache on subsequent effect runs.
     const cached = await CacheService.getSchedule(user.id);
     if (cached?.data && !scheduleLoadedFromCache) {
       scheduleEntries = cached.data.entries;
+      sortedEntries = sortEntries(cached.data.entries);
       scheduleMediaIds = new Set(cached.data.excludedIds);
       scheduleLoadedFromCache = true;
     }
@@ -162,6 +182,8 @@
 
     const nowTs = Math.floor(Date.now() / 1000);
 
+    // we paginate 1000 at a time because some lists are huge
+    // (supabase free tier has limits, but 1000 is fine)
     const allListEntries: {
       media_id: number;
       progress: number;
@@ -210,6 +232,8 @@
       return;
     }
 
+    // group schedules by media_id so we can find the next upcoming episode
+    // for each show. this is O(n*m) in theory but schedules are small.
     const mediaSchedMap = new Map<number, typeof schedules>();
     for (const s of schedules) {
       if (!mediaSchedMap.has(s.media_id)) mediaSchedMap.set(s.media_id, []);
@@ -231,10 +255,13 @@
         progress: entry.progress,
         status: entry.status,
         behind,
-        episodes: null,
+        episodes: null, // we fill this below after fetching from media table
       });
     }
 
+    // grace period: shows that just finished airing (<72h ago) still show
+    // in the schedule even though there's no "next episode". this avoids
+    // the schedule feeling like it empties out the moment an ep drops.
     const graceIds = new Set<number>();
     for (const [mediaId, scheds] of mediaSchedMap) {
       const hasFuture = scheds.some((s) => s.airing_at > nowTs);
@@ -254,6 +281,8 @@
       return;
     }
 
+    // separate query for episode counts — we need them to know when a show
+    // is complete, but media table queries are expensive so we batch them.
     const { data: mediaRows } = await supabase
       .from("media")
       .select("id, episodes")
@@ -262,16 +291,21 @@
     if (mediaRows) {
       const epMap = new Map(mediaRows.map((m) => [m.id, m.episodes]));
       for (const e of entries) {
-        e.episodes = epMap.get(e.media_id) ?? null;
+        e.episodes = epMap.get(e.media_id) ?? null; // null = incomplete/no data
       }
     }
 
     scheduleEntries = entries;
+    sortedEntries = sortEntries(entries);
     scheduleMediaIds = excludedIds;
     scheduleLoadedFromCache = true;
     scheduleLoading = false;
 
-    await CacheService.setSchedule(user.id, { entries, excludedIds: [...excludedIds] }, new Date().toISOString());
+    await CacheService.setSchedule(
+      user.id,
+      { entries, excludedIds: [...excludedIds] },
+      new Date().toISOString(),
+    );
   }
 
   $effect(() => {
@@ -329,6 +363,10 @@
     }
   }
 
+  // this handles clicking the + button on a schedule item.
+  // the logic is nearly identical to incrementProgress above, but operates
+  // on ScheduleEntry objects instead of QuickUpdateItem. yes it's
+  // duplicated. no i'm not proud of it.
   async function incrementScheduleProgress(
     e: MouseEvent,
     entry: ScheduleEntry,
@@ -355,6 +393,10 @@
       updates.completed_at = today;
     }
 
+    // schedule entries aren't always in the quick-update items list
+    // (eg. planning entries), so listItem can be null. we pass null
+    // as oldEntry to updateListEntry, which used to crash because it
+    // did oldEntry.metadata without optional chaining. fun times.
     const listItem = items.find(
       (i: QuickUpdateItem) =>
         i.media_id === entry.media_id && i.media_type === "anime",
@@ -436,13 +478,13 @@
   <!-- svelte-ignore a11y_click_events_have_key_events -->
   <!-- svelte-ignore a11y_no_static_element_interactions -->
   <div
-    class="fixed inset-0 z-30 bg-black/40 backdrop-blur-[2px] transition-opacity"
+    class="fixed inset-0 z-30 bg-(--hako-bg)/40 backdrop-blur-[2px] transition-opacity"
     onclick={onClose}
     transition:fade={{ duration: 150 }}
   ></div>
 
   <div
-    class="fixed top-15 left-0 w-full z-35 bg-(--hako-bg) border-b border-(--c8) shadow-2xl overflow-y-auto max-h-[85vh] origin-top"
+    class="fixed top-15 left-0 w-full z-35 bg-(--hako-bg) border-b border-(--c8) overflow-y-auto max-h-[85vh] origin-top"
     transition:slide={{ duration: 200 }}
   >
     <div class="max-w-375 mx-auto p-6 md:p-10">
@@ -473,9 +515,9 @@
           {:else if scheduleEntries.length > 0}
             <div class="flex gap-3 overflow-x-auto pb-2">
               {#each sortedEntries as entry}
+                {@const done = completedIds.has(entry.media_id)}
                 <!-- svelte-ignore a11y_click_events_have_key_events -->
                 <!-- svelte-ignore a11y_no_static_element_interactions -->
-                {@const done = completedIds.has(entry.media_id)}
                 <div
                   class="shrink-0 w-28 cursor-pointer group"
                   onclick={() => {
@@ -484,7 +526,7 @@
                   }}
                 >
                   <div class="relative">
-                    <div class="{done ? 'opacity-50' : ''}">
+                    <div class={done ? "opacity-50" : ""}>
                       <MediaCover
                         mediaId={entry.media_id}
                         type="anime"

@@ -473,14 +473,12 @@
       {:else}
         <img
           src={HakoImage.getBanner(media.media_id)}
-          class="w-full h-full object-cover opacity-50"
+          class="w-full h-full object-cover"
           alt="Banner"
           onerror={() => (bannerError = true)}
         />
       {/if}
-      <div
-        class="absolute inset-0 bg-linear-to-t from-(--hako-bg) to-transparent"
-      ></div>
+      <!-- <div class="absolute inset-0 bg-linear-to-t from-(--hako-bg) to-transparent"></div> -->
     </div>
 
     <div class="max-w-375 mx-auto px-4 sm:px-6 lg:px-8">
