@@ -211,7 +211,7 @@
     >
       <img
         src={HakoImage.get(post.author?.avatar_url)}
-        class="object-cover w-6 h-6 rounded-full bg-slate-700"
+        class="object-cover w-6 h-6 rounded-full bg-(--surface-elevated)"
         alt="avatar"
         onerror={(e: Event) => ((e.target as HTMLImageElement).src = "")}
       />

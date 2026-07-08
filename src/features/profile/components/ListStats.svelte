@@ -49,7 +49,9 @@
         <!-- Bar Graph -->
         <div class="h-2 w-full bg-slate-800 rounded-full flex overflow-hidden">
           {#if s && s.statusDistribution?.length > 0}
-            {@const visible = s.statusDistribution.filter((g: StatusGroup) => g.percent > 0)}
+            {@const visible = s.statusDistribution.filter(
+              (g: StatusGroup) => g.percent > 0,
+            )}
             {#each visible as group, i}
               <Tooltip
                 contentClass="border border-(--surface-elevated) bg-(--surface-elevated)/90 backdrop-blur-md"
@@ -61,17 +63,15 @@
                       class="w-2 h-2 rounded-full"
                       style="background-color: {group.color}"
                     ></span>
-                    <span class="font-bold text-(--hako-fg)"
-                      >{group.label}</span
+                    <span class="font-bold text-(--hako-fg)">{group.label}</span
                     >
                     <span class="text-slate-300">{group.count} titles</span>
                   </div>
                 {/snippet}
                 <div
                   style="background-color: {group.color};"
-                  class="h-full w-full {i === 0
-                    ? 'rounded-l-full'
-                    : ''} {i === visible.length - 1
+                  class="h-full w-full {i === 0 ? 'rounded-l-full' : ''} {i ===
+                  visible.length - 1
                     ? 'rounded-r-full'
                     : ''}"
                 ></div>

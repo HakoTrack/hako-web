@@ -211,7 +211,7 @@
             {#if profile?.avatar_url}
               <img
                 src={HakoImage.get(profile.avatar_url)}
-                class="w-8 h-8 rounded-full object-cover border border-slate-700 cursor-pointer"
+                class="w-8 h-8 rounded-full object-cover cursor-pointer"
                 alt={username ? `${username}'s avatar` : "Avatar"}
               />
             {:else}

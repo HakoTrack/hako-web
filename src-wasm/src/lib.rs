@@ -738,7 +738,7 @@ impl ListEngine {
                 format!("{:.1}", total_minutes as f32 / 1440.0),
             ),
             "manga" => (String::from("Chapters Read"), total_progress.to_string()),
-            "light_novel" => (String::from("Volumes Read"), total_progress.to_string()),
+            "light_novel" => (String::from("Chapters Read"), total_progress.to_string()),
             _ => (String::from("Progress"), String::from("0")),
         };
 

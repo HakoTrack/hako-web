@@ -180,7 +180,7 @@
         class="flex flex-col md:flex-row items-center md:items-center space-y-4 md:space-y-0 md:space-x-6"
       >
         <div
-          class="relative group w-32 h-32 md:w-40 md:h-40 rounded-full md:rounded-xl border-2 border-(--hako-bg) shadow-2xl overflow-hidden bg-(--hako-bg)"
+          class="relative group w-32 h-32 md:w-40 md:h-40 rounded-full md:rounded-xl border border-(--hako-bg) overflow-hidden bg-(--hako-bg)"
         >
           <img
             src={HakoImage.get(profileData?.avatar_url)}
