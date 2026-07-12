@@ -1,6 +1,7 @@
 <script lang="ts">
   import type { Media, MediaCompanies } from "$shared/types";
   import type { VibeResult } from "$shared/types";
+  import type { MediaStats } from "./services";
   import TasteProfile from "$features/profile/components/TasteProfile.svelte";
 
   let {
@@ -10,6 +11,7 @@
     vibes,
     categorizedTags = [],
     effectiveSource = "",
+    mediaStats,
   } = $props<{
     media: Media;
     type: string;
@@ -22,6 +24,7 @@
       tags: { name: string; parent?: string; spoiler?: boolean }[];
     }[];
     effectiveSource: string;
+    mediaStats: MediaStats;
   }>();
 
   function toTitleCase(str: string | null | undefined): string {
@@ -172,18 +175,30 @@
     <div class="space-y-3">
       <div class="flex justify-between items-center">
         <span class="text-(--c8) text-sm">Mean Score</span>
-        <span class="text-lg font-black text-(--c5)">8.5</span>
+        <span class="text-lg font-black text-(--c5)"
+          >{mediaStats.meanScore != null
+            ? mediaStats.meanScore === 10
+              ? "10"
+              : mediaStats.meanScore.toFixed(2)
+            : "—"}</span
+        >
       </div>
       <div class="flex justify-between items-center">
         <span class="text-(--c8) text-sm">Median Score</span>
-        <span class="text-lg font-black text-(--c5)">82</span>
+        <span class="text-lg font-black text-(--c5)"
+          >{mediaStats.medianScore != null
+            ? mediaStats.medianScore === 10
+              ? "10"
+              : mediaStats.medianScore.toFixed(2)
+            : "—"}</span
+        >
       </div>
       <hr class="border-(--c0)" />
       <div class="flex justify-between items-center">
         <span class="text-(--c8) text-sm">Favorites</span>
         <span class="flex items-center gap-1 text-pink-500 font-bold">
           <i class="fa-solid fa-heart text-xs"></i>
-          12.4k
+          {mediaStats.favoriteCount.toLocaleString()}
         </span>
       </div>
       <hr class="border-(--c0)" />
@@ -192,18 +207,29 @@
           >Score Distribution</span
         >
         <div class="flex items-end gap-px h-20">
-          {#each [{ score: 10, count: 120 }, { score: 20, count: 450 }, { score: 30, count: 800 }, { score: 40, count: 1500 }, { score: 50, count: 3200 }, { score: 60, count: 5600 }, { score: 70, count: 12000 }, { score: 80, count: 18000 }, { score: 90, count: 14000 }, { score: 100, count: 9000 }] as dist}
-            <div
-              class="flex-1 flex flex-col items-center justify-end h-full gap-0.5"
-            >
+          {#if mediaStats.scoreDistribution.length > 0}
+            {@const maxCount = Math.max(
+              ...mediaStats.scoreDistribution.map((d) => d.count),
+            )}
+            {#each mediaStats.scoreDistribution as dist}
               <div
-                class="w-full rounded-t opacity-70 hover:opacity-100 transition-opacity"
-                style="height: {(dist.count / 18000) *
-                  100}%; background: var(--c5)"
-              ></div>
-              <span class="text-[8px] text-(--c8) font-bold">{dist.score}</span>
+                class="flex-1 flex flex-col items-center justify-end h-full gap-0.5"
+              >
+                <div
+                  class="w-full rounded-t opacity-70 hover:opacity-100 transition-opacity"
+                  style="height: {(dist.count / maxCount) *
+                    100}%; background: var(--c5)"
+                ></div>
+                <span class="text-[8px] text-(--c8) font-bold"
+                  >{dist.score}</span
+                >
+              </div>
+            {/each}
+          {:else}
+            <div class="w-full text-center text-[10px] text-(--c8) py-6">
+              No scores yet
             </div>
-          {/each}
+          {/if}
         </div>
       </div>
     </div>

@@ -8,6 +8,13 @@ import { ListEngine } from '$wasm/hako_wasm';
 import { wasmInitialized } from '../../../core/wasm-init';
 import { get } from 'svelte/store';
 
+export interface MediaStats {
+  meanScore: number | null;
+  medianScore: number | null;
+  favoriteCount: number;
+  scoreDistribution: { score: number; count: number }[];
+}
+
 let cachedAllMedia: { data: Media }[] | null = null;
 let cachedEngine: ListEngine | null = null;
 
@@ -185,5 +192,38 @@ export const MediaService = {
 
     await CacheService.setRelationCache(CACHE_KEY, result, new Date().toISOString());
     return result;
+  },
+
+  async getMediaStats(mediaId: number, _mediaType: string): Promise<MediaStats> {
+    const { data, error } = await supabase
+      .from('media')
+      .select('mean_score, median_score, favorite_count, score_distribution')
+      .eq('id', mediaId)
+      .single();
+
+    if (error || !data) {
+      return { meanScore: null, medianScore: null, favoriteCount: 0, scoreDistribution: [] };
+    }
+
+    const dist = (data.score_distribution ?? []) as { score: number; count: number }[];
+    const bucketMap = new Map<number, number>();
+    for (const d of dist) {
+      const bucket = Math.floor(d.score);
+      if (bucket >= 1 && bucket <= 10) {
+        bucketMap.set(bucket, (bucketMap.get(bucket) ?? 0) + d.count);
+      }
+    }
+
+    const fullDistribution: { score: number; count: number }[] = [];
+    for (let s = 1; s <= 10; s++) {
+      fullDistribution.push({ score: s, count: bucketMap.get(s) ?? 0 });
+    }
+
+    return {
+      meanScore: data.mean_score,
+      medianScore: data.median_score,
+      favoriteCount: data.favorite_count ?? 0,
+      scoreDistribution: fullDistribution,
+    };
   },
 };

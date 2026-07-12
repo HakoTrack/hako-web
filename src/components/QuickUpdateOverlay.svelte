@@ -391,6 +391,8 @@
     } else if (total && total === newProgress) {
       updates.status = "completed";
       updates.completed_at = today;
+    } else {
+      updates.status = entry.status;
     }
 
     // schedule entries aren't always in the quick-update items list

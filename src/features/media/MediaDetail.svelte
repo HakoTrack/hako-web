@@ -23,6 +23,7 @@
     RecommendationService,
     type MediaRecommendation,
     type VibeRecommendation,
+    type MediaStats,
   } from "./services";
   import { AuthService } from "$core/auth";
   import type {
@@ -64,6 +65,12 @@
       { name: string; category: string; parentName: string | null }
     >
   >({});
+  let mediaStats = $state<MediaStats>({
+    meanScore: null,
+    medianScore: null,
+    favoriteCount: 0,
+    scoreDistribution: [],
+  });
 
   function goto(path: string) {
     window.history.pushState({}, "", path);
@@ -336,6 +343,10 @@
         });
       }
 
+      MediaService.getMediaStats(Number(id), t).then((stats) => {
+        if (!aborted) mediaStats = stats;
+      });
+
       ForumThreadService.getThreadsByMediaId(Number(id)).then((result) => {
         if (!aborted && result.success) forumThreads = result.data;
       });
@@ -525,7 +536,13 @@
             <div class="flex flex-col items-end shrink-0 ml-4">
               <div class="flex items-center gap-6">
                 <div class="text-center">
-                  <div class="text-2xl font-black text-(--c5)">8.5</div>
+                  <div class="text-2xl font-black text-(--c5)">
+                    {mediaStats.meanScore != null
+                      ? mediaStats.meanScore === 10
+                        ? "10"
+                        : mediaStats.meanScore.toFixed(2)
+                      : "—"}
+                  </div>
                   <div
                     class="text-[10px] text-(--c8) uppercase tracking-widest font-bold"
                   >
@@ -533,7 +550,13 @@
                   </div>
                 </div>
                 <div class="text-center">
-                  <div class="text-2xl font-black text-(--c5)">82</div>
+                  <div class="text-2xl font-black text-(--c5)">
+                    {mediaStats.medianScore != null
+                      ? mediaStats.medianScore === 10
+                        ? "10"
+                        : mediaStats.medianScore.toFixed(2)
+                      : "—"}
+                  </div>
                   <div
                     class="text-[10px] text-(--c8) uppercase tracking-widest font-bold"
                   >
@@ -545,7 +568,7 @@
                     class="flex items-center gap-1 text-2xl font-black text-pink-500"
                   >
                     <i class="fa-solid fa-heart text-lg"></i>
-                    <span>12.4k</span>
+                    <span>{mediaStats.favoriteCount.toLocaleString()}</span>
                   </div>
                   <div
                     class="text-[10px] text-(--c8) uppercase tracking-widest font-bold"
@@ -912,6 +935,7 @@
             {vibes}
             {categorizedTags}
             {effectiveSource}
+            {mediaStats}
           />
         </aside>
       </div>
