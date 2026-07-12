@@ -1,4 +1,4 @@
-export { MediaService } from './mediaService';
+export { MediaService, type MediaStats } from './mediaService';
 export { getMediaCharacters } from './characterService';
 export { getMediaStaff } from './staffService';
 export { getAnimeThemes, type AnimeTheme } from './animethemesService';
