@@ -146,6 +146,11 @@
       activeTab = pathParts[2] || "overview";
       mediaType = pathParts[2] || "anime";
     }
+
+    const scrollPrefixes = ["/feed", "/anime/", "/manga/", "/lightnovel/", "/forum", "/top/", "/search/", "/discover/", "/collection/"];
+    if (scrollPrefixes.some(p => currentPath.startsWith(p))) {
+      window.scrollTo(0, 0);
+    }
   }
 
   onMount(async () => {
