@@ -1,3 +1,5 @@
+## NOTE: Hako is currently undergoing a rewrite to ensure future maintainability. I've learned a lot while working on this project, and concluded in the process the current codebase is a mess and would be better served being remade from scratch. 
+
 <p align="center">
 <img src="https://img.shields.io/badge/sveltekit-%23f1413d.svg?style=for-the-badge&logo=svelte&logoColor=white" alt="Svelte"> <img src="https://img.shields.io/badge/tailwindcss-%2338B2AC.svg?style=for-the-badge&logo=tailwind-css&logoColor=white" alt="TailwindCSS"> <img src="https://img.shields.io/badge/rust-%23000000.svg?style=for-the-badge&logo=rust&logoColor=white" alt="Rust"> <img src="https://img.shields.io/badge/typescript-%23007ACC.svg?style=for-the-badge&logo=typescript&logoColor=white" alt="TypeScript"> <img src="https://img.shields.io/badge/zod-%233068b7.svg?style=for-the-badge&logo=zod&logoColor=white" alt="Zod">
 </p>
@@ -24,3 +26,4 @@ More features to come.
 Honestly I hate the direction the internet has taken. I wanted a place that felt closer to the old internet before everything became about engagement and ragebait to game algorithms for exposure. On top of that, similar platforms have stagnated for over a decade with no worthwhile innovations to speak of. Why are they all lumping manga and light novels together still? Why do I still have to go to a seperate site to view VN info?
 
 If no one else will make it, I will.
+
