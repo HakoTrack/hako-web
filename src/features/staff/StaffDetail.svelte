@@ -7,6 +7,7 @@
   import type {
     StaffDetail,
     StaffMediaAppearance,
+    StaffRole,
   } from "../../shared/types/index";
 
   let { staffId } = $props<{ staffId: string }>();
@@ -15,14 +16,18 @@
   let isLoading = $state(true);
   let coverLoaded = $state(false);
   let visibleYears = $state<Set<number>>(new Set());
+  let prevStaffId = $state<string | null>(null);
 
   $effect(() => {
     const id = staffId;
     if (!id) return;
 
-    staff = null;
-    coverLoaded = false;
-    isLoading = true;
+    if (prevStaffId !== null && prevStaffId !== id) {
+      staff = null;
+      coverLoaded = false;
+      isLoading = true;
+    }
+    prevStaffId = id;
 
     getStaffById(Number(id))
       .then((data) => {
@@ -45,8 +50,8 @@
     const unknown: StaffMediaAppearance[] = [];
 
     for (const m of staff.media) {
-      if (m.seasonYear) {
-        (groups[m.seasonYear] ??= []).push(m);
+      if (m.startYear) {
+        (groups[m.startYear] ??= []).push(m);
       } else {
         unknown.push(m);
       }
@@ -96,6 +101,11 @@
     }
   }
 
+  function goto(path: string) {
+    window.history.pushState({}, "", path);
+    window.dispatchEvent(new PopStateEvent("popstate"));
+  }
+
   function toTitleCase(str: string | null | undefined): string {
     if (!str) return "";
     return str
@@ -111,42 +121,58 @@
   }
 </script>
 
-{#snippet stackedCard(appearance: StaffMediaAppearance)}
+{#snippet mediaCard(appearance: StaffMediaAppearance)}
   {@const mediaType = getMediaType(appearance)}
   {@const displayTitle =
     getDisplayTitle(appearance.title, settings.titlePreference) ||
     appearance.title.romaji}
-  <div>
-    <div class="grid grid-cols-1 grid-rows-1 mb-2">
-      <div class="col-start-1 row-start-1 justify-self-end z-0">
-        <MediaCover
-          mediaId={appearance.mediaId}
-          type={mediaType}
-          size="large"
-          alt={displayTitle}
-          showTooltip={false}
-        />
-      </div>
-      <div
-        class="col-start-1 row-start-1 justify-self-start self-start z-10 -ml-2 -mt-2"
-      >
-        <img
-          src={appearance.character.image}
-          alt={appearance.character.name}
-          class="w-14 h-14 rounded-full object-cover border-2 border-(--hako-bg) shadow-md"
-        />
-      </div>
+  <div class="flex gap-3 bg-card rounded-xl p-3">
+    <div class="w-28 shrink-0">
+      <MediaCover
+        mediaId={appearance.mediaId}
+        type={mediaType}
+        size="medium"
+        alt={displayTitle}
+        showTooltip={false}
+        noHoverScale
+      />
     </div>
-    <div class="space-y-0.5 px-0.5">
-      <p class="text-xs font-bold text-(--hako-fg) truncate leading-tight">
-        {appearance.character.name}
-      </p>
-      <p class="text-[11px] text-slate-400 truncate leading-tight">
+    <div class="min-w-0 flex-1">
+      <!-- svelte-ignore a11y_click_events_have_key_events -->
+      <!-- svelte-ignore a11y_no_static_element_interactions -->
+      <span
+        onclick={() => goto(`/${mediaType}/${appearance.mediaId}`)}
+        class="text-sm font-bold text-(--hako-fg) truncate leading-tight hover:text-(--c5) transition-colors cursor-pointer"
+      >
         {displayTitle}
-      </p>
-      <span class="text-[10px] text-slate-500 leading-tight">
-        {toTitleCase(appearance.role)}
       </span>
+      <div class="flex items-center gap-2 mt-0.5">
+        {#if appearance.startYear}
+          <span class="text-[11px] text-(--c8)">{appearance.startYear}</span>
+        {/if}
+        <span class="text-[10px] font-semibold uppercase text-(--c5)">{appearance.format?.replace(/_/g, ' ')}</span>
+      </div>
+      <div class="mt-1.5 space-y-1">
+        {#each appearance.roles as role (role.character?.id ?? role.role)}
+          {#if role.character}
+            <div class="flex items-center gap-1.5">
+              <img
+                src={role.character.image}
+                alt={role.character.name}
+                class="w-8 h-8 rounded-full object-cover shrink-0"
+              />
+              <div class="min-w-0 leading-tight">
+                <p class="text-[11px] font-bold text-(--c7) truncate">{role.character.name}</p>
+                <p class="text-[10px] text-(--c8) truncate">{toTitleCase(role.role)}</p>
+              </div>
+            </div>
+          {:else}
+            <span class="inline-block text-[10px] bg-(--surface-elevated) text-(--c7) rounded px-1.5 py-0.5 leading-tight">
+              {toTitleCase(role.role)}
+            </span>
+          {/if}
+        {/each}
+      </div>
     </div>
   </div>
 {/snippet}
@@ -205,39 +231,23 @@
                   class="ml-2 w-8 h-4 bg-(--surface-elevated)/40 animate-pulse rounded"
                 ></div>
               </div>
-              <div
-                class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4"
-              >
-                {#each Array(3) as _}
-                  <div>
-                    <div class="grid grid-cols-1 grid-rows-1 mb-2">
-                      <div class="col-start-1 row-start-1 justify-self-end">
-                        <div
-                          class="w-40 aspect-17/23 bg-(--surface-elevated) animate-pulse rounded"
-                        ></div>
-                      </div>
-                      <div
-                        class="col-start-1 row-start-1 justify-self-start self-start -ml-2 -mt-2"
-                      >
-                        <div
-                          class="w-14 h-14 rounded-full bg-(--surface-elevated)/60 animate-pulse border-2 border-(--hako-bg)"
-                        ></div>
-                      </div>
-                    </div>
-                    <div class="space-y-1.5 px-0.5">
-                      <div
-                        class="w-3/4 h-3 bg-(--surface-elevated)/50 animate-pulse rounded"
-                      ></div>
-                      <div
-                        class="w-full h-2.5 bg-(--surface-elevated)/40 animate-pulse rounded"
-                      ></div>
-                      <div
-                        class="w-1/3 h-2 bg-(--surface-elevated)/30 animate-pulse rounded"
-                      ></div>
-                    </div>
-                  </div>
-                {/each}
-              </div>
+               <div class="grid grid-cols-1 lg:grid-cols-2 gap-2">
+                 {#each Array(4) as _}
+                   <div class="flex gap-3 bg-card rounded-xl p-3">
+                     <div
+                       class="w-28 aspect-[17/23] bg-(--surface-elevated) animate-pulse rounded shrink-0"
+                     ></div>
+                     <div class="flex-1 space-y-2">
+                       <div
+                         class="h-4 w-1/2 bg-(--surface-elevated)/50 animate-pulse rounded"
+                       ></div>
+                       <div
+                         class="h-10 w-3/4 bg-(--surface-elevated)/40 animate-pulse rounded"
+                       ></div>
+                     </div>
+                   </div>
+                 {/each}
+               </div>
             </div>
           {/each}
         </div>
@@ -338,11 +348,9 @@
                   >({groupedMedia.groups[year].length})</span
                 >
               </h3>
-              <div
-                class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4"
-              >
+              <div class="grid grid-cols-1 lg:grid-cols-2 gap-2">
                 {#each groupedMedia.groups[year] as appearance}
-                  {@render stackedCard(appearance)}
+                  {@render mediaCard(appearance)}
                 {/each}
               </div>
             </section>
@@ -358,11 +366,9 @@
                   >({groupedMedia.unknown.length})</span
                 >
               </h3>
-              <div
-                class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4"
-              >
+              <div class="grid grid-cols-1 lg:grid-cols-2 gap-2">
                 {#each groupedMedia.unknown as appearance}
-                  {@render stackedCard(appearance)}
+                  {@render mediaCard(appearance)}
                 {/each}
               </div>
             </section>

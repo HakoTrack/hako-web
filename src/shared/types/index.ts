@@ -59,6 +59,15 @@ export interface CharacterMediaAppearance {
   };
 }
 
+export interface StaffRole {
+  role: string;
+  character: {
+    id: number;
+    name: string;
+    image: string;
+  } | null;
+}
+
 export interface StaffMediaAppearance {
   mediaId: number;
   title: {
@@ -68,14 +77,10 @@ export interface StaffMediaAppearance {
   };
   format: string;
   mediaType: string;
-  role: string;
   seasonYear: number | null;
+  startYear: number | null;
   cover: string;
-  character: {
-    id: number;
-    name: string;
-    image: string;
-  };
+  roles: StaffRole[];
 }
 
 export interface StaffDetail {

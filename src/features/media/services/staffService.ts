@@ -2,9 +2,10 @@ import { supabase } from '../../../core/supabase';
 import { CacheService } from '../../../core/cache';
 import { HakoImage } from '../../../shared/utils/images';
 import { formatName } from '../../../shared/utils/nameUtils';
-import type { StaffDetail, StaffMediaAppearance } from '../../../shared/types/index';
+import type { StaffDetail, StaffMediaAppearance, StaffRole } from '../../../shared/types/index';
 
 const STAFF_PAGE_SIZE = 1000;
+const CACHE_PREFIX = 'staff-profile-v2:';
 
 async function staleStaffCache(
   mediaId: number,
@@ -78,6 +79,35 @@ export async function getMediaStaff(mediaId: number) {
 }
 
 export async function getStaffById(id: number): Promise<StaffDetail | null> {
+  const CACHE_KEY = `${CACHE_PREFIX}${id}`;
+  const cached = await CacheService.getRelationCache(CACHE_KEY);
+  if (cached?.data) {
+    // Fire-and-forget freshness check — return cached data immediately,
+    // refresh in the background if stale.
+    (async () => {
+      const { data: updateData } = await supabase
+        .from('staff')
+        .select('updated_at')
+        .eq('id', id)
+        .single();
+      if (updateData) {
+        const dbTime = new Date(updateData.updated_at).getTime();
+        const cacheTime = new Date(cached.lastSync).getTime();
+        if (dbTime > cacheTime) {
+          const fresh = await fetchStaffFresh(id);
+          if (fresh) await CacheService.setRelationCache(CACHE_KEY, fresh, new Date().toISOString());
+        }
+      }
+    })();
+    return cached.data;
+  }
+
+  const fresh = await fetchStaffFresh(id);
+  if (fresh) await CacheService.setRelationCache(CACHE_KEY, fresh, new Date().toISOString());
+  return fresh;
+}
+
+async function fetchStaffFresh(id: number): Promise<StaffDetail | null> {
   const { data: staff, error } = await supabase
     .from('staff')
     .select('id, name_full, name_first, name_middle, name_last, name_order, name_native, biography')
@@ -103,32 +133,60 @@ export async function getStaffById(id: number): Promise<StaffDetail | null> {
       ),
       media:media_id (
         id, title_romaji, title_english, title_native,
-        format, media_type, season_year
+        format, media_type, season_year, start_year
       )
     `)
-    .eq('staff_id', id)
-    .not('character_id', 'is', null);
+    .eq('staff_id', id);
 
-  const media: StaffMediaAppearance[] = (roles ?? [])
-    .filter((r: any) => r.media && r.character)
-    .map((r: any) => ({
-      mediaId: r.media.id,
-      title: {
-        romaji: r.media.title_romaji,
-        english: r.media.title_english,
-        native: r.media.title_native,
-      },
-      format: r.media.format,
-      mediaType: r.media.media_type,
+  const mediaMap = new Map<number, StaffMediaAppearance>();
+
+  for (const rRaw of roles ?? []) {
+    const r = rRaw as any;
+    if (!r.media) continue;
+    const mid = r.media.id;
+
+    let entry = mediaMap.get(mid);
+    if (!entry) {
+      entry = {
+        mediaId: mid,
+        title: {
+          romaji: r.media.title_romaji,
+          english: r.media.title_english,
+          native: r.media.title_native,
+        },
+        format: r.media.format,
+        mediaType: r.media.media_type,
+        seasonYear: r.media.season_year,
+        startYear: r.media.start_year,
+        cover: HakoImage.getCover(mid),
+        roles: [],
+      };
+      mediaMap.set(mid, entry);
+    }
+
+    const role: StaffRole = {
       role: r.role,
-      seasonYear: r.media.season_year,
-      cover: HakoImage.getCover(r.media.id),
-      character: {
-        id: r.character.id,
-        name: formatName(r.character.name_first, r.character.name_last, r.character.name_order, r.character.name_middle),
-        image: HakoImage.getCharacter(r.character.id),
-      },
-    }));
+      character: r.character
+        ? {
+            id: r.character.id,
+            name: formatName(r.character.name_first, r.character.name_last, r.character.name_order, r.character.name_middle),
+            image: HakoImage.getCharacter(r.character.id),
+          }
+        : null,
+    };
+    entry.roles.push(role);
+  }
+
+  const media = [...mediaMap.values()]
+    .sort((a, b) => (b.startYear ?? 0) - (a.startYear ?? 0))
+    .map((m) => {
+      m.roles.sort((x, y) => {
+        if (x.character && !y.character) return -1;
+        if (!x.character && y.character) return 1;
+        return 0;
+      });
+      return m;
+    });
 
   return {
     id: staff.id,
